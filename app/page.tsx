@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import './globals.css';
-import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, daysUntil } from '@/lib/health-data';
+import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, daysUntil, MEALS_PLAN, LABS_2023, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY } from '@/lib/health-data';
 
 const STORE_KEY = "brandon_gameplan_v1";
 
@@ -383,21 +383,114 @@ export default function Home() {
         {currentSection === 'nutrition' && (
           <div>
             <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>NUTRITION</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Meal tracking coming soon. Use "Today" tab to track protein.</p>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              DAILY TARGETS: {TARGETS.cals} CAL · {TARGETS.protein}G PROTEIN · {TARGETS.carbs}G CARBS · {TARGETS.fat}G FAT
+            </div>
+
+            {MEALS_PLAN.map((meal, i) => (
+              <div key={i} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginBottom: 18 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <h3 style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 4 }}>{meal.name}</h3>
+                    <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>{meal.time}</div>
+                  </div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, padding: '8px 14px' }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#ff4e1b', fontStyle: 'italic' }}>{meal.cals} CAL</div>
+                    <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 2 }}>
+                      {meal.p}g P · {meal.c}g C · {meal.f}g F
+                    </div>
+                  </div>
+                </div>
+                <ul style={{ marginTop: 12, paddingLeft: 20 }}>
+                  {meal.items.map((item, j) => (
+                    <li key={j} style={{ fontSize: 14, color: '#ede9e0', marginBottom: 6, lineHeight: 1.5 }}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginTop: 24 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>NON-NEGOTIABLES</h3>
+              {NON_NEGOTIABLES.map((rule, i) => (
+                <div key={i} style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderLeft: '3px solid #ff4e1b', padding: '12px 16px', marginBottom: 8, fontSize: 14, color: '#ede9e0' }}>
+                  {rule}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {currentSection === 'bloodwork' && (
           <div>
             <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>BLOODWORK</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Lab tracking coming soon.</p>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              BASELINE (2023) + RETEST PANEL
+            </div>
+
+            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>2023 Baseline</h2>
+            {LABS_2023.map((lab, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr', gap: 12, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0' }}>{lab.marker}</div>
+                <div style={{ fontSize: 14, color: lab.cls === 'red' ? '#ff3b2d' : lab.cls === 'orange' ? '#ff4e1b' : '#5fc878', fontWeight: 700 }}>{lab.result}</div>
+                <div style={{ fontSize: 12, color: '#a09ccc' }}>{lab.range}</div>
+                <div style={{ fontSize: 12, color: '#a09ccc' }}>{lab.pct}</div>
+                <div style={{ fontSize: 13, color: lab.cls === 'red' ? '#ff3b2d' : lab.cls === 'orange' ? '#ff4e1b' : '#5fc878', fontWeight: 600 }}>{lab.verdict}</div>
+              </div>
+            ))}
+
+            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginTop: 32, marginBottom: 14 }}>Retest Panel</h2>
+            <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>Order these labs after 4–6 weeks of training + supplements</div>
+            {RETEST_PANEL.map((test, i) => (
+              <div key={i} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 18, marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: '#ede9e0', textTransform: 'uppercase' }}>{test.test}</div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, padding: '4px 10px', fontSize: 12, color: '#ff4e1b', fontWeight: 700 }}>{test.target}</div>
+                </div>
+                <div style={{ fontSize: 13, color: '#a09ccc' }}>{test.why}</div>
+              </div>
+            ))}
           </div>
         )}
 
         {currentSection === 'schedule' && (
           <div>
             <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>SCHEDULE</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Daily protocols coming soon.</p>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              HOUR-BY-HOUR PROTOCOLS · PELOTON DAYS vs LIFTING DAYS
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
+              <button style={{ background: '#262358', border: '1px solid #3a3778', color: '#ede9e0', padding: '12px 16px', borderRadius: 2, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer' }}>
+                PELOTON DAY
+              </button>
+              <button style={{ background: '#1e1c47', border: '1px solid #2e2b5e', color: '#a09ccc', padding: '12px 16px', borderRadius: 2, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer' }}>
+                LIFTING DAY
+              </button>
+            </div>
+
+            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>Peloton Day Protocol</h2>
+            <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>Tues, Thurs, Sat, Sun — Cardio + Recovery Focus</div>
+            {PELOTON_DAY.map((item, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
+                  <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
+                </div>
+              </div>
+            ))}
+
+            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginTop: 32, marginBottom: 14 }}>Lifting Day Protocol</h2>
+            <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>Mon, Wed, Fri — Strength Training Focus</div>
+            {LIFTING_DAY.map((item, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
+                  <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>

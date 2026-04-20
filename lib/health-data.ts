@@ -113,6 +113,84 @@ export const NON_NEGOTIABLES = [
   "Never cut below 1,800 calories"
 ];
 
+export const MEALS_PLAN = [
+  { time: "6:30–7:30am", name: "BREAKFAST", cals: 500, p: 50, c: 39, f: 21, items: ["4 whole eggs scrambled + 2 whites (30g P)", "1 cup oatmeal + cinnamon (5g P)", "½ cup mixed berries (1g P)", "Black coffee", "Optional: ½ scoop protein in oats"] },
+  { time: "10:30am", name: "MID-MORNING SNACK", cals: 250, p: 35, c: 18, f: 5, items: ["1 cup Greek yogurt 2% (17g P)", "1 scoop protein stirred in (25g P)", "Berries or 1 tsp honey", "OR: Cottage cheese + shake"] },
+  { time: "12:30–1:30pm", name: "LUNCH", cals: 550, p: 50, c: 50, f: 17, items: ["6 oz grilled chicken breast (42g P)", "1 cup cooked brown rice/quinoa (5g P)", "2 cups roasted veg (broccoli/zucchini)", "1 tbsp olive oil", "Season generously"] },
+  { time: "3:30–4:00pm", name: "PRE-WORKOUT SNACK", cals: 200, p: 10, c: 30, f: 8, items: ["1 medium banana", "1 tbsp natural peanut/almond butter", "OR apple + string cheese", "Eat 45–60 min before lift"] },
+  { time: "Post-Workout", name: "POST-WORKOUT SHAKE", cals: 200, p: 30, c: 10, f: 3, items: ["1–1.5 scoops whey in water/almond milk", "Optional: ½ banana", "Within 60–90 min of finishing"] },
+  { time: "6:30–7:30pm", name: "DINNER", cals: 550, p: 45, c: 35, f: 18, items: ["6 oz salmon (34g P, 13g F)", "OR 6 oz lean ground beef 90/10", "1 medium sweet potato", "Large salad + olive oil + lemon", "Optional: ¼ avocado"] },
+  { time: "8:30pm", name: "EVENING SNACK (optional)", cals: 150, p: 20, c: 6, f: 2, items: ["1 cup cottage cheese (25g casein)", "Slow-release through night", "Skip if already at calories", "Moon Brew 30–45 min before sleep"] }
+];
+
+export const LABS_2023 = [
+  { marker: "Total Testosterone", result: "468 ng/dL", range: "250–827", pct: "38th", verdict: "Low-normal", cls: "orange" },
+  { marker: "Free Testosterone", result: "68.5 pg/mL", range: "46–224", pct: "13th", verdict: "Functionally low", cls: "red" },
+  { marker: "Bioavailable T", result: "146.9 ng/dL", range: "110–575", pct: "8th", verdict: "Functionally low", cls: "red" },
+  { marker: "SHBG", result: "29 nmol/L", range: "10–50", pct: "48th", verdict: "Good (midrange)", cls: "green" },
+  { marker: "Albumin", result: "4.7 g/dL", range: "3.6–5.1", pct: "73rd", verdict: "Good", cls: "green" }
+];
+
+export const RETEST_PANEL = [
+  { test: "Total Testosterone", target: "600–900 ng/dL", why: "Your baseline was 468. Optimal body comp + energy" },
+  { test: "Free Testosterone", target: ">100 pg/mL", why: "Drives recovery, muscle, drive" },
+  { test: "Bioavailable T", target: ">300 ng/dL", why: "True production reflection" },
+  { test: "SHBG", target: "10–40 nmol/L", why: "Was good at 29 — track" },
+  { test: "Estradiol (sensitive)", target: "20–30 pg/mL", why: "As T rises, E2 may follow" },
+  { test: "LH + FSH", target: "Normal range", why: "Brain-testes signaling check" },
+  { test: "Thyroid (TSH, T3, T4)", target: "TSH 0.5–2.5", why: "Fatigue + weight differential" },
+  { test: "Vitamin D", target: ">50 ng/mL", why: "Critical for T, mood, muscle" },
+  { test: "Ferritin + CBC", target: "Ferritin >50", why: "Iron stores affect energy" },
+  { test: "Fasting Insulin + HbA1c", target: "Normal", why: "Blood sugar / body comp" },
+  { test: "hs-CRP", target: "<1.0 mg/L", why: "Chronic inflammation check" }
+];
+
+export const PELOTON_DAY = [
+  { t: "5:00 am", type: "sleep", what: "WAKE UP", d: "16–20 oz water immediately. Set out ARMRA, LMNT, AG1 for post-ride." },
+  { t: "5:05 am", type: "exercise", what: "GET READY", d: "Kit up for Peloton. DO NOT eat. No coffee yet." },
+  { t: "5:15 am", type: "exercise", what: "PELOTON RIDE (45–60 min)", d: "Push intensity. Plain water during. LMNT in last 15 min if hard Z3–4." },
+  { t: "6:15 am", type: "exercise", what: "COOL DOWN", d: "5 min stretch — hips, hamstrings, thoracic spine." },
+  { t: "6:20 am", type: "supp", what: "ARMRA + LMNT", d: "ARMRA colostrum in 8 oz cold water first. Then LMNT in 16–20 oz water. Wait 10–15 min before food." },
+  { t: "6:25 am", type: "", what: "SHOWER", d: "Keep sipping LMNT water." },
+  { t: "6:40 am", type: "food", what: "BREAKFAST", d: "3 whole eggs + ½ avocado + microgreens. ~20g P · 30g F · 4g C · 380 cal." },
+  { t: "6:40 am", type: "supp", what: "SUPPLEMENTS w/ breakfast", d: "AG1 (8–10 oz water) • Creatine 5g • Tongkat Ali 400mg • D3+K2 • Omega-3 2–3g EPA+DHA • Collagen 10–15g" },
+  { t: "7:15 am", type: "food", what: "COFFEE ☕", d: "Black or 2–3 oz oat milk. Caffeine cut-off: 2:00 pm." },
+  { t: "7:45 am", type: "work", what: "OUT THE DOOR", d: "Normal departure." },
+  { t: "10:00 am", type: "food", what: "MID-MORNING PROTEIN", d: "1 cup Greek yogurt (17g P) OR protein bar (20g+) OR 2 oz jerky + apple." },
+  { t: "12:30 pm", type: "food", what: "LUNCH", d: "6 oz chicken (42g) + 1 cup rice (5g) + 2 cups roasted veg + olive oil. ~50g P · 50g C · 15g F · 530 cal." },
+  { t: "3:00 pm", type: "food", what: "AFTERNOON SNACK", d: "Apple + string cheese (7g P) OR almonds + 1 oz jerky." },
+  { t: "5:00 pm", type: "", what: "HOME · Water check", d: "Fill water to reach 3–4 L for the day." },
+  { t: "6:00 pm", type: "food", what: "DINNER", d: "6 oz salmon or lean beef + 1 sweet potato + large salad + olive oil. ~45g P · 35g C · 18g F · 530 cal." },
+  { t: "6:30 pm", type: "supp", what: "NAC 600mg w/ dinner", d: "Liver support, glutathione boost. Always with food." },
+  { t: "8:00 pm", type: "food", what: "OPTIONAL EVENING SNACK", d: "1 cup cottage cheese (25g casein) — only if short on protein (< 170g total)." },
+  { t: "8:30 pm", type: "sleep", what: "WIND DOWN", d: "Dim screens. Blue blockers. Room temp 65–68°F." },
+  { t: "8:45 pm", type: "supp", what: "MOON BREW + MAGNESIUM", d: "Moon Brew in warm water. Mg glycinate/L-threonate 300–400mg (if not in Moon Brew)." },
+  { t: "9:30 pm", type: "sleep", what: "SLEEP 😴", d: "7.5–8 hours non-negotiable. Cold, dark room. Phone away." }
+];
+
+export const LIFTING_DAY = [
+  { t: "5:00 am", type: "sleep", what: "WAKE UP", d: "16–20 oz water. Slower, intentional morning." },
+  { t: "5:05 am", type: "supp", what: "ARMRA (empty stomach)", d: "8 oz cold water. Wait 10–15 min before breakfast." },
+  { t: "5:15 am", type: "supp", what: "AG1 + CREATINE", d: "AG1 1 scoop in 12–16 oz cold water. Creatine 5g stirred in. Sip while getting ready." },
+  { t: "5:30 am", type: "food", what: "BREAKFAST", d: "3 whole eggs + ½ avocado + microgreens. ~20g P · 30g F · 4g C · 380 cal." },
+  { t: "5:30 am", type: "supp", what: "SUPPLEMENTS w/ breakfast", d: "Tongkat Ali 400mg • D3+K2 • Omega-3 2–3g • Collagen 10–15g." },
+  { t: "6:15 am", type: "food", what: "COFFEE ☕", d: "Enjoy — you have time. Caffeine cut-off: 2:00 pm." },
+  { t: "6:45 am", type: "work", what: "OUT THE DOOR", d: "Leave ~45–60 min earlier so you can leave work by 3:30pm." },
+  { t: "10:00 am", type: "food", what: "MID-MORNING PROTEIN", d: "Greek yogurt (17g) or protein bar or jerky + fruit." },
+  { t: "12:30 pm", type: "food", what: "LUNCH (pre-workout fuel)", d: "6 oz chicken + 1 cup rice + veg + olive oil. Carb-heavy is intentional. ~50g P · 55g C · 15g F." },
+  { t: "2:45 pm", type: "food", what: "PRE-WORKOUT SNACK", d: "Banana + 1 tbsp peanut/almond butter. 45–60 min before lift. NOT optional." },
+  { t: "3:00 pm", type: "work", what: "HEAD HOME / TRANSITION", d: "5-min dynamic warmup before lift (arm/hip/leg circles)." },
+  { t: "3:30 pm", type: "exercise", what: "LIFT WEIGHTS 🏋️", d: "Mon = Workout A (Lower) · Wed = Workout B (Upper) · Fri = Workout C (Full Body). Log every set." },
+  { t: "4:30 pm", type: "supp", what: "POST-WORKOUT SHAKE + LMNT", d: "Protein shake 1–1.5 scoops (25–35g) + LMNT packet in 16–20 oz water. Within 30 min." },
+  { t: "4:30 pm", type: "", what: "COOL DOWN + SHOWER", d: "5–10 min stretch: hip flexors, chest, lats. Foam roll." },
+  { t: "6:00 pm", type: "food", what: "DINNER", d: "6 oz salmon/lean beef + sweet potato + salad. Extra ½ cup rice if hard session." },
+  { t: "6:30 pm", type: "supp", what: "NAC 600mg w/ dinner", d: "Every night, no exceptions." },
+  { t: "7:30 pm", type: "food", what: "OPTIONAL EVENING SNACK", d: "1 cup cottage cheese (25g casein). Skip if 185g+ already." },
+  { t: "8:30 pm", type: "sleep", what: "WIND DOWN", d: "Hard stop on screens. Lifting cortisol needs 3+ hrs to clear." },
+  { t: "8:45 pm", type: "supp", what: "MOON BREW + MAGNESIUM", d: "Treat it as a ritual." },
+  { t: "9:30 pm", type: "sleep", what: "SLEEP 😴", d: "7.5–8 hours. Non-negotiable. Cold (65–68°F), dark, phone away." }
+];
+
 export function daysUntil(dateStr: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
