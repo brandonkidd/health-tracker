@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRANDON · NO DAYS OFF — The Game Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* BRAND PALETTE — restrained */
+  --bg:#13112e;            /* deep indigo */
+  --bg2:#1a1840;           /* one notch lighter */
+  --card:#1e1c47;          /* card surface */
+  --card2:#262358;         /* elevated card */
+  --border:#2e2b5e;        /* subtle border */
+  --border-lt:#3a3778;     /* hover border */
+  --text:#ede9e0;          /* cream — primary text */
+  --dim:#a09ccc;           /* secondary text */
+  --muted:#6864a0;         /* tertiary text */
+  --orange:#ff4e1b;        /* PRIMARY ACCENT */
+  --orange2:#ff6a37;
+  --orange-soft:rgba(255,78,27,.12);
+  --cream:#ede9e0;
+  --indigo:#3a3778;
+  --indigo2:#5d58c7;       /* lifted for gradients */
+  --red:#ff3b2d;
+  --green:#6de0c5;
+  --blush:#ff8a7a;         /* gradient companion to orange */
+  --grad-brand:linear-gradient(135deg,#ff4e1b 0%,#ff8a7a 100%);
+  --grad-bloom:radial-gradient(ellipse 80% 60% at 85% 0%,rgba(255,78,27,.18) 0%,transparent 55%),radial-gradient(ellipse 70% 60% at 0% 25%,rgba(93,88,199,.16) 0%,transparent 55%);
+  --grad-hero:radial-gradient(circle at 80% 20%,rgba(255,78,27,.32) 0%,transparent 50%),radial-gradient(circle at 15% 85%,rgba(93,88,199,.4) 0%,transparent 55%),linear-gradient(135deg,#1c1945 0%,#252352 60%,#2e2466 100%);
+  /* Aliases for legacy refs so nothing breaks — all map to neutral/primary */
+  --indigo-lt:#6864a0;     /* → muted (no longer a distinct color) */
+  --blue:#6864a0;
+  --pink:#ff8a7a;
+  --yellow:#ff8a7a;
+  --purple:#6864a0;
+  --teal:#6de0c5;
+  --volt:#ff4e1b;
+  --display:"Archivo Black","Inter Black","Bebas Neue",-apple-system,sans-serif;
+  --condensed:"Bebas Neue","Archivo Black",-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--text);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+body{background:var(--grad-bloom),#13112e;background-attachment:fixed}
+a{color:var(--orange);text-decoration:none;font-weight:700}
+a:hover{color:var(--orange2);text-decoration:underline}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ACCENT BAR — orange to indigo gradient fade */
+.swoosh-line{height:2px;background:linear-gradient(90deg,var(--orange) 0%,var(--orange) 45%,var(--indigo2) 100%);margin-bottom:0}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(19,17,46,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
+.logo{font-family:var(--display);font-weight:900;font-size:20px;letter-spacing:.5px;white-space:nowrap;text-transform:uppercase;font-style:italic;transform:skewX(-6deg);color:var(--cream)}
+.logo span{color:var(--orange)}
+.logo::before{content:"";display:inline-block;width:24px;height:10px;background:var(--orange);clip-path:polygon(0 100%,100% 0,100% 30%,15% 100%);margin-right:8px;vertical-align:middle;transform:skewX(6deg)}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links button{background:transparent;border:none;color:var(--dim);padding:10px 14px;border-radius:0;font-size:12px;font-weight:800;white-space:nowrap;transition:all .15s;text-transform:uppercase;letter-spacing:1.2px;border-bottom:2px solid transparent}
+.nav-links button:hover{color:var(--cream)}
+.nav-links button.active{color:var(--orange);border-bottom-color:var(--orange)}
+
+main{max-width:1280px;margin:0 auto;padding:28px 20px 80px}
+.section{display:none;animation:fade .35s}
+.section.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+h1,h2,h3,h4{font-weight:900;letter-spacing:-.5px;text-transform:uppercase;font-family:var(--display)}
+h1{font-size:52px;margin-bottom:6px;font-style:italic;line-height:.95;letter-spacing:-1.5px}
+h2{font-size:26px;margin-bottom:14px;font-style:italic;letter-spacing:-.8px}
+h3{font-size:17px;margin-bottom:10px;letter-spacing:-.3px}
+h4{font-size:13px;margin-bottom:6px;letter-spacing:2px;color:var(--orange);font-family:var(--display)}
+.sub{color:var(--dim);font-size:14px;margin-bottom:20px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px}
+.muted{color:var(--muted)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:26px;margin-bottom:18px;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;top:0;left:0;width:4px;height:0;background:var(--orange);transition:height .3s}
+.card:hover::before{height:100%}
+.card.tight{padding:18px}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+/* HERO — editorial gradient bloom */
+.hero{background:var(--grad-hero);border:1px solid var(--border);border-radius:4px;padding:48px 36px;margin-bottom:22px;position:relative;border-left:4px solid var(--orange);overflow:hidden}
+.hero h1{font-size:72px;line-height:.9;letter-spacing:-3px;color:var(--cream);position:relative;z-index:2}
+.hero h1 span{color:var(--orange);display:inline-block}
+.tagline{color:var(--cream);opacity:.85;margin-top:16px;font-size:12px;text-transform:uppercase;letter-spacing:2px;font-weight:700;position:relative;z-index:2}
+
+/* STAT TILE — clean, quiet unless emphasized */
+.stat-tile{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;position:relative;transition:border-color .15s;overflow:hidden}
+.stat-tile:hover{border-color:var(--border-lt)}
+.stat-tile .lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:800;font-family:var(--display);position:relative;z-index:2}
+.stat-tile .val{font-size:32px;font-weight:900;line-height:1;font-family:var(--display);font-style:italic;letter-spacing:-1px;color:var(--cream);position:relative;z-index:2}
+.stat-tile .sub{font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0;text-transform:uppercase;letter-spacing:1px;font-weight:700;position:relative;z-index:2}
+/* Primary = orange number + subtle gradient bloom in corner */
+.stat-tile.primary{border-color:var(--orange);background:radial-gradient(circle at 100% 0%,rgba(255,78,27,.18) 0%,transparent 60%),var(--card)}
+.stat-tile.primary .val{color:var(--orange)}
+/* Legacy aliases all neutral by default — only primary gets the accent */
+.stat-tile.blue .val,
+.stat-tile.green .val,
+.stat-tile.pink .val,
+.stat-tile.purple .val,
+.stat-tile.teal .val,
+.stat-tile.red .val{color:var(--cream)}
+.stat-tile.orange .val,
+.stat-tile.volt .val{color:var(--orange)}
+
+/* COUNTDOWN — primary (nearest) gets gradient glow, rest stay neutral */
+.countdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:28px 0;position:relative;z-index:2}
+.cd-card{background:rgba(26,24,64,.55);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:4px;padding:20px;text-align:center;overflow:hidden}
+.cd-card .n{font-size:44px;font-weight:900;line-height:1;font-family:var(--display);font-style:italic;letter-spacing:-2px;color:var(--cream)}
+.cd-card .l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-top:8px;font-weight:800;font-family:var(--display)}
+.cd-card.june{border-color:var(--orange);background:radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)}
+.cd-card.june .n{color:var(--orange)}
+
+/* CHECK / TODO ROWS */
+.check-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:2px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px;transition:all .15s;border-left:3px solid transparent}
+.check-row:hover{border-color:var(--border-lt);border-left-color:var(--orange)}
+.check-row.done{background:rgba(255,78,27,.08);border-color:rgba(255,78,27,.35);border-left-color:var(--orange)}
+.check-row.done .chk-main{text-decoration:line-through;color:var(--muted)}
+.chk{appearance:none;width:22px;height:22px;border:2px solid var(--border-lt);border-radius:2px;flex-shrink:0;cursor:pointer;position:relative;transition:all .15s}
+.chk:checked{background:var(--orange);border-color:var(--orange)}
+.chk:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--cream);font-weight:900;font-size:15px}
+.chk-main{font-weight:700;font-size:14px;flex:1;color:var(--cream)}
+.chk-meta{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:2px}
+.chk-time{font-size:11px;color:var(--muted);font-weight:700;min-width:60px;text-align:right}
+
+/* BUTTONS */
+.btn{background:var(--card2);border:1px solid var(--border-lt);color:var(--cream);padding:10px 16px;border-radius:2px;font-size:12px;font-weight:900;transition:all .15s;text-transform:uppercase;letter-spacing:1.2px;font-family:var(--display)}
+.btn:hover{background:var(--orange);border-color:var(--orange);color:var(--cream);transform:translateY(-1px);box-shadow:0 4px 14px var(--orange-glow)}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:var(--cream)}
+.btn.primary:hover{background:var(--orange2)}
+.btn.green{background:var(--green);border-color:var(--green);color:var(--bg)}
+.btn.orange{background:var(--orange);border-color:var(--orange);color:var(--cream)}
+.btn.red{background:var(--red);border-color:var(--red);color:var(--cream)}
+.btn.red:hover{background:#e22d20;color:var(--cream)}
+.btn.sm{padding:7px 12px;font-size:11px}
+.btn.ghost{background:transparent}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* INPUTS */
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--bg2);border:1px solid var(--border);color:var(--cream);padding:10px 12px;border-radius:2px;font-size:14px;width:100%;font-weight:600}
+input[type=text]:focus,input[type=number]:focus,input[type=date]:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 2px rgba(255,78,27,.25)}
+label{font-size:10px;color:var(--dim);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:5px;font-family:var(--display)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:12px 14px;background:var(--bg);font-size:10px;font-weight:900;color:var(--orange);text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid var(--orange);font-family:var(--display)}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--cream)}
+tr:hover td{background:rgba(255,78,27,.04)}
+tr:last-child td{border-bottom:none}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:2px}
+
+/* BADGES — 4 meanings only */
+.badge{display:inline-block;padding:4px 10px;border-radius:2px;font-size:10px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--display)}
+/* orange = action / primary / LIFT  */
+.badge.orange,.badge.volt{background:var(--orange);color:var(--cream)}
+/* green = status / done / have */
+.badge.green{background:transparent;color:var(--green);border:1px solid var(--green)}
+/* red = warning */
+.badge.red{background:transparent;color:var(--red);border:1px solid var(--red)}
+/* neutral = everything else (cardio, rest, info) */
+.badge.blue,.badge.purple,.badge.pink,.badge.yellow,.badge.grey,.badge.cream,.badge.indigo{background:transparent;color:var(--dim);border:1px solid var(--border-lt)}
+
+/* PROGRESS BAR */
+/* PROGRESS BAR — subtle gradient fill */
+.pbar{background:var(--bg2);border:1px solid var(--border);border-radius:0;height:10px;overflow:hidden;margin-top:10px}
+.pbar > span{display:block;height:100%;background:linear-gradient(90deg,var(--orange) 0%,var(--blush) 100%);transition:width .4s cubic-bezier(.3,0,.3,1)}
+.pbar.green > span,.pbar.orange > span,.pbar.pink > span,.pbar.red > span,.pbar.indigo > span{background:linear-gradient(90deg,var(--orange) 0%,var(--blush) 100%)}
+
+/* WATER DOTS — cream when full, no color variation */
+.water-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.drop{width:30px;height:38px;border-radius:0 0 50% 50% / 0 0 40% 40%;border:2px solid var(--border-lt);background:transparent;cursor:pointer;transition:all .15s}
+.drop.on{background:var(--cream);border-color:var(--cream)}
+.drop:hover:not(.on){border-color:var(--orange)}
+
+/* DAY TOGGLE — orange = active, neutral = inactive */
+.day-toggle{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:2px;padding:0;margin-bottom:18px;overflow:hidden}
+.day-toggle button{background:transparent;border:none;color:var(--dim);padding:10px 20px;border-radius:0;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-family:var(--display);transition:all .15s}
+.day-toggle button:hover{color:var(--cream)}
+.day-toggle button.active{background:var(--orange);color:var(--cream)}
+
+/* SCHEDULE — one accent color, type shown via neutral label */
+.sched-item{display:grid;grid-template-columns:90px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.sched-item:last-child{border-bottom:none}
+.sched-time{font-weight:900;color:var(--cream);font-size:12px;font-family:var(--display);letter-spacing:1px}
+.sched-body{font-size:14px}
+.sched-body .what{font-weight:900;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--display);color:var(--cream)}
+.sched-body .detail{color:var(--dim);font-size:13px;font-weight:500}
+/* Only EXERCISE rows (the primary action) get the orange time accent */
+.sched-item.exercise .sched-time{color:var(--orange)}
+
+/* CALENDAR — orange for primary (lifts), neutral for cardio, faded for rest */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-head{font-size:10px;color:var(--dim);text-align:center;padding:8px 6px;font-weight:900;text-transform:uppercase;letter-spacing:2px;font-family:var(--display)}
+.cal-day{aspect-ratio:1;background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:8px;font-size:11px;position:relative;min-height:70px;transition:border-color .15s}
+.cal-day:hover:not(.empty){border-color:var(--border-lt)}
+.cal-day .dn{font-weight:900;font-size:18px;font-family:var(--display);font-style:italic;line-height:1;color:var(--cream)}
+.cal-day .dt{font-size:9px;color:var(--dim);margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.cal-day.empty{opacity:.15;background:transparent;border-style:dashed}
+.cal-day.lift{border-left:3px solid var(--orange)}
+.cal-day.peloton{border-left:3px solid var(--border-lt)}
+.cal-day.rest{opacity:.55}
+.cal-day.today{border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange)}
+.cal-day.today .dn{color:var(--orange)}
+
+/* WORKOUT ROW */
+.ex-row{display:grid;grid-template-columns:2fr 70px 90px 1fr;gap:10px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:2px;margin-bottom:6px;align-items:center;font-size:13px}
+.ex-name{font-weight:900;font-family:var(--display);text-transform:uppercase;letter-spacing:.5px;font-size:14px;color:var(--cream)}
+.ex-row input{padding:7px 9px;font-size:13px}
+
+@media (max-width:720px){
+  h1{font-size:28px}
+  .hero{padding:24px 18px}
+  .ex-row{grid-template-columns:1fr 1fr;gap:6px}
+  .ex-row .ex-name{grid-column:1/-1}
+  .sched-item{grid-template-columns:1fr}
+}
+
+/* TIPS — neutral by default, orange for primary, red for warnings */
+.tip{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border-lt);padding:14px 16px;border-radius:2px;margin:10px 0;font-size:14px;font-weight:500;color:var(--cream)}
+.tip strong{font-family:var(--display);text-transform:uppercase;letter-spacing:1px;color:var(--cream)}
+.tip.warn,.tip.success{border-left-color:var(--orange)}
+.tip.warn strong,.tip.success strong{color:var(--orange)}
+.tip.danger{border-left-color:var(--red)}
+.tip.danger strong{color:var(--red)}
+
+/* PHASE BAR — active phase gets gradient wash, others stay neutral */
+.phase-bar{display:grid;grid-template-columns:2fr 1fr 2fr;gap:12px;margin:24px 0}
+.phase-bar .phase{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:18px;text-align:center;position:relative;overflow:hidden}
+.phase-bar .phase.p1{border:1px solid var(--orange);border-left:3px solid var(--orange);background:radial-gradient(ellipse at 100% 100%,rgba(255,78,27,.14) 0%,transparent 60%),var(--card)}
+.phase-bar .phase.p1 .title{color:var(--orange)}
+.phase-bar .phase.maui .title,
+.phase-bar .phase.p2 .title{color:var(--cream)}
+.phase-bar .phase .title{font-weight:900;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-family:var(--display);font-style:italic;font-size:16px}
+.phase-bar .phase .dates{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:2px;font-weight:800}
+.phase-bar .phase .goal{font-size:12px;color:var(--cream);margin-top:10px;font-weight:500;line-height:1.5}
+
+.kv{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:13px}
+.kv dt{color:var(--orange);font-weight:800;text-transform:uppercase;letter-spacing:1px;font-size:11px;padding-top:2px;font-family:var(--display)}
+.kv dd{color:var(--cream);font-weight:500}
+
+.footer{text-align:center;color:var(--muted);font-size:11px;padding:40px 0 20px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.footer em{color:var(--orange);font-style:italic;font-family:var(--display);font-size:14px;letter-spacing:1px;display:block;margin-bottom:16px;font-weight:900}
+
+.data-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:24px;border-top:1px solid var(--border);justify-content:center}
+
+/* MOTTO — gradient orange to blush */
+.motto-strip{background:var(--grad-brand);color:var(--cream);padding:12px 20px;margin:20px 0;font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:2px;text-align:center;font-size:15px}
+
+/* QUOTE */
+.quote{font-family:var(--display);font-style:italic;font-size:26px;font-weight:900;line-height:1.1;letter-spacing:-1px;text-transform:uppercase;margin:20px 0;padding-left:20px;border-left:3px solid var(--orange);color:var(--cream)}
+.quote span{color:var(--orange)}
+
+/* SECTION HEADER */
+.sec-head{display:flex;align-items:flex-end;gap:14px;margin-bottom:8px}
+.sec-head h1{margin:0}
+.sec-head .num{font-family:var(--display);font-size:12px;color:var(--dim);font-weight:800;letter-spacing:3px;padding-bottom:12px}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="logo">BRANDON<span>.FIT</span></div>
+    <div class="nav-links" id="navLinks">
+      <button class="active" data-s="dashboard">Home</button>
+      <button data-s="today">Today</button>
+      <button data-s="workouts">Train</button>
+      <button data-s="nutrition">Fuel</button>
+      <button data-s="supplements">Stack</button>
+      <button data-s="schedule">Protocol</button>
+      <button data-s="progress">Progress</button>
+      <button data-s="plan">8-Week Plan</button>
+      <button data-s="bloodwork">Bloodwork</button>
+      <button data-s="shopping">Shop</button>
+      <button data-s="reference">Playbook</button>
+    </div>
+  </div>
+</nav>
+<div class="swoosh-line"></div>
+<main>
+  <div id="sections"></div>
+  <div class="footer">
+    <em>"THE ONLY BAD WORKOUT IS THE ONE YOU DIDN'T DO."</em>
+    Brandon Kidd · Launch Apr 19, 2026 · 191.8 lbs · 20.9% BF · 144.2 lbs muscle · Target: Birthday Sept 2026
+    <div class="data-controls">
+      <button class="btn sm" onclick="exportData()">Export Data</button>
+      <button class="btn sm" onclick="document.getElementById('importFile').click()">Import Data</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+      <button class="btn sm red" onclick="if(confirm('Erase all tracked data? This cannot be undone.')){localStorage.clear();location.reload();}">Reset</button>
+    </div>
+  </div>
+</main>
+<script id="app-script">
+/* STATE */
+const STORE_KEY = "brandon_gameplan_v1";
+let state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+function save(){localStorage.setItem(STORE_KEY, JSON.stringify(state))}
+function todayKey(){const d=new Date();return d.toISOString().slice(0,10)}
+function ensureDay(k){if(!state.days)state.days={};if(!state.days[k])state.days[k]={supps:{},water:0,protein:0,meals:{},workout:{},notes:"",weight:null};return state.days[k]}
+function daysUntil(dateStr){const t=new Date();t.setHours(0,0,0,0);const d=new Date(dateStr);return Math.ceil((d-t)/86400000)}
+function fmtDate(d){return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+
+/* ===== DATA ===== */
+const DATES = {
+  start: "2026-04-19",
+  phase1End: "2026-06-15",
+  maui: "2026-07-15",
+  lifeTime: "2026-07-01",
+  birthday: "2026-09-15"
+};
+
+const BASELINE = {
+  age:41, height:"6'0\"",
+  weight:191.8, bmi:26.0, bodyFat:20.9,
+  leanMass:151.8, muscleMass:144.2, bodyWater:57.2,
+  skeletalMuscle:51.2, subcutaneousFat:18.2,
+  visceralFat:9, boneMass:7.6, protein:18.0,
+  bmr:1856, metabolicAge:41
+};
+
+const TARGETS = {cals:2100, protein:190, carbs:190, fat:65, water:4, steps:10000};
+
+const LABS_2023 = [
+  {marker:"Total Testosterone", result:"468 ng/dL", range:"250–827", pct:"38th", verdict:"Low-normal", cls:"orange"},
+  {marker:"Free Testosterone", result:"68.5 pg/mL", range:"46–224", pct:"13th", verdict:"Functionally low", cls:"red"},
+  {marker:"Bioavailable T", result:"146.9 ng/dL", range:"110–575", pct:"8th", verdict:"Functionally low", cls:"red"},
+  {marker:"SHBG", result:"29 nmol/L", range:"10–50", pct:"48th", verdict:"Good (midrange)", cls:"green"},
+  {marker:"Albumin", result:"4.7 g/dL", range:"3.6–5.1", pct:"73rd", verdict:"Good", cls:"green"}
+];
+
+const RETEST_PANEL = [
+  {test:"Total Testosterone", target:"600–900 ng/dL", why:"Your baseline was 468. Optimal body comp + energy"},
+  {test:"Free Testosterone", target:">100 pg/mL", why:"Drives recovery, muscle, drive"},
+  {test:"Bioavailable T", target:">300 ng/dL", why:"True production reflection"},
+  {test:"SHBG", target:"10–40 nmol/L", why:"Was good at 29 — track"},
+  {test:"Estradiol (sensitive)", target:"20–30 pg/mL", why:"As T rises, E2 may follow"},
+  {test:"LH + FSH", target:"Normal range", why:"Brain-testes signaling check"},
+  {test:"Thyroid (TSH, T3, T4)", target:"TSH 0.5–2.5", why:"Fatigue + weight differential"},
+  {test:"Vitamin D", target:">50 ng/mL", why:"Critical for T, mood, muscle"},
+  {test:"Ferritin + CBC", target:"Ferritin >50", why:"Iron stores affect energy"},
+  {test:"Fasting Insulin + HbA1c", target:"Normal", why:"Blood sugar / body comp"},
+  {test:"hs-CRP", target:"<1.0 mg/L", why:"Chronic inflammation check"}
+];
+
+const PELOTON_DAY = [
+  {t:"5:00 am", type:"sleep", what:"WAKE UP", d:"16–20 oz water immediately. Set out ARMRA, LMNT, AG1 for post-ride."},
+  {t:"5:05 am", type:"exercise", what:"GET READY", d:"Kit up for Peloton. DO NOT eat. No coffee yet."},
+  {t:"5:15 am", type:"exercise", what:"PELOTON RIDE (45–60 min)", d:"Push intensity. Plain water during. LMNT in last 15 min if hard Z3–4."},
+  {t:"6:15 am", type:"exercise", what:"COOL DOWN", d:"5 min stretch — hips, hamstrings, thoracic spine."},
+  {t:"6:20 am", type:"supp", what:"ARMRA + LMNT", d:"ARMRA colostrum in 8 oz cold water first. Then LMNT in 16–20 oz water. Wait 10–15 min before food."},
+  {t:"6:25 am", type:"", what:"SHOWER", d:"Keep sipping LMNT water."},
+  {t:"6:40 am", type:"food", what:"BREAKFAST", d:"3 whole eggs + ½ avocado + microgreens. ~20g P · 30g F · 4g C · 380 cal."},
+  {t:"6:40 am", type:"supp", what:"SUPPLEMENTS w/ breakfast", d:"AG1 (8–10 oz water) • Creatine 5g • Tongkat Ali 400mg • D3+K2 • Omega-3 2–3g EPA+DHA • Collagen 10–15g"},
+  {t:"7:15 am", type:"food", what:"COFFEE ☕", d:"Black or 2–3 oz oat milk. Caffeine cut-off: 2:00 pm."},
+  {t:"7:45 am", type:"work", what:"OUT THE DOOR", d:"Normal departure."},
+  {t:"10:00 am", type:"food", what:"MID-MORNING PROTEIN", d:"1 cup Greek yogurt (17g P) OR protein bar (20g+) OR 2 oz jerky + apple."},
+  {t:"12:30 pm", type:"food", what:"LUNCH", d:"6 oz chicken (42g) + 1 cup rice (5g) + 2 cups roasted veg + olive oil. ~50g P · 50g C · 15g F · 530 cal."},
+  {t:"3:00 pm", type:"food", what:"AFTERNOON SNACK", d:"Apple + string cheese (7g P) OR almonds + 1 oz jerky."},
+  {t:"5:00 pm", type:"", what:"HOME · Water check", d:"Fill water to reach 3–4 L for the day."},
+  {t:"6:00 pm", type:"food", what:"DINNER", d:"6 oz salmon or lean beef + 1 sweet potato + large salad + olive oil. ~45g P · 35g C · 18g F · 530 cal."},
+  {t:"6:30 pm", type:"supp", what:"NAC 600mg w/ dinner", d:"Liver support, glutathione boost. Always with food."},
+  {t:"8:00 pm", type:"food", what:"OPTIONAL EVENING SNACK", d:"1 cup cottage cheese (25g casein) — only if short on protein (< 170g total)."},
+  {t:"8:30 pm", type:"sleep", what:"WIND DOWN", d:"Dim screens. Blue blockers. Room temp 65–68°F."},
+  {t:"8:45 pm", type:"supp", what:"MOON BREW + MAGNESIUM", d:"Moon Brew in warm water. Mg glycinate/L-threonate 300–400mg (if not in Moon Brew)."},
+  {t:"9:30 pm", type:"sleep", what:"SLEEP 😴", d:"7.5–8 hours non-negotiable. Cold, dark room. Phone away."}
+];
+
+const LIFTING_DAY = [
+  {t:"5:00 am", type:"sleep", what:"WAKE UP", d:"16–20 oz water. Slower, intentional morning."},
+  {t:"5:05 am", type:"supp", what:"ARMRA (empty stomach)", d:"8 oz cold water. Wait 10–15 min before breakfast."},
+  {t:"5:15 am", type:"supp", what:"AG1 + CREATINE", d:"AG1 1 scoop in 12–16 oz cold water. Creatine 5g stirred in. Sip while getting ready."},
+  {t:"5:30 am", type:"food", what:"BREAKFAST", d:"3 whole eggs + ½ avocado + microgreens. ~20g P · 30g F · 4g C · 380 cal."},
+  {t:"5:30 am", type:"supp", what:"SUPPLEMENTS w/ breakfast", d:"Tongkat Ali 400mg • D3+K2 • Omega-3 2–3g • Collagen 10–15g."},
+  {t:"6:15 am", type:"food", what:"COFFEE ☕", d:"Enjoy — you have time. Caffeine cut-off: 2:00 pm."},
+  {t:"6:45 am", type:"work", what:"OUT THE DOOR", d:"Leave ~45–60 min earlier so you can leave work by 3:30pm."},
+  {t:"10:00 am", type:"food", what:"MID-MORNING PROTEIN", d:"Greek yogurt (17g) or protein bar or jerky + fruit."},
+  {t:"12:30 pm", type:"food", what:"LUNCH (pre-workout fuel)", d:"6 oz chicken + 1 cup rice + veg + olive oil. Carb-heavy is intentional. ~50g P · 55g C · 15g F."},
+  {t:"2:45 pm", type:"food", what:"PRE-WORKOUT SNACK", d:"Banana + 1 tbsp peanut/almond butter. 45–60 min before lift. NOT optional."},
+  {t:"3:00 pm", type:"work", what:"HEAD HOME / TRANSITION", d:"5-min dynamic warmup before lift (arm/hip/leg circles)."},
+  {t:"3:30 pm", type:"exercise", what:"LIFT WEIGHTS 🏋️", d:"Mon = Workout A (Lower) · Wed = Workout B (Upper) · Fri = Workout C (Full Body). Log every set."},
+  {t:"4:30 pm", type:"supp", what:"POST-WORKOUT SHAKE + LMNT", d:"Protein shake 1–1.5 scoops (25–35g) + LMNT packet in 16–20 oz water. Within 30 min."},
+  {t:"4:30 pm", type:"", what:"COOL DOWN + SHOWER", d:"5–10 min stretch: hip flexors, chest, lats. Foam roll."},
+  {t:"6:00 pm", type:"food", what:"DINNER", d:"6 oz salmon/lean beef + sweet potato + salad. Extra ½ cup rice if hard session."},
+  {t:"6:30 pm", type:"supp", what:"NAC 600mg w/ dinner", d:"Every night, no exceptions."},
+  {t:"7:30 pm", type:"food", what:"OPTIONAL EVENING SNACK", d:"1 cup cottage cheese (25g casein). Skip if 185g+ already."},
+  {t:"8:30 pm", type:"sleep", what:"WIND DOWN", d:"Hard stop on screens. Lifting cortisol needs 3+ hrs to clear."},
+  {t:"8:45 pm", type:"supp", what:"MOON BREW + MAGNESIUM", d:"Treat it as a ritual."},
+  {t:"9:30 pm", type:"sleep", what:"SLEEP 😴", d:"7.5–8 hours. Non-negotiable. Cold (65–68°F), dark, phone away."}
+];
+
+const SUPPLEMENTS_DAILY = [
+  {id:"armra", name:"ARMRA Colostrum", dose:"Per label", when:"Pre-food / empty stomach", status:"have", tier:1, why:"Gut lining, immune, growth factors"},
+  {id:"ag1", name:"AG1 (Athletic Greens)", dose:"1 scoop + 16oz water", when:"Morning w/ breakfast", status:"have", tier:1, why:"Foundational micronutrients, B vits, probiotics"},
+  {id:"creatine", name:"Creatine Monohydrate", dose:"5g", when:"Morning — mix into AG1", status:"buy", tier:1, why:"Strength, muscle, cognition"},
+  {id:"tongkat", name:"Tongkat Ali (Momentous)", dose:"400mg", when:"Morning with food", status:"buy", tier:1, why:"+10–20% free T, LH signaling. 8 on / 2–4 off."},
+  {id:"d3k2", name:"Vitamin D3 + K2 (Thorne)", dose:"2,000 IU D3 + 100mcg K2", when:"Breakfast w/ fat", status:"buy", tier:1, why:"+20–30% total T in deficient men. K2 directs calcium."},
+  {id:"omega3", name:"Omega-3 Fish Oil (Momentous)", dose:"2–3g EPA+DHA", when:"With breakfast", status:"buy", tier:1, why:"Inflammation, joints, cardio recovery"},
+  {id:"collagen", name:"Collagen Peptides", dose:"10–15g", when:"Morning or post-workout", status:"buy", tier:2, why:"Tendons, joints, connective tissue"},
+  {id:"lmnt", name:"LMNT Electrolytes", dose:"1 packet", when:"Post-workout / sweat", status:"buy", tier:1, why:"Sodium, K, Mg replenishment"},
+  {id:"protein", name:"Protein Shake", dose:"1–1.5 scoops (25–35g)", when:"Post-workout / fill gaps", status:"have", tier:1, why:"Hit 190g daily protein"},
+  {id:"nac", name:"NAC (Thorne/Pure)", dose:"600mg", when:"With dinner", status:"buy", tier:2, why:"Liver support, glutathione, anti-inflammatory"},
+  {id:"moonbrew", name:"Moon Brew", dose:"Per label", when:"30–45 min before bed", status:"have", tier:1, why:"Sleep quality = T production"},
+  {id:"mag", name:"Magnesium Glycinate/L-Threonate", dose:"300–400mg", when:"Before bed", status:"consider", tier:2, why:"Deep sleep, cortisol, cognitive (if Moon Brew lacks)"},
+  {id:"ashwa", name:"Ashwagandha KSM-66", dose:"300–600mg", when:"Morning or before bed", status:"consider", tier:3, why:"Lowers cortisol — T antagonist"},
+  {id:"zinc", name:"Zinc Picolinate", dose:"15mg", when:"With dinner", status:"consider", tier:3, why:"Essential for T synthesis (check AG1 label first)"},
+  {id:"glutamine", name:"L-Glutamine", dose:"5g", when:"Post-workout / before bed", status:"consider", tier:3, why:"Gut lining + muscle recovery"}
+];
+
+const WORKOUTS = {
+  A: {
+    name:"Workout A — Lower Body + Posterior Chain",
+    day:"Monday",
+    duration:"45–50 min",
+    equipment:"35 lb KB, 44 lb KB, TRX, bodyweight",
+    rest:"60–90 sec",
+    exercises:[
+      {name:"KB Goblet Squat", sets:3, reps:"12", note:"35 lb KB at chest. Squat to depth. Drive through heels."},
+      {name:"KB Sumo Deadlift", sets:3, reps:"10", note:"44 lb KB between legs. Wide stance. Flat back."},
+      {name:"TRX Hamstring Curl", sets:3, reps:"10–12", note:"Heels in TRX. Bridge hips. Curl heels to glutes."},
+      {name:"KB Swing", sets:3, reps:"15", note:"35 lb. Power from hips. Drive hips forward — let KB float."},
+      {name:"TRX Assisted Split Squat", sets:3, reps:"8–10 ea", note:"Hold TRX lightly. Progress with 25 lb DBs."},
+      {name:"Glute Bridge + KB Hold", sets:3, reps:"15", note:"44 lb KB on hips. Pause 1 sec at top."},
+      {name:"Dead Bug", sets:3, reps:"8 ea side", note:"Lower back glued to floor. Breathe out."}
+    ]
+  },
+  B: {
+    name:"Workout B — Upper Body Push + Pull",
+    day:"Wednesday",
+    duration:"45–50 min",
+    equipment:"15/20/25 lb DBs, TRX, bodyweight",
+    rest:"60–90 sec",
+    exercises:[
+      {name:"TRX Push-up", sets:3, reps:"10–12", note:"Feet in cradles OR hands in handles. Harder than regular."},
+      {name:"TRX Row", sets:3, reps:"12", note:"Plank body. Row chest to handles. Walk feet forward = harder."},
+      {name:"DB Shoulder Press", sets:3, reps:"10–12", note:"25 lb. Seated or standing. Brace core. Full range."},
+      {name:"DB Single-Arm Row", sets:3, reps:"12 ea", note:"25 lb. Row to hip (not armpit). Squeeze at top."},
+      {name:"TRX Y-Fly / Face Pull", sets:3, reps:"15", note:"Y overhead or face-height. Critical for posture."},
+      {name:"TRX Bicep Curl", sets:3, reps:"12–15", note:"Palms up. Curl to forehead. Squeeze at top."},
+      {name:"DB Lateral Raise", sets:3, reps:"15", note:"15 lb. Slight elbow bend. To shoulder height only."}
+    ]
+  },
+  C: {
+    name:"Workout C — Full Body Power + Stability",
+    day:"Friday",
+    duration:"45–50 min",
+    equipment:"35 lb KB, 44 lb KB, 20/25 lb DBs, TRX",
+    rest:"60–90 sec",
+    exercises:[
+      {name:"KB Single-Leg RDL", sets:3, reps:"8 ea", note:"35 lb in opposite hand. Hinge forward. Balance + glute builder."},
+      {name:"KB Clean + Press", sets:3, reps:"8 ea side", note:"35 lb. Swing → clean to rack → press overhead."},
+      {name:"DB Floor Press", sets:3, reps:"12", note:"25 lb each. Elbows 45° from body."},
+      {name:"TRX Row (underhand)", sets:3, reps:"12", note:"Palms up. Hits lower traps + biceps."},
+      {name:"Cossack Squat", sets:3, reps:"8 ea side", note:"Wide stance. Shift weight to one knee. Hip mobility gold."},
+      {name:"TRX Atomic Push-up", sets:3, reps:"8–10", note:"Feet in TRX. Push-up + tuck knees to chest."},
+      {name:"KB Farmer's Carry", sets:3, reps:"40 steps", note:"Both KBs (35 + 44 lb). Tall posture. Grip + core + traps."}
+    ]
+  }
+};
+
+const PHASE2_WORKOUTS = {
+  upperA:{name:"Upper A — Horizontal Push + Pull", day:"Monday", exercises:["Bench Press 4×8–10","BB/Cable Row 4×8–10","DB Shoulder Press 3×10–12","Lat Pulldown 3×10–12","Tricep Pushdown 3×12–15","BB/DB Curl 3×12–15","Face Pulls 3×15–20"]},
+  lowerA:{name:"Lower A — Squat + Hamstrings", day:"Tuesday", exercises:["Back Squat or Goblet 4×8–10","Romanian Deadlift 4×10–12","Leg Press 3×12–15","Lying Leg Curl 3×12–15","Standing Calf Raise 4×15–20","Plank/Ab Wheel 3×45s/8"]},
+  upperB:{name:"Upper B — Vertical Push + Pull", day:"Thursday", exercises:["Incline BB/DB Press 4×8–10","Pull-Ups (assisted OK) 4×6–10","Arnold Press 3×10–12","Cable Face Pulls 3×15–20","Hammer Curls 3×12–15","Skull Crushers 3×10–12"]},
+  lowerB:{name:"Lower B — Hinge + Single Leg", day:"Friday", exercises:["Conventional Deadlift 4×5–6","Bulgarian Split Squat 4×8–10 ea","Hip Thrust (BB) 3×10–12","Leg Extension 3×12–15","Standing Calf Raise 4×15–20","Ab Wheel Rollout 3×8–12"]}
+};
+
+const MEALS_PLAN = [
+  {time:"6:30–7:30am", name:"BREAKFAST", cals:500, p:50, c:39, f:21, items:["4 whole eggs scrambled + 2 whites (30g P)","1 cup oatmeal + cinnamon (5g P)","½ cup mixed berries (1g P)","Black coffee","Optional: ½ scoop protein in oats"]},
+  {time:"10:30am", name:"MID-MORNING SNACK", cals:250, p:35, c:18, f:5, items:["1 cup Greek yogurt 2% (17g P)","1 scoop protein stirred in (25g P)","Berries or 1 tsp honey","OR: Cottage cheese + shake"]},
+  {time:"12:30–1:30pm", name:"LUNCH", cals:550, p:50, c:50, f:17, items:["6 oz grilled chicken breast (42g P)","1 cup cooked brown rice/quinoa (5g P)","2 cups roasted veg (broccoli/zucchini)","1 tbsp olive oil","Season generously"]},
+  {time:"3:30–4:00pm", name:"PRE-WORKOUT SNACK", cals:200, p:10, c:30, f:8, items:["1 medium banana","1 tbsp natural peanut/almond butter","OR apple + string cheese","Eat 45–60 min before lift"]},
+  {time:"Post-Workout", name:"POST-WORKOUT SHAKE", cals:200, p:30, c:10, f:3, items:["1–1.5 scoops whey in water/almond milk","Optional: ½ banana","Within 60–90 min of finishing"]},
+  {time:"6:30–7:30pm", name:"DINNER", cals:550, p:45, c:35, f:18, items:["6 oz salmon (34g P, 13g F)","OR 6 oz lean ground beef 90/10","1 medium sweet potato","Large salad + olive oil + lemon","Optional: ¼ avocado"]},
+  {time:"8:30pm", name:"EVENING SNACK (optional)", cals:150, p:20, c:6, f:2, items:["1 cup cottage cheese (25g casein)","Slow-release through night","Skip if already at calories","Moon Brew 30–45 min before sleep"]}
+];
+
+const WEEK_TARGETS = [
+  {week:"Week 1", date:"Apr 19–25", weight:"189", focus:"Establish deficit, dial protein. Get labs drawn."},
+  {week:"Week 2", date:"Apr 26 – May 2", weight:"187", focus:"Initial drop (water). Start Tongkat Ali."},
+  {week:"Week 3", date:"May 3–9", weight:"185", focus:"Push intensity. Add weight every session."},
+  {week:"Week 4", date:"May 10–16", weight:"183", focus:"Body adapting. First checkpoint photos."},
+  {week:"Week 5", date:"May 17–23", weight:"181", focus:"Hardest stretch begins. Add 1 refeed/wk."},
+  {week:"Week 6", date:"May 24–30", weight:"179", focus:"Hold the line. Refeed + mental game."},
+  {week:"Week 7", date:"May 31 – Jun 6", weight:"177", focus:"Final push. Drop 100–150 cal or add 15m cardio."},
+  {week:"Week 8", date:"Jun 7–13", weight:"175–177", focus:"Keep lifts heavy for muscle retention."},
+  {week:"Checkpoint", date:"Jun 15", weight:"✓", focus:"Assess, celebrate, photos, transition to Phase 2."}
+];
+
+const SHOPPING_SUPP = [
+  {item:"AG1 (Athletic Greens)", dose:"1 scoop/day", cost:"$79–99", status:"buy", notes:"90-day bundle saves most"},
+  {item:"Creatine Mono (Momentous)", dose:"5g/day", cost:"$30–35", status:"buy", notes:"Creapure® form"},
+  {item:"Tongkat Ali (Momentous)", dose:"400mg/day", cost:"$40–50", status:"buy", notes:"Longjack root extract"},
+  {item:"LMNT Electrolytes", dose:"1 packet/day", cost:"$30–45", status:"buy", notes:"Citrus Salt or Mango Chili"},
+  {item:"Vitamin D3 + K2", dose:"2,000 IU + 100mcg", cost:"$20–25", status:"buy", notes:"Thorne — combined capsule"},
+  {item:"Omega-3 (Momentous)", dose:"2–3g EPA+DHA", cost:"$30–40", status:"buy", notes:"rTG triglyceride form"},
+  {item:"Collagen (Momentous)", dose:"10–15g/day", cost:"$35–45", status:"next", notes:"Connective tissue + skin"},
+  {item:"NAC (Thorne/Pure)", dose:"600mg/day", cost:"$20–30", status:"next", notes:"Liver, glutathione"},
+  {item:"Magnesium Glycinate", dose:"300–400mg", cost:"$20–25", status:"next", notes:"Skip if Moon Brew has it"},
+  {item:"ARMRA Colostrum", dose:"Per label", cost:"—", status:"have", notes:"Already in stack"},
+  {item:"Protein Powder", dose:"25–35g", cost:"—", status:"have", notes:"Already in stack"},
+  {item:"Moon Brew", dose:"Per label", cost:"—", status:"have", notes:"Already in stack"}
+];
+
+const GROCERY = {
+  proteins: ["Chicken Breast — 3 lbs (6×8oz)","Salmon (fresh or frozen) — 1.5 lbs","Lean Ground Beef 93% — 1 lb","Whole Eggs — 2 dozen","Beef Jerky (no sugar) — 2–3 oz packs ×4","Cottage Cheese (full fat) — 2×16oz tub"],
+  produce: ["Avocados — 7 (one/day)","Microgreens — 1 large clamshell","Sweet Potatoes — 4–5 medium","Mixed Salad Greens / Spinach — 2 bags","Broccoli / Mixed Veg — 2 bags","Bananas — 7","Apples — 4–5","Lemons — 2–3"],
+  dairy: ["Greek Yogurt plain 2% — 2×32oz","String Cheese — 12-pack","Oat Milk unsweetened — 1 carton"],
+  carbs: ["Jasmine or White Rice — 5 lb bag","Rolled Oats — 1 bag","Protein Bars (Quest/RXBar) — box of 12","Almond or Peanut Butter (natural) — 1 jar"],
+  fats: ["Extra Virgin Olive Oil — 16 oz","Raw Almonds — 8 oz bag"],
+  hydration: ["Sparkling Water — 2 cases (LaCroix etc)","Coffee (beans/ground) — 1 bag"]
+};
+
+const NON_NEGOTIABLES = [
+  "Hit 190g protein — every single day",
+  "Drink 3–4 L water — Peloton + runs dehydrate heavily",
+  "Eat within 1 hour of waking",
+  "ZERO alcohol for 8 weeks (April 19 → June 15)",
+  "8,000–12,000 steps daily — treadmill desk counts",
+  "Coffee cut-off: 2:00 pm sharp",
+  "Moon Brew + Mg every night — no skipping",
+  "7.5–8 hours sleep — this is training, not optional",
+  "Log every workout: exercise, weight, sets, reps",
+  "Never cut below 1,800 calories"
+];
+
+const HORMONE_LADDER = [
+  {step:1, name:"Training + Nutrition + Sleep", effect:"Heavy lifts + losing belly fat + sleep improvements", lift:"+50–150 ng/dL"},
+  {step:2, name:"Supplement Stack", effect:"D3, Zinc, Mag, Tongkat Ali — corrects deficiencies + LH signaling", lift:"+30–80 ng/dL (+10–20% free T)"},
+  {step:3, name:"Enclomiphene (Rx pill)", effect:"Signals brain to release more LH/FSH. Keeps axis intact. Daily pill.", lift:"+100–200 ng/dL (to 600–650 range)"},
+  {step:4, name:"Low-dose TRT (last resort)", effect:"Post-vasectomy fertility concern is gone — still commitment", lift:"Full range possible"}
+];
+
+const CALENDAR_APRIL = [
+  [null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null],
+  [{d:19,t:"rest",l:"START · Rest"},{d:20,t:"lift",l:"Workout A"},{d:21,t:"peloton",l:"Peloton 35m"},{d:22,t:"lift",l:"Workout B"},{d:23,t:"peloton",l:"Run 20m"},{d:24,t:"lift",l:"Workout C"},{d:25,t:"peloton",l:"Peloton 45m"}],
+  [{d:26,t:"rest",l:"REST"},{d:27,t:"lift",l:"Workout A"},{d:28,t:"peloton",l:"Peloton 35m"},{d:29,t:"lift",l:"Workout B"},{d:30,t:"peloton",l:"Run 20m"},null,null]
+];
+const CALENDAR_MAY = [
+  [null,null,null,null,null,{d:1,t:"lift",l:"Workout C"},{d:2,t:"peloton",l:"Peloton 45m"}],
+  [{d:3,t:"rest",l:"REST"},{d:4,t:"lift",l:"Workout A"},{d:5,t:"peloton",l:"Peloton 35m"},{d:6,t:"lift",l:"Workout B"},{d:7,t:"peloton",l:"Run 25m"},{d:8,t:"lift",l:"Workout C"},{d:9,t:"peloton",l:"Peloton 45m"}],
+  [{d:10,t:"rest",l:"REST"},{d:11,t:"lift",l:"Workout A"},{d:12,t:"peloton",l:"Peloton 35m"},{d:13,t:"lift",l:"Workout B"},{d:14,t:"peloton",l:"Run 25m"},{d:15,t:"lift",l:"Workout C"},{d:16,t:"peloton",l:"Peloton 45m"}],
+  [{d:17,t:"rest",l:"REST"},{d:18,t:"lift",l:"Workout A"},{d:19,t:"peloton",l:"Peloton 35m"},{d:20,t:"lift",l:"Workout B"},{d:21,t:"peloton",l:"Run 30m"},{d:22,t:"lift",l:"Workout C"},{d:23,t:"peloton",l:"Peloton 45m"}],
+  [{d:24,t:"rest",l:"REST"},{d:25,t:"lift",l:"Workout A"},{d:26,t:"peloton",l:"Peloton 40m"},{d:27,t:"lift",l:"Workout B"},{d:28,t:"peloton",l:"Run 30m"},{d:29,t:"lift",l:"Workout C"},{d:30,t:"peloton",l:"Peloton 50m"}],
+  [{d:31,t:"rest",l:"REST"},null,null,null,null,null,null]
+];
+const CALENDAR_JUNE = [
+  [null,{d:1,t:"lift",l:"Workout A"},{d:2,t:"peloton",l:"Peloton 40m"},{d:3,t:"lift",l:"Workout B"},{d:4,t:"peloton",l:"Run 30m"},{d:5,t:"lift",l:"Workout C"},{d:6,t:"peloton",l:"Peloton 50m"}],
+  [{d:7,t:"rest",l:"REST"},{d:8,t:"lift",l:"Workout A"},{d:9,t:"peloton",l:"Peloton 40m"},{d:10,t:"lift",l:"Workout B"},{d:11,t:"peloton",l:"Run 30m"},{d:12,t:"lift",l:"Workout C"},{d:13,t:"peloton",l:"Peloton 50m"}],
+  [{d:14,t:"rest",l:"Final REST"},{d:15,t:"rest",l:"✓ CHECKPOINT"},null,null,null,null,null]
+];
+
+/* ===== RENDER HELPERS ===== */
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function renderHero(){
+  const dT = daysUntil(DATES.phase1End);
+  const dM = daysUntil(DATES.maui);
+  const dB = daysUntil(DATES.birthday);
+  const dL = daysUntil(DATES.lifeTime);
+  const t = todayKey();
+  return `
+  <div class="hero">
+    <div style="position:relative;z-index:2">
+    <h4 style="color:var(--volt);margin-bottom:16px">— THE BRANDON PROJECT · 2026</h4>
+    <h1>NO DAYS<br>OFF.<span>.</span></h1>
+    <div class="tagline">HEALTH · FITNESS · FUEL · HORMONES — APR 2026 TO BIRTHDAY SEPT 2026</div>
+    <div class="countdown">
+      <div class="cd-card today"><div class="l">TODAY</div><div class="n" style="font-size:20px;margin-top:8px">${t}</div></div>
+      <div class="cd-card june"><div class="n">${dT>=0?dT:'✓'}</div><div class="l">Days to Checkpoint</div></div>
+      <div class="cd-card maui"><div class="n">${dM>=0?dM:'✓'}</div><div class="l">Days to Maui</div></div>
+      <div class="cd-card bday"><div class="n">${dB>=0?dB:'✓'}</div><div class="l">Days to Birthday</div></div>
+    </div>
+    </div>
+  </div>
+  <div class="motto-strip"><span>SHOW UP. STACK THE INPUTS. CONTROL THE VARIABLES. LET THE PLAN RUN.</span></div>
+  <div class="phase-bar">
+    <div class="phase p1">
+      <div class="title">PHASE 1 · IGNITION</div>
+      <div class="dates">Apr 19 → Jun 15 · 8 WEEKS</div>
+      <div class="goal">Learn the lifts. Burn 12–15 lbs. Build the engine.</div>
+    </div>
+    <div class="phase maui">
+      <div class="title">MAUI</div>
+      <div class="dates">SUMMER · HOLD</div>
+      <div class="goal">Beach body earned. Maintain.</div>
+    </div>
+    <div class="phase p2">
+      <div class="title">PHASE 2 · THE PUSH</div>
+      <div class="dates">Jun 16 → BIRTHDAY</div>
+      <div class="goal">Foot on the gas. Best shape of your life.</div>
+    </div>
+  </div>`;
+}
+
+/* DASHBOARD */
+function renderDashboard(){
+  const d = ensureDay(todayKey());
+  const suppsDone = Object.values(d.supps||{}).filter(Boolean).length;
+  const suppsTotal = SUPPLEMENTS_DAILY.filter(s=>s.tier===1).length;
+  return `
+  <div class="section active" id="s-dashboard">
+    ${renderHero()}
+    <div class="sec-head"><h4 class="num">01 / BASELINE</h4></div>
+    <h2 style="margin-bottom:18px">THE STARTING LINE</h2>
+    <div class="grid grid-4" style="margin-bottom:18px">
+      <div class="stat-tile primary"><div class="lbl">Start Weight</div><div class="val">${BASELINE.weight}<span style="font-size:14px;color:var(--dim);font-style:normal"> LBS</span></div><p class="sub">BMI ${BASELINE.bmi} · 04.19.26</p></div>
+      <div class="stat-tile"><div class="lbl">Body Fat</div><div class="val">${BASELINE.bodyFat}%</div><p class="sub">Target 13–15%</p></div>
+      <div class="stat-tile"><div class="lbl">Muscle Mass</div><div class="val">${BASELINE.muscleMass}<span style="font-size:14px;color:var(--dim);font-style:normal"> LBS</span></div><p class="sub">Preserve + build</p></div>
+      <div class="stat-tile"><div class="lbl">BMR</div><div class="val">${BASELINE.bmr}<span style="font-size:14px;color:var(--dim);font-style:normal"> KCAL</span></div><p class="sub">TDEE ~2,600–2,700</p></div>
+    </div>
+
+    <div class="sec-head"><h4 class="num">02 / TODAY</h4></div>
+    <h2 style="margin-bottom:18px">WIN THE DAY</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Live Numbers</h3>
+        <div class="grid grid-3">
+          <div class="stat-tile"><div class="lbl">Water</div><div class="val">${(d.water||0).toFixed(1)}<span style="font-size:14px;color:var(--dim);font-style:normal"> / ${TARGETS.water}L</span></div></div>
+          <div class="stat-tile"><div class="lbl">Protein</div><div class="val">${d.protein||0}<span style="font-size:14px;color:var(--dim);font-style:normal"> / ${TARGETS.protein}g</span></div></div>
+          <div class="stat-tile"><div class="lbl">Supps</div><div class="val">${suppsDone}<span style="font-size:14px;color:var(--dim);font-style:normal"> / ${suppsTotal}</span></div></div>
+        </div>
+        <p class="sub" style="margin-top:18px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--dim)">Head to <a href="#" onclick="goSection('today');return false">Today →</a> to attack the checklist, hit your water, and log everything.</p>
+      </div>
+      <div class="card">
+        <h3>The 10 Non-Negotiables</h3>
+        ${NON_NEGOTIABLES.map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:500;color:var(--cream)"><span style="color:var(--orange);font-weight:900;margin-right:10px">→</span>${esc(n)}</div>`).join("")}
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-top:8px"><h4 class="num">03 / WEEK</h4></div>
+    <h2 style="margin-bottom:18px">THE WEEKLY BATTLE</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Phase 1 Split</h3>
+        <div class="kv">
+          <dt>MON</dt><dd><span class="badge orange">LIFT A</span> Lower · 45–50m</dd>
+          <dt>TUE</dt><dd><span class="badge grey">PELOTON</span> 35–45m</dd>
+          <dt>WED</dt><dd><span class="badge orange">LIFT B</span> Upper · 45–50m</dd>
+          <dt>THU</dt><dd><span class="badge grey">RUN</span> 20–30m</dd>
+          <dt>FRI</dt><dd><span class="badge orange">LIFT C</span> Full Body · 45–50m</dd>
+          <dt>SAT</dt><dd><span class="badge grey">PELOTON</span> 45–60m</dd>
+          <dt>SUN</dt><dd><span class="badge grey">REST</span> Active walk</dd>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Daily Fuel Targets</h3>
+        <div class="grid grid-4">
+          <div class="stat-tile primary tight"><div class="lbl">Cal</div><div class="val">${TARGETS.cals}</div></div>
+          <div class="stat-tile tight"><div class="lbl">Protein</div><div class="val">${TARGETS.protein}g</div></div>
+          <div class="stat-tile tight"><div class="lbl">Carbs</div><div class="val">${TARGETS.carbs}g</div></div>
+          <div class="stat-tile tight"><div class="lbl">Fat</div><div class="val">${TARGETS.fat}g</div></div>
+        </div>
+        <div class="tip success" style="margin-top:16px"><strong>THE MATH:</strong> 500–600 cal daily deficit = ~1 lb/week. Weigh daily. Track weekly average. NEVER cut below 1,800.</div>
+      </div>
+    </div>
+
+    <div class="quote" style="margin-top:30px">"TRUST THE <span>PROCESS.</span><br>SHOW UP EVERY DAY."</div>
+  </div>`;
+}
+
+/* TODAY */
+function renderToday(){
+  const k = todayKey();
+  const d = ensureDay(k);
+  if(!d.dayType){
+    const dow = new Date().getDay();
+    d.dayType = [2,4,6].includes(dow)?"peloton":[1,3,5].includes(dow)?"lifting":"rest";
+  }
+  const schedule = d.dayType==="lifting"?LIFTING_DAY:PELOTON_DAY;
+  const waterDots = 16;
+  const drops = Array.from({length:waterDots},(_,i)=>`<div class="drop ${i<(d.water||0)*4?'on':''}" onclick="toggleWater(${i})"></div>`).join("");
+  const supps = SUPPLEMENTS_DAILY.filter(s=>s.tier<=2).map(s=>{
+    const done = d.supps[s.id];
+    return `<div class="check-row ${done?'done':''}">
+      <input type="checkbox" class="chk" ${done?'checked':''} onchange="toggleSupp('${s.id}')">
+      <div style="flex:1">
+        <div class="chk-main">${esc(s.name)} <span class="muted" style="font-weight:400">· ${esc(s.dose)}</span></div>
+        <div class="chk-meta">${esc(s.when)}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `
+  <div class="section" id="s-today">
+    <div class="sec-head"><h1>TODAY</h1><h4 class="num">EXECUTE.</h4></div>
+    <div class="sub">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase()}</div>
+    <div class="day-toggle">
+      <button class="${d.dayType==='peloton'?'active':''}" onclick="setDayType('peloton')">Peloton Day</button>
+      <button class="${d.dayType==='lifting'?'active':''}" onclick="setDayType('lifting')">Lift Day</button>
+      <button class="${d.dayType==='rest'?'active':''}" onclick="setDayType('rest')">Rest Day</button>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>HYDRATION · ${(d.water||0).toFixed(2)} / ${TARGETS.water}L</h3>
+        <div class="sub">250ML PER DROP · ATTACK IT</div>
+        <div class="water-row">${drops}</div>
+        <div class="pbar" style="margin-top:14px"><span style="width:${Math.min(100,(d.water||0)/TARGETS.water*100)}%"></span></div>
+      </div>
+      <div class="card">
+        <h3>PROTEIN · ${d.protein||0} / ${TARGETS.protein}G</h3>
+        <div class="sub">40–50G PER MEAL · NON-NEGOTIABLE</div>
+        <div class="btn-row">
+          <button class="btn sm" onclick="addProtein(20)">+20 EGGS</button>
+          <button class="btn sm" onclick="addProtein(25)">+25 SHAKE</button>
+          <button class="btn sm" onclick="addProtein(42)">+42 CHICKEN</button>
+          <button class="btn sm" onclick="addProtein(34)">+34 SALMON</button>
+          <button class="btn sm" onclick="addProtein(17)">+17 YOGURT</button>
+          <button class="btn sm" onclick="addProtein(25)">+25 COTTAGE</button>
+          <button class="btn sm ghost" onclick="addProtein(-10)">–10</button>
+          <button class="btn sm red" onclick="addProtein(-999)">RESET</button>
+        </div>
+        <div class="pbar green" style="margin-top:14px"><span style="width:${Math.min(100,(d.protein||0)/TARGETS.protein*100)}%"></span></div>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>THE STACK · DAILY</h3>
+        ${supps}
+      </div>
+      <div class="card">
+        <h3>BATTLE PLAN · ${d.dayType==='peloton'?'PELOTON DAY':d.dayType==='lifting'?'LIFT DAY':'REST DAY'}</h3>
+        <div style="max-height:640px;overflow-y:auto">
+          ${schedule.map(s=>`<div class="sched-item ${s.type}"><div class="sched-time">${s.t}</div><div class="sched-body"><div class="what">${esc(s.what)}</div><div class="detail">${esc(s.d)}</div></div></div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>QUICK LOG</h3>
+      <div class="grid grid-3">
+        <div><label>Morning Weight (lbs)</label><input type="number" step="0.1" value="${d.weight||''}" onchange="logField('weight',this.value)"></div>
+        <div><label>Steps</label><input type="number" value="${d.steps||''}" onchange="logField('steps',this.value)"></div>
+        <div><label>Sleep (hrs)</label><input type="number" step="0.1" value="${d.sleep||''}" onchange="logField('sleep',this.value)"></div>
+        <div><label>Energy (1–10)</label><input type="number" min="1" max="10" value="${d.energy||''}" onchange="logField('energy',this.value)"></div>
+        <div><label>Mood (1–10)</label><input type="number" min="1" max="10" value="${d.mood||''}" onchange="logField('mood',this.value)"></div>
+        <div><label>Caffeine by 2pm</label><select onchange="logField('caffeineOK',this.value)"><option value="">—</option><option ${d.caffeineOK==='yes'?'selected':''}>yes</option><option ${d.caffeineOK==='no'?'selected':''}>no</option></select></div>
+      </div>
+      <div style="margin-top:14px"><label>Notes</label><textarea rows="2" onchange="logField('notes',this.value)">${esc(d.notes||'')}</textarea></div>
+    </div>
+  </div>`;
+}
+
+/* WORKOUTS */
+function renderWorkouts(){
+  const k = todayKey();
+  const d = ensureDay(k);
+  const w = d.workoutSel || 'A';
+  const wo = WORKOUTS[w];
+  const log = (d.workout&&d.workout[w])||{};
+  const exRows = wo.exercises.map((e,i)=>{
+    const lg = log[i]||{};
+    return `<div class="ex-row">
+      <div class="ex-name">${esc(e.name)}<div style="font-size:11px;color:var(--dim);font-weight:400;margin-top:2px">${esc(e.note)}</div></div>
+      <div><label style="margin-bottom:2px">Sets</label><input type="text" placeholder="${e.sets}" value="${esc(lg.sets||'')}" onchange="logEx('${w}',${i},'sets',this.value)"></div>
+      <div><label style="margin-bottom:2px">Weight</label><input type="text" placeholder="lbs" value="${esc(lg.weight||'')}" onchange="logEx('${w}',${i},'weight',this.value)"></div>
+      <div><label style="margin-bottom:2px">Reps</label><input type="text" placeholder="${e.reps}" value="${esc(lg.reps||'')}" onchange="logEx('${w}',${i},'reps',this.value)"></div>
+    </div>`;
+  }).join("");
+  return `
+  <div class="section" id="s-workouts">
+    <div class="sec-head"><h1>TRAIN.</h1><h4 class="num">PHASE 01</h4></div>
+    <div class="sub">3× / WEEK · TRX · KETTLEBELLS · DUMBBELLS · PROGRESSIVE OVERLOAD · LOG EVERYTHING</div>
+    <div class="quote">"YOU DON'T FIND <span>WILL.</span><br>YOU BUILD IT — SET BY SET."</div>
+    <div class="day-toggle">
+      <button class="${w==='A'?'active':''}" onclick="setWorkoutSel('A')">A · Lower</button>
+      <button class="${w==='B'?'active':''}" onclick="setWorkoutSel('B')">B · Upper</button>
+      <button class="${w==='C'?'active':''}" onclick="setWorkoutSel('C')">C · Full Body</button>
+    </div>
+    <div class="card">
+      <h2>${esc(wo.name).toUpperCase()}</h2>
+      <div class="sub">${esc(wo.day).toUpperCase()} · ${esc(wo.duration)} · KIT: ${esc(wo.equipment)} · REST: ${esc(wo.rest)}</div>
+      ${exRows}
+      <div class="tip success" style="margin-top:16px"><strong>THE GOLDEN RULE · PROGRESSIVE OVERLOAD:</strong> Hit ALL reps with good form? Make it harder next time. Fixed KBs: more reps, slow tempo (3s down), less rest, add a pause. DBs: next weight. TRX: walk feet forward. YOU CAN'T MANAGE WHAT YOU DON'T TRACK.</div>
+    </div>
+    <div class="card">
+      <h2>PHASE 02 · BUILD TO BIRTHDAY</h2>
+      <div class="sub">STARTING JUN 16 · 4×/WEEK UPPER/LOWER · THE PUSH</div>
+      <div class="grid grid-2">
+        ${Object.values(PHASE2_WORKOUTS).map(p=>`
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:18px;border-left:3px solid var(--pink)">
+            <h3 style="font-size:14px">${esc(p.name).toUpperCase()}</h3>
+            <div style="font-size:10px;color:var(--volt);margin-bottom:12px;text-transform:uppercase;letter-spacing:2px;font-weight:900;font-family:var(--display)">${esc(p.day)}</div>
+            ${p.exercises.map(ex=>`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);font-weight:600">${esc(ex)}</div>`).join("")}
+          </div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <h2>CONDITIONING · 3× / WEEK</h2>
+      <div class="grid grid-3">
+        <div class="stat-tile"><div class="lbl">Tuesday</div><div class="val" style="font-size:18px">PELOTON 35–45</div><p class="sub">Push the pace</p></div>
+        <div class="stat-tile"><div class="lbl">Thursday</div><div class="val" style="font-size:18px">RUN 20–30</div><p class="sub">Zone 2 · steady</p></div>
+        <div class="stat-tile"><div class="lbl">Saturday</div><div class="val" style="font-size:18px">PELOTON 45–60</div><p class="sub">Long · hard · earned</p></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* NUTRITION */
+function renderNutrition(){
+  return `
+  <div class="section" id="s-nutrition">
+    <div class="sec-head"><h1>FUEL.</h1><h4 class="num">THE MACHINE EATS</h4></div>
+    <div class="sub">2,100 CAL · 190G P · 190G C · 65G F · 3–4L WATER · EVERY DAMN DAY</div>
+    <div class="quote">"YOU CAN'T OUT-TRAIN A <span>BAD DIET.</span><br>BUT THIS ISN'T COMPLICATED."</div>
+    <div class="grid grid-4" style="margin-bottom:14px">
+      <div class="stat-tile primary"><div class="lbl">Calories</div><div class="val">${TARGETS.cals}</div><p class="sub">500–600 deficit from TDEE</p></div>
+      <div class="stat-tile"><div class="lbl">Protein</div><div class="val">${TARGETS.protein}g</div><p class="sub">1g / lb bodyweight</p></div>
+      <div class="stat-tile"><div class="lbl">Carbs</div><div class="val">${TARGETS.carbs}g</div><p class="sub">Around workouts</p></div>
+      <div class="stat-tile"><div class="lbl">Fat</div><div class="val">${TARGETS.fat}g</div><p class="sub">EVOO, avocado, salmon</p></div>
+    </div>
+    <div class="tip success"><strong>BMR confirmed at 1,856 kcal.</strong> With 3× Peloton + 3× lifting + 8k steps, true TDEE is ~2,600–2,700 cal/day. 2,100 cal = clean 500–600 cal deficit = ~1 lb/week fat loss from diet alone.</div>
+    <div class="card">
+      <h2>Daily Meal Template</h2>
+      ${MEALS_PLAN.map(m=>`
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+            <div><span class="badge blue">${esc(m.time)}</span> <strong>${esc(m.name)}</strong></div>
+            <div style="font-size:12px;color:var(--dim)">~${m.cals} cal · ${m.p}g P · ${m.c}g C · ${m.f}g F</div>
+          </div>
+          ${m.items.map(it=>`<div style="font-size:13px;padding:3px 0;color:var(--text)">• ${esc(it)}</div>`).join("")}
+        </div>`).join("")}
+      <div class="tip" style="margin-top:16px"><strong>Daily total:</strong> ~2,200 cal · ~200g protein ✓ · ~178g carbs ✓ · ~74g fat ✓</div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Protein Sources</h2>
+        <div class="kv">
+          <dt>Chicken breast/thigh</dt><dd>30–35g / 4 oz</dd>
+          <dt>Greek yogurt</dt><dd>15–20g / cup</dd>
+          <dt>Eggs (w/ yolks)</dt><dd>6g each</dd>
+          <dt>Lean beef / bison</dt><dd>25–30g / 4 oz</dd>
+          <dt>Salmon</dt><dd>34g / 6 oz</dd>
+          <dt>Cottage cheese</dt><dd>25g / cup (casein!)</dd>
+          <dt>Whey protein</dt><dd>25–30g / scoop</dd>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Refeed Protocol (Weeks 5–8)</h2>
+        <div class="tip warn">Starting Week 5, add ONE refeed day per week — NOT a cheat day. Strategic calorie + carb reset keeps metabolism from adapting to deficit, restores glycogen, resets leptin.</div>
+        <div class="kv" style="margin-top:14px">
+          <dt>Regular</dt><dd>2,100 cal · 190P / 190C / 65F</dd>
+          <dt>Refeed</dt><dd>2,500–2,600 cal · 190P / 300C / 65F (extra carbs only)</dd>
+        </div>
+        <p class="sub" style="margin-top:10px">Add extra cup rice at lunch + extra sweet potato at dinner + larger fruit serving. Scale next day water weight ↑ — drops off in 48h.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Restaurant Survival Guide</h2>
+      <div class="kv">
+        <dt>Chipotle</dt><dd>Chicken/steak bowl, double protein, rice, black beans, fajita veg, salsa only. ~55g P · 600 cal.</dd>
+        <dt>Mexican</dt><dd>Grilled chicken/carnitas, no tortillas, extra guac, black beans, salad base. Skip chips.</dd>
+        <dt>Steakhouse</dt><dd>6–8 oz sirloin/filet, sweet potato or salad, steamed veg. Skip bread + dessert.</dd>
+        <dt>Japanese</dt><dd>Sashimi + edamame + miso. High P, low F, low C. Best option.</dd>
+        <dt>Shoot days</dt><dd>Eat before you go. Carry protein bars + jerky. Never let venue catering derail the week.</dd>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Red Flags — Adjust if you see these</h2>
+      <div class="tip danger">If ANY of these appear, add 200 cal for 3 days and reassess: (1) strength drops 10%+ on main lifts, (2) sleep craters, (3) mood tanks / irritability, (4) libido disappears. At your T levels these hit harder than for a guy at 700+ ng/dL. Listen.</div>
+    </div>
+  </div>`;
+}
+
+/* SUPPLEMENTS */
+function renderSupplements(){
+  const tierBadge = t=>t===1?'<span class="badge orange">Tier 1</span>':t===2?'<span class="badge grey">Tier 2</span>':'<span class="badge grey">Tier 3</span>';
+  const statusBadge = s=>s==="have"?'<span class="badge green">HAVE</span>':s==="buy"?'<span class="badge orange">BUY NOW</span>':'<span class="badge grey">CONSIDER</span>';
+  return `
+  <div class="section" id="s-supplements">
+    <div class="sec-head"><h1>THE STACK.</h1><h4 class="num">EVERY INPUT</h4></div>
+    <div class="sub">MOMENTOUS · GAPS ANALYSIS · LIVER + GUT HEALTH · PRIORITY ORDER</div>
+    <div class="motto-strip"><span>STACK THE INPUTS. CONTROL THE VARIABLES. GET THE BLOODWORK. LET THE PLAN RUN.</span></div>
+    <div class="card">
+      <h2>Complete Stack</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Supplement</th><th>Dose</th><th>Timing</th><th>Status</th><th>Tier</th><th>Why</th></tr></thead>
+        <tbody>
+        ${SUPPLEMENTS_DAILY.map(s=>`<tr>
+          <td><strong>${esc(s.name)}</strong></td>
+          <td>${esc(s.dose)}</td>
+          <td>${esc(s.when)}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td>${tierBadge(s.tier)}</td>
+          <td style="color:var(--dim);font-size:13px">${esc(s.why)}</td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Timing Schedule</h2>
+        <div class="kv">
+          <dt>Wake (empty)</dt><dd>ARMRA · wait 15–20 min</dd>
+          <dt>Morning water</dt><dd>AG1 + Creatine 5g + Tongkat Ali 400mg (w/ food)</dd>
+          <dt>Breakfast</dt><dd>D3+K2 · Omega-3 2–3g · Collagen 10–15g</dd>
+          <dt>Post-Workout</dt><dd>Protein shake · LMNT</dd>
+          <dt>Dinner</dt><dd>NAC 600mg (always w/ food) · Zinc if not in AG1</dd>
+          <dt>Pre-Bed</dt><dd>Moon Brew · Magnesium glycinate/L-threonate 300–400mg</dd>
+        </div>
+      </div>
+      <div class="card">
+        <h2>What NOT to Stack</h2>
+        <div class="tip warn"><strong>Zinc + Magnesium:</strong> compete for absorption. Separate ≥2 hrs (zinc w/ dinner, Mg pre-bed = perfect).</div>
+        <div class="tip warn"><strong>Melatonin:</strong> don't add on top of Moon Brew unless confirmed zero melatonin inside.</div>
+        <div class="tip warn"><strong>Ashwagandha:</strong> don't double up if Moon Brew has it — GI upset.</div>
+        <div class="tip warn"><strong>Tongkat Ali:</strong> 8 weeks on, 2–4 weeks off. Don't stack w/ other T-boosters beyond daily caffeine.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Hormone Ladder — From Lifestyle to Rx</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Intervention</th><th>Mechanism</th><th>Expected Lift</th></tr></thead>
+        <tbody>
+        ${HORMONE_LADDER.map(h=>`<tr>
+          <td><strong>${h.step}</strong></td>
+          <td><strong>${esc(h.name)}</strong></td>
+          <td style="color:var(--dim);font-size:13px">${esc(h.effect)}</td>
+          <td style="color:var(--orange);font-weight:700">${esc(h.lift)}</td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+      <div class="tip" style="margin-top:14px"><strong>Enclomiphene context:</strong> Not FDA-approved for commercial use but available via compounding pharmacies under physician supervision. In OC: Marek Health (telemedicine), Fountain Life, or local men's health optimization clinic. Start 12.5mg daily → titrate at 4–6 wk based on labs. Could feel effects by weeks 4–6 of training plan.</div>
+    </div>
+    <div class="card">
+      <h2>Monthly Supplement Budget</h2>
+      <div class="kv">
+        <dt>One-time first order</dt><dd>~$85–120</dd>
+        <dt>Recurring monthly (full stack)</dt><dd>~$150–180/mo</dd>
+        <dt>AG1 90-day bundle</dt><dd>Saves ~$40/mo</dd>
+        <dt>Momentous subscription</dt><dd>15–20% off — code HUBERMAN historically 20% off first order</dd>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* SCHEDULE (full daily schedule reference) */
+function renderSchedule(){
+  return `
+  <div class="section" id="s-schedule">
+    <div class="sec-head"><h1>PROTOCOL.</h1><h4 class="num">HOUR BY HOUR</h4></div>
+    <div class="sub">WHEN TO EAT · WHEN TO TRAIN · WHEN TO TAKE IT ALL</div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2><span class="badge blue">PELOTON DAYS</span> Tue · Thu · Sat</h2>
+        ${PELOTON_DAY.map(s=>`<div class="sched-item ${s.type}"><div class="sched-time">${s.t}</div><div class="sched-body"><div class="what">${esc(s.what)}</div><div class="detail">${esc(s.d)}</div></div></div>`).join("")}
+      </div>
+      <div class="card">
+        <h2><span class="badge orange">LIFTING DAYS</span> Mon · Wed · Fri</h2>
+        ${LIFTING_DAY.map(s=>`<div class="sched-item ${s.type}"><div class="sched-time">${s.t}</div><div class="sched-body"><div class="what">${esc(s.what)}</div><div class="detail">${esc(s.d)}</div></div></div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Daily Non-Negotiables</h2>
+      <div class="grid grid-2">
+        <div>
+          ${NON_NEGOTIABLES.slice(0,5).map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">✓ ${esc(n)}</div>`).join("")}
+        </div>
+        <div>
+          ${NON_NEGOTIABLES.slice(5).map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">✓ ${esc(n)}</div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>If You Miss a Morning — Recovery Moves</h2>
+      <div class="tip">Skipped ARMRA? Take it post-workout or w/ light snack — not perfect, still useful.</div>
+      <div class="tip">No time for eggs? Protein shake + avo = same macros in 90s.</div>
+      <div class="tip">Late night? Shift Moon Brew to 30 min before wherever you land.</div>
+      <div class="tip">Missed a supplement? Don't double-dose the next day. Just continue.</div>
+      <div class="tip">Traveling? Creatine + protein + D3 are the non-negotiables to bring.</div>
+      <div class="tip success">Off-plan meal? One meal doesn't break the week — the next meal does.</div>
+    </div>
+  </div>`;
+}
+
+/* PROGRESS */
+function renderProgress(){
+  const m = state.measurements||{};
+  const checkpoints = ["start","week4","jun15","aug15","birthday"];
+  const labels = {start:"Start (Apr 19)",week4:"Week 4 (May 17)",jun15:"Jun 15 Checkpoint",aug15:"Aug 15 (Maui)",birthday:"Birthday (Sept)"};
+  const metrics = [
+    {k:"weight",l:"Weight (lbs)"},{k:"waist",l:"Waist @ navel (in)"},{k:"chest",l:"Chest (in)"},
+    {k:"arms",l:"Arms (in)"},{k:"bench",l:"Bench Press (lbs)"},{k:"squat",l:"Squat (lbs)"},
+    {k:"energy",l:"Energy 1–10"},{k:"sleep",l:"Sleep quality 1–10"}
+  ];
+  const weightLog = Object.entries(state.days||{}).filter(([,v])=>v.weight).sort().slice(-14);
+  return `
+  <div class="section" id="s-progress">
+    <div class="sec-head"><h1>PROGRESS.</h1><h4 class="num">THE SCOREBOARD</h4></div>
+    <div class="sub">THE SCALE WILL LIE · TRACK EVERY METRIC · PROOF IS IN THE MIRROR</div>
+    <div class="quote">"DISCIPLINE <span>OUTLIVES</span> MOTIVATION."</div>
+    <div class="card">
+      <h2>Body Comp Baseline — April 19, 2026</h2>
+      <div class="grid grid-4">
+        <div class="stat-tile primary"><div class="lbl">Weight</div><div class="val">${BASELINE.weight} lbs</div></div>
+        <div class="stat-tile"><div class="lbl">BMI</div><div class="val">${BASELINE.bmi}</div></div>
+        <div class="stat-tile"><div class="lbl">Body Fat</div><div class="val">${BASELINE.bodyFat}%</div></div>
+        <div class="stat-tile"><div class="lbl">Fat-Free Mass</div><div class="val">${BASELINE.leanMass} lbs</div></div>
+        <div class="stat-tile"><div class="lbl">Body Water</div><div class="val">${BASELINE.bodyWater}%</div></div>
+        <div class="stat-tile"><div class="lbl">Skeletal Muscle</div><div class="val">${BASELINE.skeletalMuscle}%</div></div>
+        <div class="stat-tile"><div class="lbl">Muscle Mass</div><div class="val">${BASELINE.muscleMass} lbs</div></div>
+        <div class="stat-tile"><div class="lbl">Bone Mass</div><div class="val">${BASELINE.boneMass} lbs</div></div>
+        <div class="stat-tile"><div class="lbl">Protein</div><div class="val">${BASELINE.protein}%</div></div>
+        <div class="stat-tile"><div class="lbl">Subcut. Fat</div><div class="val">${BASELINE.subcutaneousFat}%</div></div>
+        <div class="stat-tile primary"><div class="lbl">Visceral Fat</div><div class="val">${BASELINE.visceralFat}</div><p class="sub">Borderline (healthy 1–9)</p></div>
+        <div class="stat-tile"><div class="lbl">Metabolic Age</div><div class="val">${BASELINE.metabolicAge}</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Checkpoint Tracker</h2>
+      <div class="sub">Fill in on checkpoint days — June 15 should show noticeable changes; birthday should be a transformation.</div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metric</th>${checkpoints.map(c=>`<th>${labels[c]}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${metrics.map(mt=>`<tr>
+            <td><strong>${esc(mt.l)}</strong></td>
+            ${checkpoints.map(c=>{
+              const v = (m[c]||{})[mt.k] || "";
+              return `<td><input type="text" value="${esc(v)}" onchange="logMeas('${c}','${mt.k}',this.value)" style="padding:6px"></td>`;
+            }).join("")}
+          </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent Weight Log (daily)</h2>
+      ${weightLog.length?`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Weight (lbs)</th><th>Sleep</th><th>Energy</th></tr></thead>
+        <tbody>${weightLog.map(([d,v])=>`<tr><td>${d}</td><td>${v.weight}</td><td>${v.sleep||'—'}</td><td>${v.energy||'—'}</td></tr>`).join("")}</tbody>
+      </table></div>`:`<p class="muted">No weight logged yet. Log your morning weight in <a href="#" onclick="goSection('today');return false">Today</a>.</p>`}
+    </div>
+
+    <div class="card">
+      <h2>Week-by-Week Weight Targets</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Week</th><th>Dates</th><th>Target (lbs)</th><th>Focus</th></tr></thead>
+        <tbody>
+        ${WEEK_TARGETS.map(w=>`<tr>
+          <td><strong>${esc(w.week)}</strong></td>
+          <td>${esc(w.date)}</td>
+          <td><span style="color:var(--orange);font-weight:700">${esc(w.weight)}</span></td>
+          <td style="color:var(--dim);font-size:13px">${esc(w.focus)}</td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+      <div class="tip warn" style="margin-top:14px"><strong>Week 5–6 is where people quit.</strong> Hunger increases and strength may plateau. Add one refeed day/week (maintenance cals, mostly carbs) to reset leptin + training output.</div>
+    </div>
+
+    <div class="card">
+      <h2>Realistic Expectations</h2>
+      <div class="grid grid-3">
+        <div>
+          <h4>Jun 15 · 8 Weeks</h4>
+          <div class="kv">
+            <dt>Weight</dt><dd>177–180 lbs</dd>
+            <dt>Body Fat</dt><dd>16–17%</dd>
+            <dt>Waist</dt><dd>Visibly smaller</dd>
+            <dt>Strength</dt><dd>2× starting point</dd>
+          </div>
+        </div>
+        <div>
+          <h4>Maui Summer</h4>
+          <div class="kv">
+            <dt>Goal</dt><dd>Maintain momentum</dd>
+            <dt>Look</dt><dd>Best beach body you've had</dd>
+            <dt>Habits</dt><dd>Fully locked in</dd>
+          </div>
+        </div>
+        <div>
+          <h4>Birthday · ~5 Months</h4>
+          <div class="kv">
+            <dt>Down</dt><dd>17–22 lbs + real muscle</dd>
+            <dt>Body Fat</dt><dd>13–15%</dd>
+            <dt>State</dt><dd>Strongest + leanest of life</dd>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* PLAN — calendar */
+function renderPlan(){
+  function calHTML(label,weeks){
+    return `<h3 style="margin:16px 0 8px">${label}</h3>
+    <div class="cal">
+      ${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="cal-head">${d}</div>`).join("")}
+      ${weeks.map(wk=>wk.map(day=>{
+        if(!day)return `<div class="cal-day empty"></div>`;
+        const ds = label.includes("April")?`2026-04-${String(day.d).padStart(2,'0')}`:label.includes("May")?`2026-05-${String(day.d).padStart(2,'0')}`:`2026-06-${String(day.d).padStart(2,'0')}`;
+        const isToday = ds===todayKey()?"today":"";
+        return `<div class="cal-day ${day.t} ${isToday}"><div class="dn">${day.d}</div><div class="dt">${esc(day.l)}</div></div>`;
+      }).join("")).join("")}
+    </div>`;
+  }
+  return `
+  <div class="section" id="s-plan">
+    <div class="sec-head"><h1>8 WEEKS.</h1><h4 class="num">APR 19 → JUN 15</h4></div>
+    <div class="sub">PHASE 01 · IGNITION · EVERY WORKOUT MAPPED · NO EXCUSES</div>
+    <div class="grid grid-3">
+      <div class="stat-tile primary"><div class="lbl">Phase 1 Lift Days</div><div class="val">24</div><p class="sub">3×/week for 8 weeks</p></div>
+      <div class="stat-tile"><div class="lbl">Cardio Sessions</div><div class="val">24</div><p class="sub">Peloton + runs</p></div>
+      <div class="stat-tile"><div class="lbl">Target Fat Loss</div><div class="val">12–15 lbs</div><p class="sub">+ 1–3 lbs muscle</p></div>
+    </div>
+    <div class="card">
+      <h2>Legend</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div><span class="cal-day lift" style="display:inline-block;width:16px;height:16px;vertical-align:middle;padding:0;min-height:0"></span> Lift (A/B/C)</div>
+        <div style="margin-left:14px"><span class="cal-day peloton" style="display:inline-block;width:16px;height:16px;vertical-align:middle;padding:0;min-height:0"></span> Peloton / Run</div>
+        <div style="margin-left:14px"><span class="cal-day rest" style="display:inline-block;width:16px;height:16px;vertical-align:middle;padding:0;min-height:0"></span> Rest / Active recovery</div>
+        <div style="margin-left:14px"><span style="display:inline-block;width:14px;height:14px;vertical-align:middle;border:2px solid var(--green);border-radius:4px"></span> Today</div>
+      </div>
+    </div>
+    <div class="card">
+      ${calHTML("April 2026",CALENDAR_APRIL)}
+      ${calHTML("May 2026",CALENDAR_MAY)}
+      ${calHTML("June 2026 (through Checkpoint)",CALENDAR_JUNE)}
+    </div>
+    <div class="card">
+      <h2>Phase Roadmap</h2>
+      <div class="phase-bar">
+        <div class="phase p1">
+          <div class="title">Phase 1 — Jumpstart</div>
+          <div class="dates">Apr 19 – Jun 15</div>
+          <div class="goal">At-home TRX + KB + DB · 3 lifts/week · Learn patterns · 12–15 lbs fat loss</div>
+        </div>
+        <div class="phase maui">
+          <div class="title">Maui Trip</div>
+          <div class="dates">Summer 2026</div>
+          <div class="goal">Hotel gyms + beach runs · Maintain momentum · Enjoy</div>
+        </div>
+        <div class="phase p2">
+          <div class="title">Phase 2 — Birthday Push</div>
+          <div class="dates">Jun 16 – Sept 15</div>
+          <div class="goal">Life Time Brea opens July · 4×/wk Upper/Lower · Best shape of life</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* BLOODWORK */
+function renderBloodwork(){
+  const retest = state.retest || {};
+  return `
+  <div class="section" id="s-bloodwork">
+    <div class="sec-head"><h1>BLOODWORK.</h1><h4 class="num">STEP ZERO</h4></div>
+    <div class="sub">REAL DATA BEATS GUESSWORK · GET RETESTED THIS WEEK</div>
+    <div class="tip danger"><strong>DO THIS NOW:</strong> Retest the full panel ASAP so the whole plan runs on real data, not a 3-year-old snapshot. Order direct via LabCorp, Quest, Marek Health, or Private MD Labs (~$150–$300). Fasted, first thing AM, before training.</div>
+
+    <div class="card">
+      <h2>⚡ GET IT DONE TODAY — BREA / OC</h2>
+      <div class="sub">WALK-IN · DTC ORDER · SAME-DAY CLINIC</div>
+      <div class="grid grid-2">
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>LABCORP · BREA <span class="badge green">WALK-IN</span></h3>
+          <p style="font-size:13px;margin-top:8px;color:var(--cream)"><strong style="color:var(--orange);font-family:var(--display);letter-spacing:.5px">(657) 756-6505</strong></p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">955 W Imperial Hwy, Suite 110 · Mon–Fri 7:30–11:30 AM · 12:30–4:00 PM · Walk-ins accepted. Bring your DTC requisition.</p>
+        </div>
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>PRIVATE MD LABS <span class="badge grey">ORDER ONLINE</span></h3>
+          <p style="font-size:13px;margin-top:8px"><a href="https://www.privatemdlabs.com/blood-test-brea-ca" target="_blank">privatemdlabs.com/blood-test-brea-ca</a></p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">Order online today → PDF requisition emailed instantly → walk into LabCorp Brea tomorrow → results in a few days.</p>
+        </div>
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>MD TOTAL WELLNESS · BREA <span class="badge grey">CLINIC</span></h3>
+          <p style="font-size:13px;margin-top:8px"><a href="https://mdtw.co/" target="_blank">mdtw.co</a></p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">Same-day T panels on-site. Physician-ordered. One-stop if you want a clinician to design + review.</p>
+        </div>
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>GAMEDAY MEN'S HEALTH · BREA <span class="badge grey">CLINIC</span></h3>
+          <p style="font-size:13px;margin-top:8px"><a href="https://gamedaymenshealth.com/fullerton/brea" target="_blank">gamedaymenshealth.com/fullerton/brea</a></p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">Complimentary consult + in-house blood draw. Direct path to Enclomiphene conversation.</p>
+        </div>
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>MAREK HEALTH <span class="badge grey">TELEHEALTH</span></h3>
+          <p style="font-size:13px;margin-top:8px"><a href="https://marekhealth.com/" target="_blank">marekhealth.com</a></p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">Gold standard for hormone optimization. Full panel + physician review + Rx path (including Enclomiphene). Slower start, cleanest finish.</p>
+        </div>
+        <div style="background:var(--bg2);padding:18px;border:1px solid var(--border)">
+          <h3>QUEST DIAGNOSTICS · BREA <span class="badge grey">APPT</span></h3>
+          <p style="font-size:13px;margin-top:8px"><a href="https://appointment.questdiagnostics.com/" target="_blank">appointment.questdiagnostics.com</a> · (855) 392-6361</p>
+          <p style="font-size:13px;color:var(--dim);margin-top:6px">Multiple PSCs around Brea/Fullerton. Same-day slots usually available. Appointment strongly preferred over walk-in.</p>
+        </div>
+      </div>
+      <div class="tip success" style="margin-top:20px"><strong>FASTEST PATH:</strong> Private MD Labs order today → LabCorp Brea walk-in tomorrow morning, fasted.</div>
+    </div>
+
+    <div class="card">
+      <h2>⚠ DAY-OF PROTOCOL</h2>
+      <div class="kv">
+        <dt>Fast</dt><dd>10+ hrs water only — last meal by 9pm night before</dd>
+        <dt>Timing</dt><dd>7:00–10:00 AM draw — T peaks AM</dd>
+        <dt>No training</dt><dd>Skip workout morning-of AND day before (spikes T + inflammation)</dd>
+        <dt>No caffeine</dt><dd>Coffee counts — wait until after</dd>
+        <dt>No supplements</dt><dd>Hold Tongkat Ali, biotin, D3 24–48h before (biotin skews thyroid/hormones)</dd>
+        <dt>No alcohol</dt><dd>Zero for 48h before</dd>
+        <dt>Bring</dt><dd>Photo ID · insurance · 2023 labs · printed requisition</dd>
+      </div>
+      <div class="tip success" style="margin-top:16px"><strong>PRINT THE ORDER SHEET:</strong> A standalone print-ready sheet with the full panel checklist + day-of protocol + local provider list is saved as <code style="color:var(--volt)">brandon-bloodwork-order-sheet.html</code> in your outputs folder. Open it, print, fold it, bring it to the draw.</div>
+    </div>
+    <div class="card">
+      <h2>July 2023 Baseline (Age 38)</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Marker</th><th>Result</th><th>Range</th><th>Percentile</th><th>Verdict</th></tr></thead>
+        <tbody>
+        ${LABS_2023.map(l=>{
+          const badgeCls = l.cls==='green'?'green':l.cls==='red'?'red':'grey';
+          return `<tr>
+          <td><strong>${esc(l.marker)}</strong></td>
+          <td>${esc(l.result)}</td>
+          <td>${esc(l.range)}</td>
+          <td>${esc(l.pct)}</td>
+          <td><span class="badge ${badgeCls}">${esc(l.verdict)}</span></td>
+        </tr>`;}).join("")}
+        </tbody>
+      </table>
+      </div>
+      <div class="tip success" style="margin-top:14px"><strong>Key finding:</strong> SHBG was midrange (29) — it wasn't hogging your testosterone. Your body simply wasn't making enough. That's the more addressable scenario — lifestyle, training, and targeted intervention have a real shot.</div>
+    </div>
+    <div class="card">
+      <h2>Full Retest Panel — Log Your New Results</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Test</th><th>Target</th><th>Why It Matters</th><th>Your New Result</th></tr></thead>
+        <tbody>
+        ${RETEST_PANEL.map((r,i)=>`<tr>
+          <td><strong>${esc(r.test)}</strong></td>
+          <td><span class="badge grey">${esc(r.target)}</span></td>
+          <td style="color:var(--dim);font-size:13px">${esc(r.why)}</td>
+          <td><input type="text" placeholder="—" value="${esc(retest[i]||'')}" onchange="logRetest(${i},this.value)"></td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Hormone Optimization Ladder</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Intervention</th><th>How It Works</th><th>Expected Lift</th></tr></thead>
+        <tbody>
+        ${HORMONE_LADDER.map(h=>`<tr>
+          <td><strong>${h.step}</strong></td>
+          <td><strong>${esc(h.name)}</strong></td>
+          <td style="color:var(--dim);font-size:13px">${esc(h.effect)}</td>
+          <td style="color:var(--orange);font-weight:700">${esc(h.lift)}</td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>
+      <div class="tip" style="margin-top:14px"><strong>Enclomiphene in OC:</strong> Marek Health (telemedicine, fast), Fountain Life, or local men's health optimization clinic. Bring 2023 labs + fresh retest. Start 12.5mg daily — doc titrates at 4–6 wk.</div>
+    </div>
+  </div>`;
+}
+
+/* SHOPPING */
+function renderShopping(){
+  const st = state.shopping || {};
+  const toggleable = (key,label,extra="")=>{
+    const on = st[key];
+    return `<div class="check-row ${on?'done':''}">
+      <input type="checkbox" class="chk" ${on?'checked':''} onchange="toggleShop('${key}')">
+      <div style="flex:1"><div class="chk-main">${esc(label)}</div>${extra?`<div class="chk-meta">${esc(extra)}</div>`:""}</div>
+    </div>`;
+  };
+  return `
+  <div class="section" id="s-shopping">
+    <div class="sec-head"><h1>SHOP.</h1><h4 class="num">ONE ORDER · ONE RUN</h4></div>
+    <div class="sub">ONE SUPPLEMENT ORDER + ONE WEEKLY GROCERY RUN = 100% LOCKED IN</div>
+    <div class="card">
+      <h2>Supplement Order</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>✓</th><th>Item</th><th>Dose</th><th>Cost/mo</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+        ${SHOPPING_SUPP.map((s,i)=>{
+          const on = st['sp'+i];
+          return `<tr>
+            <td><input type="checkbox" ${on?'checked':''} onchange="toggleShop('sp${i}')" class="chk" style="width:18px;height:18px"></td>
+            <td><strong>${esc(s.item)}</strong></td>
+            <td>${esc(s.dose)}</td>
+            <td style="color:var(--dim);font-weight:700">${esc(s.cost)}</td>
+            <td><span class="badge ${s.status==='have'?'green':s.status==='buy'?'orange':'grey'}">${s.status.toUpperCase()}</span></td>
+            <td style="color:var(--dim);font-size:13px">${esc(s.notes)}</td>
+          </tr>`;
+        }).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>🥩 Proteins</h2>
+        ${GROCERY.proteins.map((it,i)=>toggleable('gp'+i,it)).join("")}
+      </div>
+      <div class="card">
+        <h2>🥑 Produce</h2>
+        ${GROCERY.produce.map((it,i)=>toggleable('gpr'+i,it)).join("")}
+      </div>
+      <div class="card">
+        <h2>🥛 Dairy + Eggs</h2>
+        ${GROCERY.dairy.map((it,i)=>toggleable('gd'+i,it)).join("")}
+      </div>
+      <div class="card">
+        <h2>🍚 Carbs + Grains</h2>
+        ${GROCERY.carbs.map((it,i)=>toggleable('gc'+i,it)).join("")}
+      </div>
+      <div class="card">
+        <h2>🫒 Fats + Oils</h2>
+        ${GROCERY.fats.map((it,i)=>toggleable('gf'+i,it)).join("")}
+      </div>
+      <div class="card">
+        <h2>💧 Hydration + Coffee</h2>
+        ${GROCERY.hydration.map((it,i)=>toggleable('gh'+i,it)).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sunday Meal Prep · 90 min</h2>
+      <div class="tip success">
+        • Cook 3 lbs chicken breast (375°F / 25 min) — portion into 6 containers<br>
+        • Cook 3 cups dry rice — divide into 6 portions<br>
+        • Roast 2 bags mixed veg w/ olive oil at 400°F for 25 min<br>
+        • Bake 4 sweet potatoes<br>
+        • Hard boil 6 eggs<br>
+        • Portion 6 Greek yogurt cups (grab-and-go)
+      </div>
+      <h3 style="margin-top:16px">Shopping Tips</h3>
+      <div class="kv">
+        <dt>Costco</dt><dd>Eggs, chicken, Greek yogurt, salmon, string cheese, almonds — huge savings</dd>
+        <dt>Whole Foods / Sprouts</dt><dd>Avocados, microgreens, sweet potatoes, quality olive oil</dd>
+        <dt>Amazon Subscribe & Save</dt><dd>Creatine, protein, LMNT, collagen — cheapest recurring</dd>
+        <dt>Momentous.com</dt><dd>Tongkat Ali, D3+K2, Omega-3, NAC, Collagen in one order</dd>
+        <dt>Feel It First</dt><dd>Tongkat Ali, D3, and Omega-3 — noticeable within days</dd>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* REFERENCE */
+function renderReference(){
+  return `
+  <div class="section" id="s-reference">
+    <div class="sec-head"><h1>PLAYBOOK.</h1><h4 class="num">THE WHY</h4></div>
+    <div class="sub">THE STRATEGY · GYM INTEL · RECOVERY · MEAL SWAPS</div>
+    <div class="card">
+      <h2>The Strategy (Why This Plan Will Work)</h2>
+      <p>You have a massive advantage most beginners don't: a strong aerobic base. Your Peloton, running, and treadmill walks mean your heart and lungs are already primed. The goal of Phase 1 is NOT to get shredded overnight — it's to learn movement patterns, build a lifting habit, and start a <strong>body recomposition</strong> (losing fat while gaining muscle simultaneously). This is most effective for beginner lifters — which works in your favor.</p>
+      <p style="margin-top:10px">Three lifting days per week is the sweet spot. More is not better for a beginner — your muscles grow during recovery, not during the workout. Trust the process.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Sleep — Your Most Powerful PED</h2>
+        <div class="tip danger">90% of testosterone and HGH is released during deep sleep. If you're sleeping 5–6 hours, no training program will fix that. This may do more for your energy and drive than any workout.</div>
+        <div class="kv" style="margin-top:14px">
+          <dt>Duration</dt><dd>7.5–8 hours non-negotiable</dd>
+          <dt>Temp</dt><dd>65–68°F cold room</dd>
+          <dt>Dark</dt><dd>Phone face down or in another room</dd>
+          <dt>Screens</dt><dd>None 30 min before bed</dd>
+          <dt>Caffeine</dt><dd>Cut at 2pm sharp</dd>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Stress Management</h2>
+        <p>Chronic stress elevates cortisol, which directly suppresses testosterone AND causes your body to preferentially store fat around the belly — exactly what you're fighting. Your Peloton + runs are already powerful cortisol reducers. Add 5–10 min deliberate breathing or quiet time after hard sessions.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Brea Gym Options</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Gym / Studio</th><th>What They Offer</th><th>Why It's Right for You</th></tr></thead>
+        <tbody>
+          <tr><td><strong>BFT Brea</strong></td><td>50-min structured group classes · HR tracking · Coach-led</td><td>Group energy + coach watching form. Zero intimidation.</td></tr>
+          <tr><td><strong>FIT Brea</strong></td><td>Group + semi-private · Strength & conditioning focus</td><td>Learn compound lifts with hands-on. Bridge to Phase 2.</td></tr>
+          <tr><td><strong>24 Hour Fitness Brea Sport</strong></td><td>Full gym + Les Mills BODYPUMP, cycling, HIIT, yoga</td><td>BODYPUMP is perfect for learning barbell lifts with music + coach.</td></tr>
+          <tr><td><strong>Brea Fitness Center</strong></td><td>HIIT, barbell, dance, kickboxing · City-run</td><td>Low cost, welcoming. Good to sample formats.</td></tr>
+          <tr><td><strong>Life Time Brea ★ Opens July 2026</strong></td><td>85,000 sq ft · 4 studios (GTX, Alpha, Core Tone, Yoga) · Pool, spa, recovery</td><td>Your Phase 2 home base — perfect timing for birthday push. Waitlist NOW.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Meal Swaps — When Plan A Can't Happen</h2>
+      <div class="kv">
+        <dt>No eggs?</dt><dd>Greek yogurt + 2 scoops protein + berries — same P, 4 min</dd>
+        <dt>No grilled chicken?</dt><dd>3 oz Costco rotisserie + pre-made rice + any veg</dd>
+        <dt>No cooked dinner?</dt><dd>4 oz canned tuna/salmon + 1 avo + rice cakes</dd>
+        <dt>No pre-workout snack?</dt><dd>Quest or RX Bar (20g+ P) from camera bag</dd>
+        <dt>No cottage cheese?</dt><dd>1 cup plain Greek yogurt — same slow-release benefit</dd>
+        <dt>Traveling?</dt><dd>Protein shakes + jerky + Greek yogurt from any convenience store</dd>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Momentous Shopping List (one order)</h2>
+      <div class="tip"><strong>Subscribe-and-save 15–20%.</strong> Code HUBERMAN historically gives 20% off first order.</div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>What It Is</th><th>Monthly Cost</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td>Momentous Creatine</td><td>Pure creatine monohydrate (Creapure®), 5g scoop</td><td>~$35/mo</td><td><span class="badge green">BUY NOW</span></td></tr>
+          <tr><td>Momentous Tongkat Ali</td><td>400mg standardized Physta extract</td><td>~$50/mo</td><td><span class="badge green">BUY NOW</span></td></tr>
+          <tr><td>Momentous Omega-3</td><td>High-DHA triglyceride form fish oil</td><td>~$45/mo</td><td><span class="badge orange">Add this week</span></td></tr>
+          <tr><td>Momentous Collagen</td><td>Grass-fed, with added vitamin C</td><td>~$40/mo</td><td><span class="badge orange">Add this week</span></td></tr>
+          <tr><td>Momentous Magnesium L-Threonate</td><td>Magtein — brain-crossing magnesium</td><td>~$40/mo</td><td><span class="badge purple">If Moon Brew lacks Mg</span></td></tr>
+          <tr><td>Momentous Ashwagandha KSM-66</td><td>Standardized 300mg extract</td><td>~$35/mo</td><td><span class="badge purple">If Moon Brew lacks it</span></td></tr>
+          <tr><td>Momentous Vital Aminos</td><td>EAAs + BCAAs for hard training days</td><td>~$50/mo</td><td><span class="badge grey">Optional</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="tip warn" style="margin-top:14px"><strong>Not from Momentous:</strong> D3+K2 (Thorne is gold standard), NAC (Pure Encapsulations or Thorne), LMNT (separate brand).</div>
+    </div>
+    <div class="card">
+      <h2>Liver Health — Why NAC Matters</h2>
+      <p>Your liver is doing heavy lifting during this protocol: processing Tongkat Ali, metabolizing higher protein intake, handling training-induced oxidative stress, and if you go Enclomiphene, processing that too. A 41-year-old in a caloric deficit with ramped training has elevated liver demands.</p>
+      <div class="tip success" style="margin-top:10px"><strong>NAC 600mg with dinner.</strong> Precursor to glutathione — your body's master antioxidant. It's what ERs use for Tylenol overdose. Protects liver cells, boosts glutathione, reduces inflammation, has cognitive benefits, synergizes with ARMRA on gut-liver axis.</div>
+    </div>
+    <div class="card">
+      <h2>Tongkat Ali — What to Know</h2>
+      <p>Tongkat Ali (Eurycoma longifolia) is a well-studied botanical with the best evidence in men who have stress-suppressed or low-normal testosterone — <strong>exactly your profile</strong>. Studies show 10–20% increase in free testosterone in men at your baseline, plus modest improvements in libido, mood, and recovery.</p>
+      <div class="kv" style="margin-top:10px">
+        <dt>Dose</dt><dd>400mg/day standardized 200:1 extract (or Physta)</dd>
+        <dt>Timing</dt><dd>Morning with food — not empty stomach</dd>
+        <dt>Cycle</dt><dd>8 weeks on, 2–4 weeks off (perfectly timed to your Jun 15 checkpoint)</dd>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* NAV + WIRING */
+const RENDERERS = {
+  dashboard: renderDashboard,
+  today: renderToday,
+  workouts: renderWorkouts,
+  nutrition: renderNutrition,
+  supplements: renderSupplements,
+  schedule: renderSchedule,
+  progress: renderProgress,
+  plan: renderPlan,
+  bloodwork: renderBloodwork,
+  shopping: renderShopping,
+  reference: renderReference
+};
+
+let currentSection = "dashboard";
+function renderAll(){
+  const el = document.getElementById("sections");
+  el.innerHTML = Object.keys(RENDERERS).map(k=>RENDERERS[k]()).join("");
+  showSection(currentSection);
+}
+function showSection(name){
+  currentSection = name;
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  const sel = document.getElementById("s-"+name);
+  if(sel)sel.classList.add("active");
+  document.querySelectorAll("#navLinks button").forEach(b=>b.classList.toggle("active",b.dataset.s===name));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function goSection(n){showSection(n);}
+document.getElementById("navLinks").addEventListener("click",e=>{
+  if(e.target.tagName==="BUTTON")showSection(e.target.dataset.s);
+});
+
+/* INTERACTIONS */
+function toggleSupp(id){
+  const d = ensureDay(todayKey());
+  d.supps[id] = !d.supps[id];
+  save();renderAll();
+}
+function toggleWater(i){
+  const d = ensureDay(todayKey());
+  const filled = Math.round((d.water||0)*4);
+  const target = i<filled ? i : i+1;
+  d.water = target/4;
+  save();renderAll();
+}
+function addProtein(g){
+  const d = ensureDay(todayKey());
+  if(g===-999)d.protein=0;
+  else d.protein = Math.max(0,(d.protein||0)+g);
+  save();renderAll();
+}
+function setDayType(t){
+  const d = ensureDay(todayKey());
+  d.dayType = t;save();renderAll();
+}
+function setWorkoutSel(w){
+  const d = ensureDay(todayKey());
+  d.workoutSel = w;save();renderAll();
+}
+function logField(k,v){
+  const d = ensureDay(todayKey());
+  d[k]=v;save();
+}
+function logEx(w,i,k,v){
+  const d = ensureDay(todayKey());
+  if(!d.workout)d.workout={};
+  if(!d.workout[w])d.workout[w]={};
+  if(!d.workout[w][i])d.workout[w][i]={};
+  d.workout[w][i][k]=v;save();
+}
+function logMeas(cp,k,v){
+  if(!state.measurements)state.measurements={};
+  if(!state.measurements[cp])state.measurements[cp]={};
+  state.measurements[cp][k]=v;save();
+}
+function logRetest(i,v){
+  if(!state.retest)state.retest={};
+  state.retest[i]=v;save();
+}
+function toggleShop(k){
+  if(!state.shopping)state.shopping={};
+  state.shopping[k]=!state.shopping[k];save();renderAll();
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `brandon-gameplan-${todayKey()}.json`;
+  a.click();
+}
+function importData(e){
+  const f = e.target.files[0];
+  if(!f)return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{state = JSON.parse(ev.target.result);save();renderAll();alert("Data imported.");}
+    catch(err){alert("Invalid file: "+err.message);}
+  };
+  r.readAsText(f);
+}
+
+/* INIT */
+renderAll();
+</script>
+</body>
+</html>
