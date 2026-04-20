@@ -271,51 +271,223 @@ export default function Home() {
             </div>
 
             <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginTop: 18 }}>
-              <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>THE STACK · DAILY</h3>
-              {SUPPLEMENTS_DAILY.map(s => {
-                const done = today.supps[s.id];
-                return (
-                  <div
-                    key={s.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 14px',
-                      borderRadius: 2,
-                      background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
-                      border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
-                      borderLeft: `3px solid ${done ? '#ff4e1b' : 'transparent'}`,
-                      marginBottom: 6,
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => toggleSupp(s.id)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={done || false}
-                      readOnly
+              <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>THE STACK · BY TIME</h3>
+              
+              {/* Morning (5:00-7:00 AM) */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>
+                  5:00–7:00 AM · MORNING
+                </div>
+                {SUPPLEMENTS_DAILY.filter(s => 
+                  s.when.toLowerCase().includes('morning') || 
+                  s.when.toLowerCase().includes('breakfast') ||
+                  s.when.toLowerCase().includes('empty stomach')
+                ).map(s => {
+                  const done = today.supps[s.id];
+                  return (
+                    <div
+                      key={s.id}
                       style={{
-                        width: 22,
-                        height: 22,
-                        border: '2px solid #3a3778',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 14px',
                         borderRadius: 2,
-                        flexShrink: 0,
-                        cursor: 'pointer',
-                        accentColor: '#ff4e1b'
+                        background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
+                        border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                        borderLeft: `3px solid ${done ? '#ff4e1b' : 'transparent'}`,
+                        marginBottom: 6,
+                        cursor: 'pointer'
                       }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
-                        {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
-                        {s.when}
+                      onClick={() => toggleSupp(s.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={done || false}
+                        readOnly
+                        style={{
+                          width: 22,
+                          height: 22,
+                          border: '2px solid #3a3778',
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          accentColor: '#ff4e1b'
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
+                          {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
+                          {s.when}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {/* Post-Workout (4:30 PM) */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>
+                  POST-WORKOUT
+                </div>
+                {SUPPLEMENTS_DAILY.filter(s => 
+                  s.when.toLowerCase().includes('post-workout') || 
+                  s.when.toLowerCase().includes('sweat')
+                ).map(s => {
+                  const done = today.supps[s.id];
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 14px',
+                        borderRadius: 2,
+                        background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
+                        border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                        borderLeft: `3px solid ${done ? '#ff4e1b' : 'transparent'}`,
+                        marginBottom: 6,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => toggleSupp(s.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={done || false}
+                        readOnly
+                        style={{
+                          width: 22,
+                          height: 22,
+                          border: '2px solid #3a3778',
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          accentColor: '#ff4e1b'
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
+                          {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
+                          {s.when}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Evening (6:30 PM) */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>
+                  6:30 PM · WITH DINNER
+                </div>
+                {SUPPLEMENTS_DAILY.filter(s => 
+                  s.when.toLowerCase().includes('dinner')
+                ).map(s => {
+                  const done = today.supps[s.id];
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 14px',
+                        borderRadius: 2,
+                        background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
+                        border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                        borderLeft: `3px solid ${done ? '#ff4e1b' : 'transparent'}`,
+                        marginBottom: 6,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => toggleSupp(s.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={done || false}
+                        readOnly
+                        style={{
+                          width: 22,
+                          height: 22,
+                          border: '2px solid #3a3778',
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          accentColor: '#ff4e1b'
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
+                          {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
+                          {s.when}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Before Bed (8:45 PM) */}
+              <div>
+                <div style={{ fontSize: 12, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>
+                  8:45 PM · BEFORE BED
+                </div>
+                {SUPPLEMENTS_DAILY.filter(s => 
+                  s.when.toLowerCase().includes('bed') || 
+                  s.when.toLowerCase().includes('before sleep')
+                ).map(s => {
+                  const done = today.supps[s.id];
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 14px',
+                        borderRadius: 2,
+                        background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
+                        border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                        borderLeft: `3px solid ${done ? '#ff4e1b' : 'transparent'}`,
+                        marginBottom: 6,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => toggleSupp(s.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={done || false}
+                        readOnly
+                        style={{
+                          width: 22,
+                          height: 22,
+                          border: '2px solid #3a3778',
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          accentColor: '#ff4e1b'
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
+                          {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
+                          {s.when}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
