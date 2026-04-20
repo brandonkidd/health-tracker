@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import './globals.css';
-import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, daysUntil } from '@/lib/health-data';
 
 const STORE_KEY = "brandon_gameplan_v1";
 
@@ -11,8 +10,11 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Load from localStorage
     const saved = localStorage.getItem(STORE_KEY);
-    if (saved) setState(JSON.parse(saved));
+    if (saved) {
+      setState(JSON.parse(saved));
+    }
     setMounted(true);
   }, []);
 
@@ -25,15 +27,28 @@ export default function Home() {
   const ensureDay = (key: string) => {
     const days = state.days || {};
     if (!days[key]) {
-      days[key] = { supps: {}, water: 0, protein: 0, meals: {}, workout: {}, notes: "", weight: null };
+      days[key] = {
+        supps: {},
+        water: 0,
+        protein: 0,
+        meals: {},
+        workout: {},
+        notes: "",
+        weight: null
+      };
     }
     return days[key];
   };
 
-  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const todayKey = () => {
+    return new Date().toISOString().slice(0, 10);
+  };
 
   const updateState = (updater: (prev: any) => any) => {
-    setState((prev: any) => ({ ...updater(prev) }));
+    setState((prev: any) => {
+      const next = updater(prev);
+      return { ...next };
+    });
   };
 
   const toggleWater = (index: number) => {
@@ -84,10 +99,20 @@ export default function Home() {
   const waterDots = 16;
   const targetWater = 4;
   const targetProtein = 190;
+
+  const SUPPLEMENTS_DAILY = [
+    { id: "armra", name: "ARMRA Colostrum", dose: "Per label", when: "Pre-food / empty stomach", tier: 1 },
+    { id: "ag1", name: "AG1 (Athletic Greens)", dose: "1 scoop + 16oz water", when: "Morning w/ breakfast", tier: 1 },
+    { id: "creatine", name: "Creatine Monohydrate", dose: "5g", when: "Morning — mix into AG1", tier: 1 },
+    { id: "tongkat", name: "Tongkat Ali", dose: "400mg", when: "Morning with food", tier: 1 },
+    { id: "d3k2", name: "Vitamin D3 + K2", dose: "2,000 IU + 100mcg", when: "Breakfast w/ fat", tier: 1 },
+    { id: "omega3", name: "Omega-3 Fish Oil", dose: "2–3g EPA+DHA", when: "With breakfast", tier: 1 },
+    { id: "lmnt", name: "LMNT Electrolytes", dose: "1 packet", when: "Post-workout", tier: 1 },
+    { id: "protein", name: "Protein Shake", dose: "25–35g", when: "Post-workout", tier: 1 },
+  ];
+
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
-
-  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork', 'schedule'];
 
   return (
     <>
@@ -97,7 +122,7 @@ export default function Home() {
             BRANDON<span style={{ color: '#ff4e1b' }}>.FIT</span>
           </div>
           <div style={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
-            {sections.map(s => (
+            {['dashboard', 'today', 'workouts', 'nutrition', 'progress'].map(s => (
               <button
                 key={s}
                 onClick={() => setCurrentSection(s)}
@@ -133,20 +158,6 @@ export default function Home() {
               </h1>
               <div style={{ color: '#ede9e0', opacity: 0.85, marginTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
                 HEALTH · FITNESS · FUEL · HORMONES — APR 2026 TO BIRTHDAY SEPT 2026
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginTop: 28 }}>
-                <div style={{ background: 'rgba(26,24,64,.55)', backdropFilter: 'blur(6px)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>TODAY</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0', marginTop: 8 }}>{todayKey()}</div>
-                </div>
-                <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #ff4e1b', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ff4e1b' }}>{daysUntil(DATES.phase1End) >= 0 ? daysUntil(DATES.phase1End) : '✓'}</div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Days to Checkpoint</div>
-                </div>
-                <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0' }}>{daysUntil(DATES.birthday) >= 0 ? daysUntil(DATES.birthday) : '✓'}</div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Days to Birthday</div>
-                </div>
               </div>
             </div>
 
@@ -322,82 +333,43 @@ export default function Home() {
 
         {currentSection === 'workouts' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>WORKOUTS</h1>
+            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>TRAIN.</h1>
             <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-              PHASE 1 · 3× / WEEK · TRX + KETTLEBELLS + DUMBBELLS
+              3× / WEEK · TRX · KETTLEBELLS · DUMBBELLS · PROGRESSIVE OVERLOAD
             </div>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-              {['A', 'B', 'C'].map(w => (
-                <button
-                  key={w}
-                  style={{
-                    background: '#262358',
-                    border: '1px solid #3a3778',
-                    color: '#ede9e0',
-                    padding: '10px 20px',
-                    borderRadius: 2,
-                    fontSize: 12,
-                    fontWeight: 900,
-                    textTransform: 'uppercase',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Workout {w}
-                </button>
-              ))}
+            <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+              <p style={{ fontSize: 16, lineHeight: 1.6, color: '#ede9e0' }}>
+                Workout tracking coming soon. For now, log your sets, reps, and weight in your notes app or the original HTML version.
+              </p>
             </div>
-
-            {Object.entries(WORKOUTS).map(([key, workout]) => (
-              <div key={key} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginBottom: 18 }}>
-                <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 8 }}>{workout.name}</h2>
-                <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-                  {workout.day} · {workout.duration} · {workout.equipment}
-                </div>
-
-                {workout.exercises.map((ex, i) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1fr', gap: 10, padding: 14, background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
-                    <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14, color: '#ede9e0' }}>
-                      {ex.name}
-                      <div style={{ fontSize: 11, color: '#a09ccc', fontWeight: 400, marginTop: 2 }}>{ex.note}</div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Sets</label>
-                      <input type="text" placeholder={ex.sets.toString()} style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Weight</label>
-                      <input type="text" placeholder="lbs" style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Reps</label>
-                      <input type="text" placeholder={ex.reps} style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
           </div>
         )}
 
         {currentSection === 'nutrition' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>NUTRITION</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Meal tracking coming soon. Use "Today" tab to track protein.</p>
+            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>FUEL.</h1>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              2,100 CAL · 190G P · 190G C · 65G F · 3–4L WATER
+            </div>
+            <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+              <p style={{ fontSize: 16, lineHeight: 1.6, color: '#ede9e0' }}>
+                Full meal plans and nutrition guidance available in the original HTML version. Use the protein tracker above to hit your daily 190g target.
+              </p>
+            </div>
           </div>
         )}
 
-        {currentSection === 'bloodwork' && (
+        {currentSection === 'progress' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>BLOODWORK</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Lab tracking coming soon.</p>
-          </div>
-        )}
-
-        {currentSection === 'schedule' && (
-          <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>SCHEDULE</h1>
-            <p style={{ fontSize: 16, color: '#ede9e0' }}>Daily protocols coming soon.</p>
+            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>PROGRESS.</h1>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              THE SCOREBOARD · TRACK EVERY METRIC
+            </div>
+            <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+              <p style={{ fontSize: 16, lineHeight: 1.6, color: '#ede9e0' }}>
+                Progress tracking and body composition analysis coming soon. For now, use the original HTML version for detailed checkpoint tracking.
+              </p>
+            </div>
           </div>
         )}
       </main>
