@@ -73,6 +73,18 @@ export default function Home() {
     });
   };
 
+  const toggleMeal = (mealName: string) => {
+    const key = todayKey();
+    updateState((prev: any) => {
+      const days = { ...prev.days };
+      const d = ensureDay(key);
+      if (!d.meals) d.meals = {};
+      d.meals[mealName] = !d.meals[mealName];
+      days[key] = d;
+      return { ...prev, days };
+    });
+  };
+
   if (!mounted) {
     return (
       <div style={{ background: '#13112e', minHeight: '100vh', color: '#ede9e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -630,27 +642,59 @@ export default function Home() {
               DAILY TARGETS: {TARGETS.cals} CAL · {TARGETS.protein}G PROTEIN · {TARGETS.carbs}G CARBS · {TARGETS.fat}G FAT
             </div>
 
-            {MEALS_PLAN.map((meal, i) => (
-              <div key={i} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginBottom: 18 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <h3 style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 4 }}>{meal.name}</h3>
-                    <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>{meal.time}</div>
-                  </div>
-                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, padding: '8px 14px' }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#ff4e1b', fontStyle: 'italic' }}>{meal.cals} CAL</div>
-                    <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 2 }}>
-                      {meal.p}g P · {meal.c}g C · {meal.f}g F
+            {MEALS_PLAN.map((meal, i) => {
+              const mealDone = today.meals?.[meal.name] || false;
+              return (
+                <div 
+                  key={i} 
+                  style={{ 
+                    background: mealDone ? 'rgba(255,78,27,.08)' : '#1e1c47', 
+                    border: `1px solid ${mealDone ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                    borderLeft: `3px solid ${mealDone ? '#ff4e1b' : 'transparent'}`,
+                    borderRadius: 4, 
+                    padding: 26, 
+                    marginBottom: 18,
+                    cursor: 'pointer',
+                    transition: 'all .15s'
+                  }}
+                  onClick={() => toggleMeal(meal.name)}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={mealDone}
+                        readOnly
+                        style={{
+                          width: 22,
+                          height: 22,
+                          border: '2px solid #3a3778',
+                          borderRadius: 2,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          accentColor: '#ff4e1b'
+                        }}
+                      />
+                      <div>
+                        <h3 style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 4, color: mealDone ? '#6864a0' : '#ede9e0', textDecoration: mealDone ? 'line-through' : 'none' }}>{meal.name}</h3>
+                        <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>{meal.time}</div>
+                      </div>
+                    </div>
+                    <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, padding: '8px 14px' }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: '#ff4e1b', fontStyle: 'italic' }}>{meal.cals} CAL</div>
+                      <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 2 }}>
+                        {meal.p}g P · {meal.c}g C · {meal.f}g F
+                      </div>
                     </div>
                   </div>
+                  <ul style={{ marginTop: 12, paddingLeft: 20 }}>
+                    {meal.items.map((item, j) => (
+                      <li key={j} style={{ fontSize: 14, color: mealDone ? '#6864a0' : '#ede9e0', marginBottom: 6, lineHeight: 1.5, textDecoration: mealDone ? 'line-through' : 'none' }}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul style={{ marginTop: 12, paddingLeft: 20 }}>
-                  {meal.items.map((item, j) => (
-                    <li key={j} style={{ fontSize: 14, color: '#ede9e0', marginBottom: 6, lineHeight: 1.5 }}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              );
+            })}
 
             <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginTop: 24 }}>
               <h3 style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>NON-NEGOTIABLES</h3>
