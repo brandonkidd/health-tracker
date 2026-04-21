@@ -101,6 +101,35 @@ export default function Home() {
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
 
+  // Calculate streak (consecutive days hitting goals)
+  const calculateStreak = () => {
+    if (!state.days) return 0;
+    let streak = 0;
+    const currentDate = new Date();
+    
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(currentDate);
+      checkDate.setDate(checkDate.getDate() - i);
+      const key = checkDate.toISOString().slice(0, 10);
+      const day = state.days[key];
+      
+      if (!day) break;
+      
+      const waterGoal = (day.water || 0) >= 3; // At least 3L
+      const proteinGoal = (day.protein || 0) >= 170; // At least 170g (90% of target)
+      const suppGoal = Object.values(day.supps || {}).filter(Boolean).length >= 6; // At least 6 supps
+      
+      if (waterGoal && proteinGoal && suppGoal) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  };
+
+  const streak = calculateStreak();
+
   const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork', 'schedule'];
 
   return (
@@ -152,6 +181,13 @@ export default function Home() {
                 <div style={{ background: 'rgba(26,24,64,.55)', backdropFilter: 'blur(6px)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>TODAY</div>
                   <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0', marginTop: 8 }}>{todayKey()}</div>
+                </div>
+                <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(95,200,120,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #5fc878', borderRadius: 4, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#5fc878' }}>
+                    {streak}
+                    <span style={{ fontSize: 16, marginLeft: 4 }}>🔥</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Day Streak</div>
                 </div>
                 <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #ff4e1b', borderRadius: 4, padding: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ff4e1b' }}>{daysUntil(DATES.phase1End) >= 0 ? daysUntil(DATES.phase1End) : '✓'}</div>
