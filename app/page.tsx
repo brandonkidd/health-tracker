@@ -130,7 +130,7 @@ export default function Home() {
 
   const streak = calculateStreak();
 
-  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork', 'schedule'];
+  const sections = ['dashboard', 'today', 'workouts', 'bloodwork'];
 
   return (
     <>
