@@ -100,7 +100,7 @@ export default function Home() {
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
 
-  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork', 'schedule'];
+  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork'];
 
   return (
     <>
@@ -242,7 +242,9 @@ export default function Home() {
                   {[
                     { label: '+20 EGGS', val: 20 },
                     { label: '+25 SHAKE', val: 25 },
+                    { label: '+25 COTTAGE', val: 25 },
                     { label: '+42 CHICKEN', val: 42 },
+                    { label: '+45 STEAK', val: 45 },
                     { label: '+34 SALMON', val: 34 },
                     { label: '+17 YOGURT', val: 17 },
                     { label: '–10', val: -10 },
@@ -502,6 +504,36 @@ export default function Home() {
                 })}
               </div>
             </div>
+
+            {/* Today's Schedule */}
+            <div style={{ marginTop: 32 }}>
+              <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>
+                TODAY'S PROTOCOL
+              </h2>
+              {(() => {
+                const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, 2=Tue...
+                const isLiftDay = [1, 3, 5].includes(dayOfWeek); // Mon, Wed, Fri
+                const schedule = isLiftDay ? LIFTING_DAY : PELOTON_DAY;
+                const dayType = isLiftDay ? 'LIFTING DAY' : 'PELOTON DAY';
+                
+                return (
+                  <>
+                    <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
+                      {dayType} · HOUR-BY-HOUR PROTOCOL
+                    </div>
+                    {schedule.map((item, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
+                        <div>
+                          <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
+                          <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+            </div>
           </div>
         )}
 
@@ -739,47 +771,7 @@ export default function Home() {
           </div>
         )}
 
-        {currentSection === 'schedule' && (
-          <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>SCHEDULE</h1>
-            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-              HOUR-BY-HOUR PROTOCOLS · PELOTON DAYS vs LIFTING DAYS
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
-              <button style={{ background: '#262358', border: '1px solid #3a3778', color: '#ede9e0', padding: '12px 16px', borderRadius: 2, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer' }}>
-                PELOTON DAY
-              </button>
-              <button style={{ background: '#1e1c47', border: '1px solid #2e2b5e', color: '#a09ccc', padding: '12px 16px', borderRadius: 2, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer' }}>
-                LIFTING DAY
-              </button>
-            </div>
-
-            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>Peloton Day Protocol</h2>
-            <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>Tues, Thurs, Sat, Sun — Cardio + Recovery Focus</div>
-            {PELOTON_DAY.map((item, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
-                <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
-                  <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
-                </div>
-              </div>
-            ))}
-
-            <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginTop: 32, marginBottom: 14 }}>Lifting Day Protocol</h2>
-            <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>Mon, Wed, Fri — Strength Training Focus</div>
-            {LIFTING_DAY.map((item, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
-                <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
-                  <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </main>
     </>
   );
