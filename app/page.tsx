@@ -323,30 +323,34 @@ export default function Home() {
                     const taskKey = `task-${todayKey()}-${i}`;
                     const taskDone = state.tasks?.[taskKey] || false;
                     
-                    // Check if this is a supplement time
-                    const timeHour = parseInt(item.t.split(':')[0]);
+                    // Only show supplements for specific supp-related items
                     let suppGroup: any[] = [];
                     
-                    if (timeHour >= 5 && timeHour < 8) {
-                      suppGroup = SUPPLEMENTS_DAILY.filter(s => 
-                        s.when.toLowerCase().includes('morning') || 
-                        s.when.toLowerCase().includes('breakfast') ||
-                        s.when.toLowerCase().includes('empty stomach')
-                      );
-                    } else if (item.type === 'supp' && item.what.toLowerCase().includes('post-workout')) {
-                      suppGroup = SUPPLEMENTS_DAILY.filter(s => 
-                        s.when.toLowerCase().includes('post-workout') || 
-                        s.when.toLowerCase().includes('sweat')
-                      );
-                    } else if (timeHour >= 18 && timeHour < 20) {
-                      suppGroup = SUPPLEMENTS_DAILY.filter(s => 
-                        s.when.toLowerCase().includes('dinner')
-                      );
-                    } else if (timeHour >= 20 || timeHour < 5) {
-                      suppGroup = SUPPLEMENTS_DAILY.filter(s => 
-                        s.when.toLowerCase().includes('bed') || 
-                        s.when.toLowerCase().includes('before sleep')
-                      );
+                    // Only show supplements if this item mentions supplements
+                    if (item.type === 'supp' || item.what.toLowerCase().includes('supplement')) {
+                      const timeHour = parseInt(item.t.split(':')[0]);
+                      
+                      if (timeHour >= 5 && timeHour < 8) {
+                        suppGroup = SUPPLEMENTS_DAILY.filter(s => 
+                          s.when.toLowerCase().includes('morning') || 
+                          s.when.toLowerCase().includes('breakfast') ||
+                          s.when.toLowerCase().includes('empty stomach')
+                        );
+                      } else if (item.what.toLowerCase().includes('post-workout')) {
+                        suppGroup = SUPPLEMENTS_DAILY.filter(s => 
+                          s.when.toLowerCase().includes('post-workout') || 
+                          s.when.toLowerCase().includes('sweat')
+                        );
+                      } else if (timeHour >= 18 && timeHour < 20) {
+                        suppGroup = SUPPLEMENTS_DAILY.filter(s => 
+                          s.when.toLowerCase().includes('dinner')
+                        );
+                      } else if (timeHour >= 20 || timeHour < 5) {
+                        suppGroup = SUPPLEMENTS_DAILY.filter(s => 
+                          s.when.toLowerCase().includes('bed') || 
+                          s.when.toLowerCase().includes('before sleep')
+                        );
+                      }
                     }
 
                     return (
