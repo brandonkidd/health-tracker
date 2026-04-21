@@ -238,7 +238,12 @@ export default function Home() {
               const dayOfWeek = new Date().getDay();
               const isLiftDay = [1, 3, 5].includes(dayOfWeek);
               const dayType = isLiftDay ? 'LIFTING DAY' : 'PELOTON DAY';
-              const schedule = isLiftDay ? LIFTING_DAY : PELOTON_DAY;
+              const rawSchedule = isLiftDay ? LIFTING_DAY : PELOTON_DAY;
+              // Filter out individual supplement cards (keep only comprehensive "SUPPLEMENTS" cards)
+              const schedule = rawSchedule.filter(item => {
+                const isIndividualSupp = item.type === 'supp' && !item.what.toLowerCase().includes('supplements');
+                return !isIndividualSupp;
+              });
 
               return (
                 <>
