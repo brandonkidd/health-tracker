@@ -8,6 +8,7 @@ const STORE_KEY = "brandon_gameplan_v1";
 export default function Home() {
   const [state, setState] = useState<any>({});
   const [currentSection, setCurrentSection] = useState('dashboard');
+  const [currentWorkout, setCurrentWorkout] = useState<'A' | 'B' | 'C'>('A');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -500,19 +501,31 @@ export default function Home() {
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-              {['A', 'B', 'C'].map(w => (
+              {(['A', 'B', 'C'] as const).map(w => (
                 <button
                   key={w}
+                  onClick={() => setCurrentWorkout(w)}
                   style={{
-                    background: '#262358',
-                    border: '1px solid #3a3778',
+                    background: currentWorkout === w ? '#ff4e1b' : '#262358',
+                    border: `1px solid ${currentWorkout === w ? '#ff4e1b' : '#3a3778'}`,
                     color: '#ede9e0',
                     padding: '10px 20px',
                     borderRadius: 2,
                     fontSize: 12,
                     fontWeight: 900,
                     textTransform: 'uppercase',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all .15s'
+                  }}
+                  onMouseOver={(e) => {
+                    if (currentWorkout !== w) {
+                      e.currentTarget.style.borderColor = '#ff4e1b';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (currentWorkout !== w) {
+                      e.currentTarget.style.borderColor = '#3a3778';
+                    }
                   }}
                 >
                   Workout {w}
@@ -520,35 +533,93 @@ export default function Home() {
               ))}
             </div>
 
-            {Object.entries(WORKOUTS).map(([key, workout]) => (
-              <div key={key} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginBottom: 18 }}>
-                <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 8 }}>{workout.name}</h2>
-                <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-                  {workout.day} · {workout.duration} · {workout.equipment}
-                </div>
+            {(() => {
+              const workout = WORKOUTS[currentWorkout];
+              const workoutKey = `workout-${currentWorkout}-${todayKey()}`;
+              const savedWorkout = state.workouts?.[workoutKey] || {};
 
-                {workout.exercises.map((ex, i) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1fr', gap: 10, padding: 14, background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
-                    <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14, color: '#ede9e0' }}>
-                      {ex.name}
-                      <div style={{ fontSize: 11, color: '#a09ccc', fontWeight: 400, marginTop: 2 }}>{ex.note}</div>
+              return (
+                <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+                  <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 8 }}>{workout.name}</h2>
+                  <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    {workout.day} · {workout.duration} · {workout.equipment}
+                  </div>
+
+                  {workout.exercises.map((ex, i) => {
+                    const exData = savedWorkout[ex.name] || { sets: '', weight: '', reps: '' };
+                    
+                    return (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1fr', gap: 10, padding: 14, background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                        <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14, color: '#ede9e0' }}>
+                          {ex.name}
+                          <div style={{ fontSize: 11, color: '#a09ccc', fontWeight: 400, marginTop: 2 }}>{ex.note}</div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Sets</label>
+                          <input 
+                            type="text" 
+                            value={exData.sets}
+                            onChange={(e) => {
+                              updateState((prev: any) => {
+                                const workouts = { ...prev.workouts };
+                                if (!workouts[workoutKey]) workouts[workoutKey] = {};
+                                workouts[workoutKey][ex.name] = { ...exData, sets: e.target.value };
+                                return { ...prev, workouts };
+                              });
+                            }}
+                            placeholder={ex.sets.toString()} 
+                            style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Weight</label>
+                          <input 
+                            type="text" 
+                            value={exData.weight}
+                            onChange={(e) => {
+                              updateState((prev: any) => {
+                                const workouts = { ...prev.workouts };
+                                if (!workouts[workoutKey]) workouts[workoutKey] = {};
+                                workouts[workoutKey][ex.name] = { ...exData, weight: e.target.value };
+                                return { ...prev, workouts };
+                              });
+                            }}
+                            placeholder="lbs" 
+                            style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Reps</label>
+                          <input 
+                            type="text" 
+                            value={exData.reps}
+                            onChange={(e) => {
+                              updateState((prev: any) => {
+                                const workouts = { ...prev.workouts };
+                                if (!workouts[workoutKey]) workouts[workoutKey] = {};
+                                workouts[workoutKey][ex.name] = { ...exData, reps: e.target.value };
+                                return { ...prev, workouts };
+                              });
+                            }}
+                            placeholder={ex.reps} 
+                            style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} 
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div style={{ marginTop: 20, padding: 14, background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2 }}>
+                    <div style={{ fontSize: 13, color: '#5fc878', fontWeight: 700, marginBottom: 6 }}>
+                      ✓ Workout data auto-saves
                     </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Sets</label>
-                      <input type="text" placeholder={ex.sets.toString()} style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Weight</label>
-                      <input type="text" placeholder="lbs" style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', display: 'block', marginBottom: 2 }}>Reps</label>
-                      <input type="text" placeholder={ex.reps} style={{ padding: '7px 9px', fontSize: 13, background: '#13112e', border: '1px solid #2e2b5e', color: '#ede9e0', borderRadius: 2, width: '100%' }} />
+                    <div style={{ fontSize: 12, color: '#a09ccc' }}>
+                      Your progress is tracked automatically. View charts and improvements coming soon!
                     </div>
                   </div>
-                ))}
-              </div>
-            ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
