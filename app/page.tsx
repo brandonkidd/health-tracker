@@ -323,11 +323,11 @@ export default function Home() {
                     const taskKey = `task-${todayKey()}-${i}`;
                     const taskDone = state.tasks?.[taskKey] || false;
                     
-                    // Only show supplements for specific supp-related items
+                    // Only show supplements for cards with "SUPPLEMENTS" (plural) in title
                     let suppGroup: any[] = [];
                     
-                    // Only show supplements if this item mentions supplements
-                    if (item.type === 'supp' || item.what.toLowerCase().includes('supplement')) {
+                    // Only show supplement list if card title mentions "SUPPLEMENTS" (comprehensive cards only)
+                    if (item.what.toLowerCase().includes('supplements')) {
                       const timeHour = parseInt(item.t.split(':')[0]);
                       
                       if (timeHour >= 5 && timeHour < 8) {
