@@ -340,6 +340,23 @@ export default function Home() {
                     const taskKey = `task-${todayKey()}-${i}`;
                     const taskDone = state.tasks?.[taskKey] || false;
                     
+                    // Determine if we need a time block header
+                    const timeHour = parseInt(item.t.split(':')[0]);
+                    const prevTimeHour = i > 0 ? parseInt(schedule[i-1].t.split(':')[0]) : -1;
+                    let showHeader = '';
+                    
+                    if (i === 0 || (timeHour >= 5 && prevTimeHour < 5)) {
+                      showHeader = '🌅 MORNING ROUTINE (5:00-7:30 AM)';
+                    } else if (timeHour >= 8 && prevTimeHour < 8) {
+                      showHeader = '💼 WORK (8:00 AM-3:30 PM)';
+                    } else if (timeHour >= 15 && prevTimeHour < 15) {
+                      showHeader = '🏋️ TRAINING (3:00-5:30 PM)';
+                    } else if (timeHour >= 17 && prevTimeHour < 17) {
+                      showHeader = '🍽️ EVENING (5:30-8:00 PM)';
+                    } else if (timeHour >= 20 && prevTimeHour < 20) {
+                      showHeader = '🌙 WIND DOWN (8:00-9:30 PM)';
+                    }
+                    
                     // Only show supplements for cards with "SUPPLEMENTS" (plural) in title
                     let suppGroup: any[] = [];
                     
@@ -371,8 +388,14 @@ export default function Home() {
                     }
 
                     return (
-                      <div
-                        key={i}
+                      <>
+                        {showHeader && (
+                          <div style={{ fontSize: 15, fontWeight: 900, textTransform: 'uppercase', color: '#ff4e1b', marginTop: i === 0 ? 0 : 28, marginBottom: 14, letterSpacing: '1.5px', paddingLeft: 4 }}>
+                            {showHeader}
+                          </div>
+                        )}
+                        <div
+                          key={i}
                         onClick={() => {
                           updateState((prev: any) => {
                             const tasks = { ...prev.tasks };
@@ -468,6 +491,7 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
+                      </>
                     );
                   })}
                 </>
