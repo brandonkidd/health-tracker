@@ -132,17 +132,47 @@ export const LABS_2023 = [
 ];
 
 export const RETEST_PANEL = [
-  { test: "Total Testosterone", target: "600–900 ng/dL", why: "Your baseline was 468. Optimal body comp + energy" },
-  { test: "Free Testosterone", target: ">100 pg/mL", why: "Drives recovery, muscle, drive" },
-  { test: "Bioavailable T", target: ">300 ng/dL", why: "True production reflection" },
-  { test: "SHBG", target: "10–40 nmol/L", why: "Was good at 29 — track" },
-  { test: "Estradiol (sensitive)", target: "20–30 pg/mL", why: "As T rises, E2 may follow" },
-  { test: "LH + FSH", target: "Normal range", why: "Brain-testes signaling check" },
-  { test: "Thyroid (TSH, T3, T4)", target: "TSH 0.5–2.5", why: "Fatigue + weight differential" },
-  { test: "Vitamin D", target: ">50 ng/mL", why: "Critical for T, mood, muscle" },
-  { test: "Ferritin + CBC", target: "Ferritin >50", why: "Iron stores affect energy" },
-  { test: "Fasting Insulin + HbA1c", target: "Normal", why: "Blood sugar / body comp" },
-  { test: "hs-CRP", target: "<1.0 mg/L", why: "Chronic inflammation check" }
+  // HORMONES
+  { test: "Total Testosterone", target: "600–900 ng/dL", why: "Your baseline was 468. Optimal body comp + energy", category: "Hormones" },
+  { test: "Free Testosterone", target: ">100 pg/mL", why: "Drives recovery, muscle, drive", category: "Hormones" },
+  { test: "Bioavailable Testosterone", target: ">300 ng/dL", why: "True production reflection", category: "Hormones" },
+  { test: "SHBG", target: "10–40 nmol/L", why: "Was good at 29 — track", category: "Hormones" },
+  { test: "Estradiol (sensitive assay)", target: "20–30 pg/mL", why: "As T rises, E2 may follow", category: "Hormones" },
+  { test: "LH (Luteinizing Hormone)", target: "Normal range", why: "Brain-testes signaling", category: "Hormones" },
+  { test: "FSH (Follicle Stimulating Hormone)", target: "Normal range", why: "Sperm production signal", category: "Hormones" },
+  { test: "DHEA-S", target: "Normal range", why: "Adrenal function, vitality", category: "Hormones" },
+  
+  // THYROID
+  { test: "TSH", target: "0.5–2.5 µIU/mL", why: "Fatigue + weight differential", category: "Thyroid" },
+  { test: "Free T3", target: "Normal range", why: "Active thyroid hormone", category: "Thyroid" },
+  { test: "Free T4", target: "Normal range", why: "Thyroid hormone production", category: "Thyroid" },
+  
+  // METABOLIC
+  { test: "Fasting Insulin", target: "<5 µIU/mL", why: "Insulin sensitivity marker", category: "Metabolic" },
+  { test: "HbA1c", target: "<5.7%", why: "3-month glucose average", category: "Metabolic" },
+  { test: "Fasting Glucose", target: "70–90 mg/dL", why: "Blood sugar control", category: "Metabolic" },
+  { test: "Comprehensive Metabolic Panel (CMP)", target: "Normal range", why: "Kidney, liver, electrolytes", category: "Metabolic" },
+  { test: "Lipid Panel (Total, LDL, HDL, Trig)", target: "Optimal ranges", why: "Cardiovascular health", category: "Metabolic" },
+  
+  // MICRONUTRIENTS
+  { test: "Vitamin D (25-hydroxy)", target: ">50 ng/mL", why: "Critical for T, mood, muscle", category: "Micronutrients" },
+  { test: "Ferritin", target: ">50 ng/mL", why: "Iron stores affect energy", category: "Micronutrients" },
+  { test: "Magnesium, RBC (not serum)", target: "Normal range", why: "Muscle, recovery, sleep", category: "Micronutrients" },
+  { test: "Zinc", target: "Normal range", why: "Testosterone production", category: "Micronutrients" },
+  
+  // CARDIOVASCULAR / INFLAMMATION
+  { test: "ApoB (Apolipoprotein B)", target: "<90 mg/dL", why: "True cardiovascular risk", category: "Cardiovascular" },
+  { test: "Lp(a) (test once, genetic)", target: "<30 mg/dL", why: "Genetic CVD risk", category: "Cardiovascular" },
+  { test: "hs-CRP", target: "<1.0 mg/L", why: "Chronic inflammation check", category: "Cardiovascular" },
+  { test: "Homocysteine", target: "<10 µmol/L", why: "Vascular inflammation", category: "Cardiovascular" },
+  
+  // PROSTATE (baseline before any Rx)
+  { test: "PSA (Prostate-Specific Antigen)", target: "<4.0 ng/mL", why: "Baseline before T optimization", category: "Prostate" },
+  { test: "Free PSA (if total PSA borderline)", target: ">25%", why: "Cancer risk assessment", category: "Prostate" },
+  
+  // BLOOD HEALTH / LIVER
+  { test: "CBC (Complete Blood Count)", target: "Normal range", why: "RBC, WBC, platelets", category: "Blood Health" },
+  { test: "GGT (Gamma-Glutamyl Transferase)", target: "<30 U/L", why: "Liver function, oxidative stress", category: "Blood Health" }
 ];
 
 export const PELOTON_DAY = [
