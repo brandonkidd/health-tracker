@@ -279,11 +279,13 @@ export default function Home() {
                       </h3>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                         {[
-                          { label: '+20', val: 20 },
-                          { label: '+25', val: 25 },
-                          { label: '+42', val: 42 },
-                          { label: '+45', val: 45 },
-                          { label: '+34', val: 34 }
+                          { label: '+20 EGGS', val: 20 },
+                          { label: '+25 SHAKE', val: 25 },
+                          { label: '+25 COTTAGE', val: 25 },
+                          { label: '+42 CHICKEN', val: 42 },
+                          { label: '+45 STEAK', val: 45 },
+                          { label: '+34 SALMON', val: 34 },
+                          { label: '+17 YOGURT', val: 17 }
                         ].map(btn => (
                           <button
                             key={btn.label}
@@ -305,10 +307,10 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Supps */}
+                    {/* Supplements */}
                     <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                       <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 900, textTransform: 'uppercase' }}>
-                        SUPPS · {suppsDone} / {suppsTotal}
+                        SUPPLEMENTS · {suppsDone} / {suppsTotal}
                       </h3>
                       <div style={{ fontSize: 12, color: '#a09ccc', marginTop: 4 }}>
                         Check off as you take them below
