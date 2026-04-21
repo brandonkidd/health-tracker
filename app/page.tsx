@@ -43,9 +43,9 @@ export default function Home() {
     updateState((prev: any) => {
       const days = { ...prev.days };
       const d = ensureDay(key);
-      const filled = Math.round((d.water || 0) * 4);
+      const filled = d.water || 0; // water is stored as number of drops (each 8oz)
       const target = index < filled ? index : index + 1;
-      d.water = target / 4;
+      d.water = target;
       days[key] = d;
       return { ...prev, days };
     });
@@ -95,8 +95,8 @@ export default function Home() {
   }
 
   const today = ensureDay(todayKey());
-  const waterDots = 16;
-  const targetWater = 4;
+  const waterDots = 12; // 12 drops × 8oz = 96oz
+  const targetWater = 96; // 96 oz total
   const targetProtein = 190;
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
@@ -207,7 +207,7 @@ export default function Home() {
                   <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
                     <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, fontWeight: 800 }}>Water</div>
                     <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                      {(today.water || 0).toFixed(1)}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {targetWater}L</span>
+                      {Math.round((today.water || 0) * 8)}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {targetWater} OZ</span>
                     </div>
                   </div>
                   <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
@@ -251,7 +251,7 @@ export default function Home() {
                     {/* Water */}
                     <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                       <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 900, textTransform: 'uppercase' }}>
-                        WATER · {(today.water || 0).toFixed(1)} / 4L
+                        WATER · {Math.round((today.water || 0) * 8)} / 96 OZ
                       </h3>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                         {Array.from({ length: 16 }, (_, idx) => (
@@ -263,7 +263,7 @@ export default function Home() {
                               height: 36,
                               borderRadius: '0 0 50% 50% / 0 0 40% 40%',
                               border: '2px solid #3a3778',
-                              background: idx < (today.water || 0) * 4 ? '#ede9e0' : 'transparent',
+                              background: idx < (today.water || 0) ? '#ede9e0' : 'transparent',
                               cursor: 'pointer',
                               transition: 'all .15s'
                             }}
