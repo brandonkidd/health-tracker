@@ -9,6 +9,7 @@ export default function Home() {
   const [state, setState] = useState<any>({});
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [currentWorkout, setCurrentWorkout] = useState<'A' | 'B' | 'C'>('A');
+  const [currentSchedule, setCurrentSchedule] = useState<'peloton' | 'lifting'>('peloton');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function Home() {
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
 
-  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork'];
+  const sections = ['dashboard', 'today', 'workouts', 'nutrition', 'bloodwork', 'schedule'];
 
   return (
     <>
@@ -505,35 +506,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Today's Schedule */}
-            <div style={{ marginTop: 32 }}>
-              <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>
-                TODAY'S PROTOCOL
-              </h2>
-              {(() => {
-                const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, 2=Tue...
-                const isLiftDay = [1, 3, 5].includes(dayOfWeek); // Mon, Wed, Fri
-                const schedule = isLiftDay ? LIFTING_DAY : PELOTON_DAY;
-                const dayType = isLiftDay ? 'LIFTING DAY' : 'PELOTON DAY';
-                
-                return (
-                  <>
-                    <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                      {dayType} · HOUR-BY-HOUR PROTOCOL
-                    </div>
-                    {schedule.map((item, i) => (
-                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
-                        <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
-                        <div>
-                          <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
-                          <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                );
-              })()}
-            </div>
+
           </div>
         )}
 
@@ -771,7 +744,70 @@ export default function Home() {
           </div>
         )}
 
+        {currentSection === 'schedule' && (
+          <div>
+            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>SCHEDULE</h1>
+            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              HOUR-BY-HOUR PROTOCOLS · PELOTON DAYS vs LIFTING DAYS
+            </div>
 
+            <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+              {(['peloton', 'lifting'] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => setCurrentSchedule(s)}
+                  style={{
+                    background: currentSchedule === s ? '#ff4e1b' : '#262358',
+                    border: `1px solid ${currentSchedule === s ? '#ff4e1b' : '#3a3778'}`,
+                    color: '#ede9e0',
+                    padding: '10px 20px',
+                    borderRadius: 2,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    transition: 'all .15s'
+                  }}
+                  onMouseOver={(e) => {
+                    if (currentSchedule !== s) {
+                      e.currentTarget.style.borderColor = '#ff4e1b';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (currentSchedule !== s) {
+                      e.currentTarget.style.borderColor = '#3a3778';
+                    }
+                  }}
+                >
+                  {s === 'peloton' ? 'PELOTON DAY' : 'LIFTING DAY'}
+                </button>
+              ))}
+            </div>
+
+            {(() => {
+              const schedule = currentSchedule === 'peloton' ? PELOTON_DAY : LIFTING_DAY;
+              const scheduleTitle = currentSchedule === 'peloton' ? 'Peloton Day Protocol' : 'Lifting Day Protocol';
+              const scheduleDesc = currentSchedule === 'peloton' ? 'Tues, Thurs, Sat, Sun — Cardio + Recovery Focus' : 'Mon, Wed, Fri — Strength Training Focus';
+
+              return (
+                <div>
+                  <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 8 }}>{scheduleTitle}</h2>
+                  <div style={{ color: '#a09ccc', fontSize: 13, marginBottom: 16 }}>{scheduleDesc}</div>
+                  
+                  {schedule.map((item, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px auto', gap: 16, padding: 14, background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
+                      <div>
+                        <div style={{ fontWeight: 900, fontSize: 14, color: '#ede9e0', marginBottom: 4 }}>{item.what}</div>
+                        <div style={{ fontSize: 13, color: '#a09ccc' }}>{item.d}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </main>
     </>
   );
