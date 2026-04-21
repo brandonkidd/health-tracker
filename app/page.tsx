@@ -641,11 +641,59 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <ul style={{ marginTop: 12, paddingLeft: 20 }}>
-                    {meal.items.map((item, j) => (
-                      <li key={j} style={{ fontSize: 14, color: mealDone ? '#6864a0' : '#ede9e0', marginBottom: 6, lineHeight: 1.5, textDecoration: mealDone ? 'line-through' : 'none' }}>{item}</li>
-                    ))}
-                  </ul>
+                  <div style={{ marginTop: 12, paddingLeft: 0 }}>
+                    {meal.items.map((item, j) => {
+                      const itemKey = `${meal.name}-item-${j}`;
+                      const itemDone = today.meals?.[itemKey] || false;
+                      
+                      return (
+                        <div
+                          key={j}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateState((prev: any) => {
+                              const days = { ...prev.days };
+                              const d = ensureDay(todayKey());
+                              if (!d.meals) d.meals = {};
+                              d.meals[itemKey] = !d.meals[itemKey];
+                              days[todayKey()] = d;
+                              return { ...prev, days };
+                            });
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '6px 10px',
+                            borderRadius: 2,
+                            background: itemDone ? 'rgba(255,78,27,.08)' : 'transparent',
+                            border: `1px solid ${itemDone ? 'rgba(255,78,27,.35)' : 'transparent'}`,
+                            marginBottom: 6,
+                            cursor: 'pointer',
+                            transition: 'all .15s'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={itemDone}
+                            readOnly
+                            style={{
+                              width: 18,
+                              height: 18,
+                              border: '2px solid #3a3778',
+                              borderRadius: 2,
+                              flexShrink: 0,
+                              cursor: 'pointer',
+                              accentColor: '#ff4e1b'
+                            }}
+                          />
+                          <div style={{ fontSize: 14, color: itemDone ? '#6864a0' : '#ede9e0', lineHeight: 1.5, textDecoration: itemDone ? 'line-through' : 'none' }}>
+                            {item}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
