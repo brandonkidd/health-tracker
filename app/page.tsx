@@ -304,6 +304,21 @@ export default function Home() {
                             {btn.label}
                           </button>
                         ))}
+                        <button
+                          onClick={() => addProtein(-999)}
+                          style={{
+                            background: '#ff3b2d',
+                            border: '1px solid #ff3b2d',
+                            color: '#ede9e0',
+                            padding: '6px 10px',
+                            borderRadius: 2,
+                            fontSize: 11,
+                            fontWeight: 900,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          RESET
+                        </button>
                       </div>
                     </div>
 
