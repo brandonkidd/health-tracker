@@ -246,33 +246,84 @@ export default function Home() {
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()} · {dayType}
                   </div>
 
-                  {/* Quick Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 16 }}>
-                      <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6, fontWeight: 800 }}>Water</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                        {(today.water || 0).toFixed(1)}<span style={{ fontSize: 16, color: '#a09ccc' }}> / 4L</span>
+                  {/* Quick Tracking Section */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 24 }}>
+                    {/* Water */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 900, textTransform: 'uppercase' }}>
+                        WATER · {(today.water || 0).toFixed(1)} / 4L
+                      </h3>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                        {Array.from({ length: 16 }, (_, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => toggleWater(idx)}
+                            style={{
+                              width: 28,
+                              height: 36,
+                              borderRadius: '0 0 50% 50% / 0 0 40% 40%',
+                              border: '2px solid #3a3778',
+                              background: idx < (today.water || 0) * 4 ? '#ede9e0' : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all .15s'
+                            }}
+                          />
+                        ))}
                       </div>
                     </div>
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 16 }}>
-                      <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6, fontWeight: 800 }}>Protein</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                        {today.protein || 0}<span style={{ fontSize: 16, color: '#a09ccc' }}> / 190g</span>
+
+                    {/* Protein */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 900, textTransform: 'uppercase' }}>
+                        PROTEIN · {today.protein || 0} / 190G
+                      </h3>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                        {[
+                          { label: '+20', val: 20 },
+                          { label: '+25', val: 25 },
+                          { label: '+42', val: 42 },
+                          { label: '+45', val: 45 },
+                          { label: '+34', val: 34 }
+                        ].map(btn => (
+                          <button
+                            key={btn.label}
+                            onClick={() => addProtein(btn.val)}
+                            style={{
+                              background: '#262358',
+                              border: '1px solid #3a3778',
+                              color: '#ede9e0',
+                              padding: '6px 10px',
+                              borderRadius: 2,
+                              fontSize: 11,
+                              fontWeight: 900,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 16 }}>
-                      <div style={{ fontSize: 11, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6, fontWeight: 800 }}>Supplements</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                        {suppsDone}<span style={{ fontSize: 16, color: '#a09ccc' }}> / {suppsTotal}</span>
+
+                    {/* Supps */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 900, textTransform: 'uppercase' }}>
+                        SUPPS · {suppsDone} / {suppsTotal}
+                      </h3>
+                      <div style={{ fontSize: 12, color: '#a09ccc', marginTop: 4 }}>
+                        Check off as you take them below
                       </div>
                     </div>
                   </div>
 
-                  {/* Timeline with inline tracking */}
-                  <h2 style={{ fontSize: 24, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 16 }}>TODAY'S TIMELINE</h2>
+                  {/* Timeline Cards */}
+                  <h2 style={{ fontSize: 24, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 16 }}>TODAY'S SCHEDULE</h2>
                   
                   {schedule.map((item, i) => {
-                    // Check if this time block has supplements
+                    const taskKey = `task-${todayKey()}-${i}`;
+                    const taskDone = state.tasks?.[taskKey] || false;
+                    
+                    // Check if this is a supplement time
                     const timeHour = parseInt(item.t.split(':')[0]);
                     let suppGroup: any[] = [];
                     
@@ -298,101 +349,72 @@ export default function Home() {
                       );
                     }
 
-                    const showProteinButtons = item.type === 'food';
-                    const showWaterDrops = item.t === '5:00 am';
-                    const showSupps = suppGroup.length > 0;
-
                     return (
-                      <div key={i} style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: item.type === 'exercise' ? '3px solid #ff4e1b' : item.type === 'food' ? '3px solid #5fc878' : item.type === 'supp' ? '3px solid #c9a96e' : '3px solid #2e2b5e', borderRadius: 4, padding: 18, marginBottom: 12 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '80px auto', gap: 16, alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{item.t}</div>
-                          <div>
-                            <div style={{ fontWeight: 900, fontSize: 16, color: '#ede9e0', marginBottom: 6 }}>{item.what}</div>
-                            <div style={{ fontSize: 13, color: '#a09ccc', marginBottom: 12 }}>{item.d}</div>
-
-                            {/* Water drops */}
-                            {showWaterDrops && (
-                              <div style={{ marginTop: 12 }}>
-                                <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                                  TRACK WATER · 250ML PER DROP
-                                </div>
-                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                  {Array.from({ length: 16 }, (_, idx) => (
-                                    <div
-                                      key={idx}
-                                      onClick={() => toggleWater(idx)}
-                                      style={{
-                                        width: 30,
-                                        height: 38,
-                                        borderRadius: '0 0 50% 50% / 0 0 40% 40%',
-                                        border: '2px solid #3a3778',
-                                        background: idx < (today.water || 0) * 4 ? '#ede9e0' : 'transparent',
-                                        cursor: 'pointer',
-                                        transition: 'all .15s'
-                                      }}
-                                    />
-                                  ))}
-                                </div>
+                      <div
+                        key={i}
+                        onClick={() => {
+                          updateState((prev: any) => {
+                            const tasks = { ...prev.tasks };
+                            tasks[taskKey] = !tasks[taskKey];
+                            return { ...prev, tasks };
+                          });
+                        }}
+                        style={{
+                          background: taskDone ? 'rgba(255,78,27,.08)' : '#1e1c47',
+                          border: `1px solid ${taskDone ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
+                          borderLeft: `3px solid ${taskDone ? '#ff4e1b' : item.type === 'exercise' ? '#ff4e1b' : item.type === 'food' ? '#5fc878' : item.type === 'supp' ? '#c9a96e' : '#2e2b5e'}`,
+                          borderRadius: 4,
+                          padding: 20,
+                          marginBottom: 12,
+                          cursor: 'pointer',
+                          transition: 'all .15s'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                          <input
+                            type="checkbox"
+                            checked={taskDone}
+                            readOnly
+                            style={{
+                              width: 22,
+                              height: 22,
+                              border: '2px solid #3a3778',
+                              borderRadius: 2,
+                              flexShrink: 0,
+                              marginTop: 2,
+                              cursor: 'pointer',
+                              accentColor: '#ff4e1b'
+                            }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 4 }}>{item.t}</div>
+                                <h3 style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', color: taskDone ? '#6864a0' : '#ede9e0', textDecoration: taskDone ? 'line-through' : 'none', marginBottom: 6 }}>{item.what}</h3>
                               </div>
-                            )}
-
-                            {/* Protein buttons */}
-                            {showProteinButtons && (
-                              <div style={{ marginTop: 12 }}>
-                                <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                                  LOG PROTEIN
-                                </div>
-                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                  {[
-                                    { label: '+20 EGGS', val: 20 },
-                                    { label: '+25 SHAKE', val: 25 },
-                                    { label: '+25 COTTAGE', val: 25 },
-                                    { label: '+42 CHICKEN', val: 42 },
-                                    { label: '+45 STEAK', val: 45 },
-                                    { label: '+34 SALMON', val: 34 },
-                                    { label: '+17 YOGURT', val: 17 }
-                                  ].map(btn => (
-                                    <button
-                                      key={btn.label}
-                                      onClick={() => addProtein(btn.val)}
-                                      style={{
-                                        background: '#262358',
-                                        border: '1px solid #3a3778',
-                                        color: '#ede9e0',
-                                        padding: '7px 12px',
-                                        borderRadius: 2,
-                                        fontSize: 11,
-                                        fontWeight: 900,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1.2px',
-                                        cursor: 'pointer',
-                                        transition: 'all .15s'
-                                      }}
-                                    >
-                                      {btn.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Supplement checkboxes */}
-                            {showSupps && (
-                              <div style={{ marginTop: 12 }}>
-                                <div style={{ fontSize: 12, color: '#a09ccc', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>
-                                  SUPPLEMENTS TO TAKE
+                            </div>
+                            <div style={{ fontSize: 13, color: taskDone ? '#6864a0' : '#a09ccc', marginBottom: suppGroup.length > 0 ? 12 : 0, textDecoration: taskDone ? 'line-through' : 'none' }}>{item.d}</div>
+                            
+                            {/* Show supplements for this time block */}
+                            {suppGroup.length > 0 && !taskDone && (
+                              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #2e2b5e' }}>
+                                <div style={{ fontSize: 11, color: '#c9a96e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>
+                                  SUPPLEMENTS TO TAKE:
                                 </div>
                                 {suppGroup.map(s => {
                                   const done = today.supps[s.id];
                                   return (
                                     <div
                                       key={s.id}
-                                      onClick={() => toggleSupp(s.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSupp(s.id);
+                                      }}
                                       style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 10,
-                                        padding: '10px 12px',
+                                        padding: '8px 10px',
                                         borderRadius: 2,
                                         background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
                                         border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
@@ -405,8 +427,8 @@ export default function Home() {
                                         checked={done || false}
                                         readOnly
                                         style={{
-                                          width: 20,
-                                          height: 20,
+                                          width: 18,
+                                          height: 18,
                                           border: '2px solid #3a3778',
                                           borderRadius: 2,
                                           flexShrink: 0,
@@ -414,10 +436,8 @@ export default function Home() {
                                           accentColor: '#ff4e1b'
                                         }}
                                       />
-                                      <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: 13, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
-                                          {s.name} <span style={{ color: '#6864a0', fontWeight: 400 }}>· {s.dose}</span>
-                                        </div>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: done ? '#6864a0' : '#ede9e0', textDecoration: done ? 'line-through' : 'none' }}>
+                                        {s.name} · {s.dose}
                                       </div>
                                     </div>
                                   );
