@@ -1,7 +1,7 @@
 // Complete health plan data extracted from original HTML
 export const DATES = {
-  start: "2026-04-19",
-  phase1End: "2026-06-15",
+  start: "2026-06-21",
+  phase1End: "2026-08-16",
   maui: "2026-07-15",
   lifeTime: "2026-07-01",
   birthday: "2026-09-15"
@@ -183,7 +183,7 @@ export type FoodPreset = {
   id: string;
   label: string;
   say: string;
-  category: 'breakfast' | 'snack' | 'lunch' | 'dinner' | 'restaurant' | 'quick' | 'drink';
+  category: 'breakfast' | 'snack' | 'lunch' | 'dinner' | 'restaurant' | 'quick' | 'drink' | 'alcohol';
   cals: number;
   p: number;
   c: number;
@@ -248,7 +248,15 @@ export const FOOD_PRESETS: FoodPreset[] = [
   { id: 'quick-coffee', label: 'Black Coffee', say: 'coffee', category: 'drink', cals: 5, p: 0, c: 0, f: 0 },
 ];
 
-export const FOOD_CATEGORIES: FoodPreset['category'][] = ['breakfast', 'snack', 'lunch', 'dinner', 'restaurant', 'quick', 'drink'];
+/** Go-to drinks — tap to log calories + carbs into today's fuel */
+export const ALCOHOL_PRESETS: FoodPreset[] = [
+  { id: 'alc-margarita', label: 'Margarita', say: 'margarita', category: 'alcohol', cals: 280, p: 0, c: 36, f: 0, notes: 'Restaurant pour w/ mix' },
+  { id: 'alc-draft-beer', label: 'Draft Beer', say: 'draft beer', category: 'alcohol', cals: 200, p: 2, c: 16, f: 0, notes: '16 oz pint' },
+  { id: 'alc-gt', label: 'Gin & Tonic', say: 'gin and tonic', category: 'alcohol', cals: 175, p: 0, c: 16, f: 0 },
+  { id: 'alc-wine', label: 'Glass of Wine', say: 'glass of wine', category: 'alcohol', cals: 125, p: 0, c: 4, f: 0, notes: '5 oz pour' },
+];
+
+export const FOOD_CATEGORIES: FoodPreset['category'][] = ['breakfast', 'snack', 'lunch', 'dinner', 'restaurant', 'quick', 'drink', 'alcohol'];
 
 export const LABS_2023 = [
   { marker: "Total Testosterone", result: "468 ng/dL", range: "250–827", pct: "38th", verdict: "Low-normal", cls: "orange" },
@@ -874,6 +882,15 @@ export const CHECKPOINTS: Checkpoint[] = [
 export function daysUntil(dateStr: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
+  const target = new Date(dateStr + 'T00:00:00');
   return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+/** Day 1 on start date, Day 2 the next morning, etc. */
+export function daysSinceStart(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(dateStr + 'T00:00:00');
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
+  return Math.max(1, diff + 1);
 }

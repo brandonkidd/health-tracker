@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import './globals.css';
-import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
-import { getUpNext, progressPct, progressColor, macroCalories, getMilestones, getNextMilestone, getWeightHistory, rollingAverage, getLatestWeight, getBodyComp, getStartBodyComp, calculateStreak, formatDelta, RECOMP_TARGETS } from '@/lib/tracking-helpers';
+import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, ALCOHOL_PRESETS, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
+import { getUpNext, progressPct, progressColor, macroCalories, getMilestones, getNextMilestone, getWeightHistory, rollingAverage, getLatestWeight, getBodyComp, getStartBodyComp, calculateStreak, formatDelta, deltaColor, COLOR_GOOD, COLOR_BAD, RECOMP_TARGETS, getPhase1Progress } from '@/lib/tracking-helpers';
 import type { FoodPreset, LabComparison } from '@/lib/health-data';
 
 const STORE_KEY = "brandon_gameplan_v1";
@@ -115,8 +115,8 @@ function WeightLogger({
   };
 
   return (
-    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: '4px solid #5fc878', borderRadius: 4, padding: '22px 24px', marginBottom: 22 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+    <div className="weight-logger-card">
+      <div className="weight-logger-header">
         <div>
           <div style={{ fontSize: 10, color: '#5fc878', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: 6 }}>Weight Tracker</div>
           <div style={{ fontSize: 44, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0', lineHeight: 1 }}>
@@ -127,10 +127,10 @@ function WeightLogger({
             Goal {targetWeight} lbs · Started {startWeight} lbs
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div className="weight-logger-stats">
           {weightDelta != null && (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b' }}>{formatDelta(weightDelta, ' lbs', true)}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: deltaColor(weightDelta, 'lower-is-better') }}>{formatDelta(weightDelta, ' lbs', true)}</div>
               <div style={{ fontSize: 9, color: '#6864a0', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>From Start</div>
             </div>
           )}
@@ -151,7 +151,7 @@ function WeightLogger({
 
       <ProgressBar current={weightProgressPct} target={100} label={`Progress to ${targetWeight} lbs`} />
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="mobile-input-row" style={{ marginTop: 16 }}>
         <input
           type="number"
           step="0.1"
@@ -160,56 +160,20 @@ function WeightLogger({
           placeholder="Today's weight (e.g. 187.4)"
           defaultValue={todayWeight ?? ''}
           key={`weight-input-${todayWeight ?? 'empty'}`}
+          className="mobile-input"
           onKeyDown={(e) => {
             if (e.key === 'Enter') submitWeight(e.currentTarget);
-          }}
-          style={{
-            flex: 1,
-            minWidth: 160,
-            background: '#1a1840',
-            border: '1px solid #3a3778',
-            borderRadius: 4,
-            color: '#ede9e0',
-            padding: '12px 14px',
-            fontSize: 14,
-            fontWeight: 700,
-            fontFamily: 'inherit',
           }}
         />
         <button
           type="button"
+          className="chip-btn chip-btn--success"
           onClick={(e) => submitWeight(e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement)}
-          style={{
-            background: '#5fc878',
-            border: '1px solid #5fc878',
-            color: '#13112e',
-            padding: '12px 18px',
-            borderRadius: 4,
-            fontSize: 12,
-            fontWeight: 900,
-            cursor: 'pointer',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
         >
           Log Weight
         </button>
         {todayWeight != null && (
-          <button
-            type="button"
-            onClick={onClear}
-            style={{
-              background: 'transparent',
-              border: '1px solid #3a3778',
-              color: '#a09ccc',
-              padding: '12px 14px',
-              borderRadius: 4,
-              fontSize: 11,
-              fontWeight: 800,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-            }}
-          >
+          <button type="button" className="chip-btn" onClick={onClear}>
             Clear Today
           </button>
         )}
@@ -412,21 +376,6 @@ export default function Home() {
     });
   };
 
-  const macroResetStyle: React.CSSProperties = {
-    background: 'transparent',
-    border: '1px solid #3a3778',
-    color: '#a09ccc',
-    padding: '4px 8px',
-    borderRadius: 4,
-    fontSize: 9,
-    fontWeight: 800,
-    textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    cursor: 'pointer',
-    marginTop: 8,
-    width: '100%',
-  };
-
   const toggleMeal = (mealName: string) => {
     const key = todayKey();
     updateState((prev: any) => {
@@ -456,6 +405,7 @@ export default function Home() {
 
   const milestones = getMilestones();
   const nextMilestone = getNextMilestone();
+  const phase1 = getPhase1Progress();
   const streak = calculateStreak(state.days);
   const weightHistory = getWeightHistory(state.days);
   const latestWeight = getLatestWeight(state.days);
@@ -465,6 +415,8 @@ export default function Home() {
   const latestDay = latestWeight != null ? state.days?.[weightHistory[weightHistory.length - 1]?.date] : null;
   const currentComp = latestWeight != null ? getBodyComp(latestWeight, latestDay) : null;
   const fatLost = currentComp ? startComp.fatMass - currentComp.fatMass : 0;
+  const fatMassDelta = currentComp ? currentComp.fatMass - startComp.fatMass : null;
+  const muscleMassDelta = currentComp ? currentComp.muscleMass - startComp.muscleMass : null;
   const bfDelta = currentComp ? currentComp.bodyFatPct - startComp.bodyFatPct : 0;
   const musclePctGain = currentComp ? currentComp.musclePct - startComp.musclePct : 0;
   const weightDelta = latestWeight != null ? latestWeight - START_WEIGHT : null;
@@ -494,6 +446,9 @@ export default function Home() {
 
   const labCategories = Array.from(new Set(LAB_COMPARISONS.map((lab) => lab.category)));
   const tierOneSupps = SUPPLEMENTS_DAILY.filter((s) => s.tier === 1);
+  const alcoholToday = (today.foodLog || []).filter((e: any) => String(e.id).startsWith('alc-'));
+  const drinksToday = alcoholToday.length;
+  const alcoholCalsToday = alcoholToday.reduce((sum: number, e: any) => sum + macroCalories(e.p || 0, e.c || 0, e.f || 0), 0);
   const foodLog = today.foodLog || [];
 
   const labSummary = {
@@ -542,9 +497,9 @@ export default function Home() {
 
   return (
     <>
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(19,17,46,.88)', backdropFilter: 'blur(18px)', borderBottom: '1px solid #2e2b5e' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: 12 }}>
-          <div style={{ fontFamily: '"Archivo Black","Inter Black",-apple-system,sans-serif', fontWeight: 900, fontSize: 20, letterSpacing: '.5px', textTransform: 'uppercase', fontStyle: 'italic', transform: 'skewX(-6deg)', flexShrink: 0 }}>
+      <nav className="app-nav">
+        <div className="app-nav-inner">
+          <div className="brand-logo">
             BRANDON<span style={{ color: '#ff4e1b' }}>.FIT</span>
           </div>
           <div className="nav-clock" aria-live="polite">
@@ -566,7 +521,7 @@ export default function Home() {
       <main className="app-main">
         {currentSection === 'today' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>TODAY</h1>
+            <h1 className="page-title">TODAY</h1>
             {(() => {
               const dayOfWeek = new Date().getDay();
               const isLiftDay = [1, 3, 5].includes(dayOfWeek);
@@ -581,23 +536,23 @@ export default function Home() {
 
               return (
                 <>
-                  <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 16, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                  <div className="section-sub">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()} · {dayType}
+                  </div>
+                  <div style={{ background: 'rgba(255,78,27,.1)', border: '1px solid rgba(255,78,27,.35)', borderRadius: 4, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#ede9e0', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Phase 1 starts today · Day {phase1.day} · {phase1.daysLeft} days to {DATES.phase1End}
                   </div>
 
                   {upNext && (
-                    <div style={{ background: 'linear-gradient(135deg,#1e1c47,#262358)', border: '1px solid #ff4e1b', borderLeft: '4px solid #ff4e1b', borderRadius: 4, padding: '16px 18px', marginBottom: 20 }}>
+                    <div className="up-next-card">
                       <div style={{ fontSize: 10, color: '#ff4e1b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: 6 }}>Up Next</div>
-                      <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', color: '#ede9e0' }}>{upNext.t} — {upNext.what}</div>
-                      <div style={{ fontSize: 13, color: '#a09ccc', marginTop: 6 }}>{upNext.d}</div>
+                      <div className="up-next-title">{upNext.t} — {upNext.what}</div>
+                      <div className="up-next-detail">{upNext.d}</div>
                     </div>
                   )}
 
                   {isLiftDay && (
-                    <button
-                      onClick={() => setCurrentSection('train')}
-                      style={{ width: '100%', background: '#ff4e1b', border: 'none', color: '#fff', padding: '14px 18px', borderRadius: 4, fontWeight: 900, fontSize: 13, textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer', marginBottom: 20 }}
-                    >
+                    <button type="button" className="btn-primary" onClick={() => setCurrentSection('train')} style={{ marginBottom: 16 }}>
                       Log Today&apos;s Workout →
                     </button>
                   )}
@@ -605,37 +560,33 @@ export default function Home() {
                   {/* Daily trackers — water | protein | calories */}
                   <div className="today-tracker-grid" style={{ marginBottom: 20 }}>
                     {/* Water */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                    <div className="tracker-card">
+                      <h3>
                         WATER · {Math.round((today.water || 0) * 8)} / 96 OZ
                       </h3>
                       <ProgressBar current={(today.water || 0) * 8} target={targetWater} label="Progress" />
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                      <div className="water-row">
                         {Array.from({ length: 16 }, (_, idx) => (
                           <div
                             key={idx}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Water glass ${idx + 1}`}
                             onClick={() => toggleWater(idx)}
-                            style={{
-                              width: 28,
-                              height: 36,
-                              borderRadius: '0 0 50% 50% / 0 0 40% 40%',
-                              border: '2px solid #3a3778',
-                              background: idx < (today.water || 0) ? '#ede9e0' : 'transparent',
-                              cursor: 'pointer',
-                              transition: 'all .15s'
-                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleWater(idx); }}
+                            className={`water-drop${idx < (today.water || 0) ? ' filled' : ''}`}
                           />
                         ))}
                       </div>
                     </div>
 
                     {/* Protein */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                    <div className="tracker-card">
+                      <h3>
                         PROTEIN · {today.protein || 0} / 190G
                       </h3>
                       <ProgressBar current={today.protein || 0} target={targetProtein} label="Progress" />
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                      <div className="chip-row">
                         {[
                           { label: '+18 3 EGGS', val: 18 },
                           { label: '+25 SHAKE', val: 25 },
@@ -647,42 +598,22 @@ export default function Home() {
                         ].map(btn => (
                           <button
                             key={btn.label}
+                            type="button"
+                            className="chip-btn"
                             onClick={() => addProtein(btn.val)}
-                            style={{
-                              background: '#262358',
-                              border: '1px solid #3a3778',
-                              color: '#ede9e0',
-                              padding: '6px 10px',
-                              borderRadius: 2,
-                              fontSize: 11,
-                              fontWeight: 900,
-                              cursor: 'pointer'
-                            }}
                           >
                             {btn.label}
                           </button>
                         ))}
-                        <button
-                          onClick={() => addProtein(-999)}
-                          style={{
-                            background: '#ff3b2d',
-                            border: '1px solid #ff3b2d',
-                            color: '#ede9e0',
-                            padding: '6px 10px',
-                            borderRadius: 2,
-                            fontSize: 11,
-                            fontWeight: 900,
-                            cursor: 'pointer'
-                          }}
-                        >
+                        <button type="button" className="chip-btn chip-btn--danger" onClick={() => addProtein(-999)}>
                           RESET
                         </button>
                       </div>
                     </div>
 
                     {/* Weight */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                    <div className="tracker-card">
+                      <h3>
                         WEIGHT · {today.weight != null ? today.weight.toFixed(1) : '—'} / {TARGET_WEIGHT} LBS
                       </h3>
                       {today.weight != null && (
@@ -692,7 +623,7 @@ export default function Home() {
                           label="To Goal"
                         />
                       )}
-                      <div style={{ display: 'flex', gap: 6, marginTop: 10, alignItems: 'center' }}>
+                      <div className="mobile-input-row">
                         <input
                           type="number"
                           step="0.1"
@@ -701,168 +632,117 @@ export default function Home() {
                           placeholder="e.g. 187.4"
                           defaultValue={today.weight ?? ''}
                           key={today.weight ?? 'empty'}
+                          className="mobile-input"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               const val = parseFloat((e.target as HTMLInputElement).value);
                               if (!isNaN(val) && val > 0) setTodayWeight(val);
                             }
                           }}
-                          style={{
-                            flex: 1,
-                            background: '#1a1840',
-                            border: '1px solid #3a3778',
-                            borderRadius: 2,
-                            color: '#ede9e0',
-                            padding: '8px 10px',
-                            fontSize: 13,
-                            fontWeight: 700,
-                            fontFamily: 'inherit',
-                            minWidth: 0,
-                          }}
                         />
                         <button
                           type="button"
+                          className="chip-btn chip-btn--accent"
                           onClick={(e) => {
                             const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
                             const val = parseFloat(input.value);
                             if (!isNaN(val) && val > 0) setTodayWeight(val);
-                          }}
-                          style={{
-                            background: '#ff4e1b',
-                            border: '1px solid #ff4e1b',
-                            color: '#fff',
-                            padding: '8px 12px',
-                            borderRadius: 2,
-                            fontSize: 11,
-                            fontWeight: 900,
-                            cursor: 'pointer',
-                            flexShrink: 0,
                           }}
                         >
                           LOG
                         </button>
                       </div>
                       {today.weight != null && (
-                        <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 8, fontWeight: 700 }}>
-                          {(today.weight - START_WEIGHT).toFixed(1)} lbs from start ({START_WEIGHT})
+                        <div style={{ fontSize: 11, color: deltaColor(today.weight - START_WEIGHT, 'lower-is-better'), marginTop: 8, fontWeight: 700 }}>
+                          {formatDelta(today.weight - START_WEIGHT, ' lbs', true)} from start ({START_WEIGHT})
                         </div>
                       )}
                     </div>
 
                     {/* Calories */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                    <div className="tracker-card">
+                      <h3>
                         CALORIES · {todayCalories} / {TARGETS.cals}
                       </h3>
                       <ProgressBar current={todayCalories} target={TARGETS.cals} label="Progress" />
                       <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {today.protein || 0}g P · {today.carbs || 0}g C · {today.fat || 0}g F
                       </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                      <div className="chip-row">
                         {FOOD_PRESETS.filter((p) => ['meal-shake', 'quick-eggs', 'quick-chicken', 'meal-pre-wo'].includes(p.id)).map((preset) => (
                           <button
                             key={preset.id}
                             type="button"
+                            className="chip-btn"
                             onClick={() => addFoodPreset(preset)}
-                            style={{
-                              background: '#262358',
-                              border: '1px solid #3a3778',
-                              color: '#ede9e0',
-                              padding: '6px 10px',
-                              borderRadius: 2,
-                              fontSize: 11,
-                              fontWeight: 900,
-                              cursor: 'pointer',
-                            }}
                           >
                             +{macroCalories(preset.p, preset.c, preset.f)} {preset.label.split(' ')[0].toUpperCase()}
                           </button>
                         ))}
-                        <button
-                          type="button"
-                          onClick={() => resetMacro('calories')}
-                          style={{
-                            background: '#ff3b2d',
-                            border: '1px solid #ff3b2d',
-                            color: '#ede9e0',
-                            padding: '6px 10px',
-                            borderRadius: 2,
-                            fontSize: 11,
-                            fontWeight: 900,
-                            cursor: 'pointer',
-                          }}
-                        >
+                        <button type="button" className="chip-btn chip-btn--danger" onClick={() => resetMacro('calories')}>
                           UNDO LAST
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setCurrentSection('fuel')}
-                        style={{
-                          marginTop: 10,
-                          width: '100%',
-                          background: 'transparent',
-                          border: '1px solid #ff4e1b',
-                          color: '#ff4e1b',
-                          padding: '8px 10px',
-                          borderRadius: 2,
-                          fontSize: 11,
-                          fontWeight: 900,
-                          cursor: 'pointer',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
+                      <button type="button" className="btn-secondary" onClick={() => setCurrentSection('fuel')} style={{ marginTop: 10 }}>
                         More meals in Fuel →
                       </button>
                     </div>
 
+                    {/* Alcohol */}
+                    <div className="tracker-card tracker-card--full">
+                      <h3>
+                        ALCOHOL · {drinksToday} DRINK{drinksToday !== 1 ? 'S' : ''}
+                        {alcoholCalsToday > 0 && (
+                          <span style={{ color: '#a09ccc', fontWeight: 700 }}> · +{alcoholCalsToday} CAL</span>
+                        )}
+                      </h3>
+                      <div style={{ fontSize: 11, color: '#6864a0', marginBottom: 10 }}>Tap your go-to — logs into today&apos;s calories & carbs.</div>
+                      <div className="chip-row">
+                        {ALCOHOL_PRESETS.map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            className="chip-btn"
+                            onClick={() => addFoodPreset(preset)}
+                            style={{ textAlign: 'left', minWidth: 140 }}
+                          >
+                            <div>{preset.label}</div>
+                            <div style={{ color: '#ff4e1b', fontSize: 10, marginTop: 4, fontWeight: 800 }}>
+                              {macroCalories(preset.p, preset.c, preset.f)} cal · {preset.c}c
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      {alcoholToday.length > 0 && (
+                        <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {alcoholToday.map((entry: any) => (
+                            <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, fontSize: 11 }}>
+                              <span style={{ color: '#ede9e0', fontWeight: 800 }}>{entry.label}</span>
+                              <span style={{ color: '#6864a0' }}>{entry.at}</span>
+                              <button type="button" onClick={() => removeFoodLogEntry(entry.id)} style={{ background: 'transparent', border: 'none', color: '#ff3b2d', fontWeight: 800, cursor: 'pointer', padding: 0, fontSize: 10 }}>UNDO</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Supplements — upfront checklist */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, gridColumn: '1 / -1' }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                    <div className="tracker-card tracker-card--full">
+                      <h3>
                         SUPPLEMENTS · {suppsDone} / {suppsTotal}
                       </h3>
                       <ProgressBar current={suppsDone} target={suppsTotal} label="Progress" />
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginTop: 14 }}>
+                      <div className="supp-grid">
                         {tierOneSupps.map((s) => {
                           const done = today.supps?.[s.id];
                           return (
                             <button
                               key={s.id}
                               type="button"
+                              className={`supplement-card${done ? ' done' : ''}`}
                               onClick={() => toggleSupp(s.id)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                padding: '10px 12px',
-                                borderRadius: 4,
-                                background: done ? 'rgba(255,78,27,.08)' : '#1a1840',
-                                border: `1px solid ${done ? 'rgba(255,78,27,.35)' : '#2e2b5e'}`,
-                                cursor: 'pointer',
-                                width: '100%',
-                                textAlign: 'left',
-                                fontFamily: 'inherit',
-                                color: 'inherit',
-                              }}
                             >
-                              <span
-                                aria-hidden="true"
-                                style={{
-                                  width: 18,
-                                  height: 18,
-                                  flexShrink: 0,
-                                  borderRadius: 2,
-                                  border: `2px solid ${done ? '#ff4e1b' : '#3a3778'}`,
-                                  background: done ? '#ff4e1b' : 'transparent',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: 12,
-                                  color: '#fff',
-                                  fontWeight: 900,
-                                }}
-                              >
+                              <span aria-hidden="true" className={`supplement-check${done ? ' done' : ''}`}>
                                 {done ? '✓' : ''}
                               </span>
                               <div>
@@ -1055,7 +935,7 @@ export default function Home() {
 
         {currentSection === 'progress' && (
           <div>
-            <div style={{ background: 'radial-gradient(circle at 80% 20%,rgba(255,78,27,.32) 0%,transparent 50%),radial-gradient(circle at 15% 85%,rgba(93,88,199,.4) 0%,transparent 55%),linear-gradient(135deg,#1c1945 0%,#252352 60%,#2e2466 100%)', border: '1px solid #2e2b5e', borderRadius: 4, padding: '48px 36px', marginBottom: 22, borderLeft: '4px solid #ff4e1b' }}>
+            <div className="hero-banner">
               <h4 style={{ color: '#ff4e1b', marginBottom: 16, fontSize: 12, letterSpacing: 3, fontWeight: 800 }}>— THE BRANDON PROJECT · 2026</h4>
               <h1 className="hero-title" style={{ fontSize: 72, lineHeight: 0.9, letterSpacing: -3, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic' }}>
                 NO DAYS<br />OFF<span style={{ color: '#ff4e1b' }}>.</span>
@@ -1063,7 +943,7 @@ export default function Home() {
               <div style={{ color: '#ede9e0', opacity: 0.85, marginTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
                 RECOMP · FAT DOWN · MUSCLE HELD · BIRTHDAY SEPT 2026
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginTop: 28 }}>
+              <div className="stat-grid" style={{ marginTop: 28 }}>
                 <div style={{ background: 'rgba(26,24,64,.55)', backdropFilter: 'blur(6px)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#5fc878' }}>
                     {streak}<span style={{ fontSize: 16, marginLeft: 4 }}>🔥</span>
@@ -1072,10 +952,13 @@ export default function Home() {
                 </div>
                 <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #ff4e1b', borderRadius: 4, padding: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ff4e1b' }}>
-                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? '✓' : milestones.find((m) => m.label === 'Phase 1')!.days}
+                    {phase1.day}
                   </div>
                   <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>
-                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? 'Phase 1 Complete' : 'Days to Phase 1 End'}
+                    Day {phase1.day} of Phase 1
+                  </div>
+                  <div style={{ fontSize: 10, color: '#6864a0', marginTop: 4, fontWeight: 700 }}>
+                    {phase1.daysLeft} days left · ends {DATES.phase1End}
                   </div>
                 </div>
                 <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
@@ -1109,7 +992,7 @@ export default function Home() {
             />
 
             <h2 style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', marginBottom: 14 }}>Body Recomp</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 22 }}>
+            <div className="stat-grid-2" style={{ marginBottom: 22 }}>
               <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                 <div style={{ fontSize: 10, color: '#a09ccc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Weight</div>
                 <div style={{ fontSize: 36, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0', lineHeight: 1 }}>
@@ -1117,7 +1000,7 @@ export default function Home() {
                   <span style={{ fontSize: 14, color: '#a09ccc' }}> lbs</span>
                 </div>
                 {weightDelta != null && (
-                  <div style={{ fontSize: 13, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, marginTop: 8 }}>
+                  <div style={{ fontSize: 13, color: deltaColor(weightDelta, 'lower-is-better'), fontWeight: 800, marginTop: 8 }}>
                     {formatDelta(weightDelta, ' lbs', true)} from start
                   </div>
                 )}
@@ -1141,13 +1024,14 @@ export default function Home() {
                   <span style={{ fontSize: 14, color: '#a09ccc' }}>%</span>
                 </div>
                 {currentComp && (
-                  <div style={{ fontSize: 13, color: '#5fc878', fontWeight: 800, marginTop: 8 }}>
+                  <div style={{ fontSize: 13, color: deltaColor(bfDelta, 'lower-is-better'), fontWeight: 800, marginTop: 8 }}>
                     {formatDelta(bfDelta, '%', true)} from start ({BASELINE.bodyFat}%)
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: '#6864a0', marginTop: 4 }}>
                   Fat mass: {currentComp ? `${currentComp.fatMass} lbs` : `${startComp.fatMass} lbs`}
-                  {fatLost > 0 && <span style={{ color: '#5fc878' }}> · {fatLost.toFixed(1)} lbs lost</span>}
+                  {fatLost > 0 && <span style={{ color: COLOR_GOOD }}> · {fatLost.toFixed(1)} lbs lost</span>}
+                  {fatLost < 0 && <span style={{ color: COLOR_BAD }}> · {Math.abs(fatLost).toFixed(1)} lbs gained</span>}
                 </div>
                 <div style={{ fontSize: 10, color: '#6864a0', marginTop: 6 }}>Goal: {RECOMP_TARGETS.bodyFat}% · {currentComp?.source === 'estimate' ? 'Est. (lean held)' : 'Scan'}</div>
                 <div style={{ marginTop: 12 }}>
@@ -1161,9 +1045,16 @@ export default function Home() {
                   {currentComp ? currentComp.muscleMass.toFixed(1) : BASELINE.muscleMass}
                   <span style={{ fontSize: 14, color: '#a09ccc' }}> lbs</span>
                 </div>
-                <div style={{ fontSize: 13, color: musclePctGain >= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, marginTop: 8 }}>
-                  {formatDelta(musclePctGain, '%', false)} muscle % of bodyweight
-                </div>
+                {currentComp ? (
+                  <div style={{ fontSize: 13, color: deltaColor(musclePctGain, 'higher-is-better'), fontWeight: 800, marginTop: 8 }}>
+                    {formatDelta(musclePctGain, '%', false)} muscle % of bodyweight
+                  </div>
+                ) : null}
+                {muscleMassDelta != null && muscleMassDelta !== 0 && (
+                  <div style={{ fontSize: 11, color: deltaColor(muscleMassDelta, 'higher-is-better'), fontWeight: 800, marginTop: 4 }}>
+                    {formatDelta(muscleMassDelta, ' lbs', false)} lean muscle mass
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: '#6864a0', marginTop: 4 }}>
                   {currentComp ? `${currentComp.musclePct}% of bodyweight` : `${startComp.musclePct}%`} · target: hold {RECOMP_TARGETS.muscleMass} lbs
                 </div>
@@ -1178,10 +1069,10 @@ export default function Home() {
               <WeightTrendChart entries={weightHistory.slice(-14)} startWeight={START_WEIGHT} targetWeight={TARGET_WEIGHT} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 22 }}>
+            <div className="stat-grid-3" style={{ marginBottom: 22 }}>
               <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
                 <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Live Numbers</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+                <div className="stat-grid">
                   <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
                     <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
                       {latestWeight != null ? latestWeight.toFixed(1) : '—'}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {TARGET_WEIGHT} lbs</span>
@@ -1219,17 +1110,23 @@ export default function Home() {
                 <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Baseline → Now</h3>
                 <div style={{ display: 'grid', gap: 10 }}>
                   {[
-                    { label: 'Weight', start: `${START_WEIGHT} lbs`, now: latestWeight != null ? `${latestWeight.toFixed(1)} lbs` : '—', delta: weightDelta, good: weightDelta != null && weightDelta < 0 },
-                    { label: 'Body fat %', start: `${BASELINE.bodyFat}%`, now: currentComp ? `${currentComp.bodyFatPct}%` : '—', delta: bfDelta, good: bfDelta < 0 },
-                    { label: 'Fat mass', start: `${startComp.fatMass} lbs`, now: currentComp ? `${currentComp.fatMass} lbs` : '—', delta: fatLost > 0 ? -fatLost : 0, good: fatLost > 0 },
-                    { label: 'Muscle %', start: `${startComp.musclePct}%`, now: currentComp ? `${currentComp.musclePct}%` : '—', delta: musclePctGain, good: musclePctGain >= 0 },
+                    { label: 'Weight', start: `${START_WEIGHT} lbs`, now: latestWeight != null ? `${latestWeight.toFixed(1)} lbs` : '—', delta: weightDelta, direction: 'lower-is-better' as const },
+                    { label: 'Body fat %', start: `${BASELINE.bodyFat}%`, now: currentComp ? `${currentComp.bodyFatPct}%` : '—', delta: currentComp ? bfDelta : null, direction: 'lower-is-better' as const },
+                    { label: 'Fat mass', start: `${startComp.fatMass} lbs`, now: currentComp ? `${currentComp.fatMass} lbs` : '—', delta: fatMassDelta, direction: 'lower-is-better' as const },
+                    { label: 'Muscle %', start: `${startComp.musclePct}%`, now: currentComp ? `${currentComp.musclePct}%` : '—', delta: currentComp ? musclePctGain : null, direction: 'higher-is-better' as const },
                   ].map((row) => (
-                    <div key={row.label} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '10px 12px', background: '#1a1840', borderRadius: 4, border: '1px solid #2e2b5e', fontSize: 12 }}>
+                    <div key={row.label} className="composition-row">
                       <span style={{ fontWeight: 800, color: '#a09ccc', textTransform: 'uppercase', fontSize: 10 }}>{row.label}</span>
                       <span style={{ color: '#6864a0' }}>{row.start}</span>
                       <span style={{ fontWeight: 800, color: '#ede9e0' }}>{row.now}</span>
-                      <span style={{ fontWeight: 900, color: row.good ? '#5fc878' : '#6864a0', minWidth: 52, textAlign: 'right' }}>
-                        {row.delta != null && row.delta !== 0 ? formatDelta(row.delta, row.label.includes('%') ? '%' : row.label.includes('fat') && row.label !== 'Body fat %' ? ' lbs' : row.label === 'Weight' ? ' lbs' : '%', row.label !== 'Muscle %') : '—'}
+                      <span style={{ fontWeight: 900, color: deltaColor(row.delta, row.direction), minWidth: 52, textAlign: 'right' }}>
+                        {row.delta != null && row.delta !== 0
+                          ? formatDelta(
+                              row.delta,
+                              row.label.includes('%') ? '%' : ' lbs',
+                              row.direction === 'lower-is-better'
+                            )
+                          : '—'}
                       </span>
                     </div>
                   ))}
@@ -1248,7 +1145,7 @@ export default function Home() {
                     <div key={entry.date} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#1a1840', borderRadius: 4, border: '1px solid #2e2b5e', fontSize: 13 }}>
                       <span style={{ color: '#a09ccc' }}>{entry.date}</span>
                       <span style={{ fontWeight: 900, color: '#ede9e0' }}>{entry.weight.toFixed(1)} lbs</span>
-                      <span style={{ color: entry.weight - START_WEIGHT <= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, fontSize: 12 }}>
+                      <span style={{ color: deltaColor(entry.weight - START_WEIGHT, 'lower-is-better'), fontWeight: 800, fontSize: 12 }}>
                         {formatDelta(entry.weight - START_WEIGHT, ' lbs', true)}
                       </span>
                     </div>
@@ -1261,7 +1158,7 @@ export default function Home() {
 
         {currentSection === 'train' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>WORKOUTS</h1>
+            <h1 className="page-title">WORKOUTS</h1>
             <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 16, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
               PHASE 1 · 3× / WEEK · TRX + KETTLEBELLS + DUMBBELLS
             </div>
@@ -1320,7 +1217,7 @@ export default function Home() {
                     const exData = savedWorkout[ex.name] || { sets: '', weight: '', reps: '' };
                     
                     return (
-                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1fr', gap: 10, padding: 14, background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6, alignItems: 'center' }}>
+                      <div key={i} className="workout-row">
                         <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 14, color: '#ede9e0' }}>
                           {ex.name}
                           <div style={{ fontSize: 11, color: '#a09ccc', fontWeight: 400, marginTop: 2 }}>{ex.note}</div>
@@ -1412,7 +1309,7 @@ export default function Home() {
                     <strong style={{ color: '#ff3b2d' }}>Foot rule: </strong>{DAILY_REPS.footRule}
                   </div>
                   {DAILY_REPS.rotation.map((d) => (
-                    <div key={d.day} style={{ display: 'grid', gridTemplateColumns: '32px 110px 1fr', gap: 10, alignItems: 'baseline', padding: '10px 12px', background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, marginBottom: 6 }}>
+                    <div key={d.day} className="schedule-row">
                       <div style={{ fontSize: 16, fontWeight: 900, fontStyle: 'italic', color: '#ff4e1b' }}>{d.day}</div>
                       <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#ede9e0' }}>{d.focus}</div>
                       <div style={{ fontSize: 12, color: '#a09ccc', lineHeight: 1.5 }}>{d.moves}</div>
@@ -1452,7 +1349,7 @@ export default function Home() {
                 <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 6 }}>Phase 2 / 3 Gym Split</h3>
                   <div style={{ fontSize: 13, color: '#a09ccc', lineHeight: 1.6, marginBottom: 12 }}>{GYM_SPLIT.intro}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6, marginBottom: 14 }}>
+                  <div className="stat-grid" style={{ marginBottom: 14 }}>
                     {GYM_SPLIT.schedule.map((s) => (
                       <div key={s.day} style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 2, padding: 10, textAlign: 'center' }}>
                         <div style={{ fontSize: 11, fontWeight: 900, color: '#ff4e1b', textTransform: 'uppercase' }}>{s.day}</div>
@@ -1490,8 +1387,8 @@ export default function Home() {
 
         {currentSection === 'fuel' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>FUEL</h1>
-            <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 16, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            <h1 className="page-title">FUEL</h1>
+            <div className="section-sub">
               DAILY TARGETS · {TARGETS.cals} CAL · {TARGETS.protein}G P · {TARGETS.carbs}G C · {TARGETS.fat}G F · {TARGETS.fiber}G FIBER
             </div>
 
@@ -1499,8 +1396,8 @@ export default function Home() {
               <strong style={{ color: '#ff4e1b' }}>Recomp meals:</strong> Tap a preset to log macros. Home meals, restaurant builds, and quick proteins from your meal spreadsheet. Say the keyword under each button when voice-memo logging.
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, flex: 1, minWidth: 280 }}>
+            <div className="fuel-toolbar">
+              <div className="fuel-macro-grid">
               {[
                 { key: 'calories' as const, label: 'Calories', current: todayCalories, target: TARGETS.cals, hint: 'Removes last log entry' },
                 { key: 'protein' as const, label: 'Protein', current: today.protein || 0, target: TARGETS.protein, hint: 'Clears fuel protein' },
@@ -1512,29 +1409,13 @@ export default function Home() {
                     {m.current}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {m.target}</span>
                   </div>
                   <ProgressBar current={m.current} target={m.target} label={m.label} />
-                  <button type="button" onClick={() => resetMacro(m.key)} style={macroResetStyle} title={m.hint}>
+                  <button type="button" onClick={() => resetMacro(m.key)} className="macro-reset-btn" title={m.hint}>
                     Reset
                   </button>
                 </div>
               ))}
               </div>
-              <button
-                type="button"
-                onClick={resetFuel}
-                style={{
-                  background: '#ff3b2d',
-                  border: '1px solid #ff3b2d',
-                  color: '#ede9e0',
-                  padding: '12px 18px',
-                  borderRadius: 4,
-                  fontSize: 12,
-                  fontWeight: 900,
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-              >
+              <button type="button" className="chip-btn chip-btn--danger fuel-reset-day" onClick={resetFuel}>
                 Reset Day
               </button>
             </div>
@@ -1543,7 +1424,7 @@ export default function Home() {
               <div key={cat} style={{ marginBottom: 20 }}>
                 <h2 style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', marginBottom: 10 }}>{cat}</h2>
                 <div className="preset-grid">
-                  {FOOD_PRESETS.filter((p) => p.category === cat).map((preset) => (
+                  {FOOD_PRESETS.filter((p) => p.category === cat).concat(cat === 'alcohol' ? ALCOHOL_PRESETS : []).map((preset) => (
                     <button key={preset.id} type="button" className="preset-btn" onClick={() => addFoodPreset(preset)}>
                       <div style={{ fontWeight: 900, marginBottom: 4 }}>{preset.label}</div>
                       <div style={{ color: '#ff4e1b', fontSize: 10, marginBottom: 4 }}>{macroCalories(preset.p, preset.c, preset.f)} cal · {preset.p}p · {preset.c}c · {preset.f}f</div>
@@ -1561,12 +1442,12 @@ export default function Home() {
             ) : (
               <div style={{ marginBottom: 24 }}>
                 {foodLog.map((entry: any) => (
-                  <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, marginBottom: 8 }}>
-                    <div>
+                  <div key={entry.id} className="food-log-row">
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>{entry.label}</div>
                       <div style={{ fontSize: 12, color: '#a09ccc' }}>{entry.at} · {macroCalories(entry.p, entry.c, entry.f)} cal · {entry.p}p · {entry.c}c · {entry.f}f</div>
                     </div>
-                    <button type="button" onClick={() => removeFoodLogEntry(entry.id)} style={{ background: '#262358', border: '1px solid #3a3778', color: '#ff3b2d', padding: '6px 10px', borderRadius: 4, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>UNDO</button>
+                    <button type="button" className="chip-btn chip-btn--danger" onClick={() => removeFoodLogEntry(entry.id)} style={{ flexShrink: 0 }}>UNDO</button>
                   </div>
                 ))}
               </div>
@@ -1691,7 +1572,7 @@ export default function Home() {
 
         {currentSection === 'plan' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>PLAN</h1>
+            <h1 className="page-title">PLAN</h1>
             <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
               RECOMP · 195 → 178 · ATHLETIC LEAN
             </div>
@@ -1699,7 +1580,7 @@ export default function Home() {
             {/* Goal */}
             <div style={{ background: 'radial-gradient(circle at 85% 15%,rgba(255,78,27,.28) 0%,transparent 55%),linear-gradient(135deg,#1c1945 0%,#252352 70%)', border: '1px solid #2e2b5e', borderLeft: '4px solid #ff4e1b', borderRadius: 4, padding: 26, marginBottom: 16 }}>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#ede9e0', fontStyle: 'italic', marginBottom: 14 }}>{RECOMP_GOAL.framing}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+              <div className="stat-grid-2" style={{ marginBottom: 16 }}>
                 <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
                   <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, marginBottom: 6 }}>Start</div>
                   <div style={{ fontSize: 14, color: '#ede9e0', fontWeight: 700 }}>{RECOMP_GOAL.start}</div>
@@ -1838,7 +1719,7 @@ export default function Home() {
             </button>
             {planSectionOpen('review') && (
               <div style={{ marginTop: 8, marginBottom: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 10 }}>
+                <div className="supp-grid" style={{ marginBottom: 10 }}>
                   {[
                     { label: 'Track Daily', items: WEEKLY_REVIEW.daily },
                     { label: 'Per Workout', items: WEEKLY_REVIEW.perWorkout },
@@ -1877,7 +1758,7 @@ export default function Home() {
 
         {currentSection === 'labs' && (
           <div>
-            <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>LABS</h1>
+            <h1 className="page-title">LABS</h1>
             <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
               2023 BASELINE vs {LABS_MAY_2026_DRAWN.toUpperCase()} PANEL
             </div>
@@ -1886,7 +1767,7 @@ export default function Home() {
               <strong style={{ color: '#5fc878' }}>Hormone headline:</strong> Total testosterone moved from <strong>468 → 512 ng/dL</strong> (+44). Still mid-range for age 41 — TSH, cortisol, and PSA look clean. Free T, SHBG, and estradiol were not in the May panel; order on follow-up.
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: labFilter ? 12 : 20 }}>
+            <div className="lab-filter-grid" style={{ marginBottom: labFilter ? 12 : 20 }}>
               {([
                 { key: 'optimal' as const, count: labSummary.optimal, label: 'Optimal / Good', color: '#5fc878' },
                 { key: 'watch' as const, count: labSummary.watch, label: 'Watch', color: '#ff4e1b' },
@@ -1901,9 +1782,10 @@ export default function Home() {
                     style={{
                       background: active ? `${color}18` : '#1e1c47',
                       border: `2px solid ${color}`,
-                      borderRadius: 4,
+                      borderRadius: 6,
                       padding: 14,
                       textAlign: 'center',
+                      minHeight: 44,
                       cursor: 'pointer',
                       transition: 'all .15s',
                       boxShadow: active ? `0 0 0 1px ${color}40` : 'none',
@@ -1917,15 +1799,11 @@ export default function Home() {
             </div>
 
             {labFilter && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '10px 14px', background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4 }}>
+              <div className="filter-banner">
                 <span style={{ fontSize: 13, color: '#ede9e0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
                   Showing {filteredLabCount} {labFilter === 'optimal' ? 'optimal / good' : labFilter} result{filteredLabCount === 1 ? '' : 's'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setLabFilter(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#a09ccc', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', cursor: 'pointer', letterSpacing: '1px' }}
-                >
+                <button type="button" className="chip-btn" onClick={() => setLabFilter(null)} style={{ background: 'transparent', border: 'none', color: '#a09ccc' }}>
                   Clear filter
                 </button>
               </div>

@@ -40,26 +40,8 @@ function LoginForm() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: 'var(--card)',
-          border: '1px solid var(--border-lt)',
-          borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
-        }}
-      >
+    <div className="login-shell">
+      <div className="login-card">
         <p
           style={{
             color: 'var(--orange)',
@@ -97,18 +79,9 @@ function LoginForm() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            className="mobile-input"
             autoComplete="current-password"
             required
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-lt)',
-              background: 'var(--bg2)',
-              color: 'var(--text)',
-              marginBottom: '16px',
-              fontSize: '16px',
-            }}
           />
 
           {error ? (
@@ -118,19 +91,8 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: 'var(--orange)',
-              color: '#fff',
-              fontWeight: 800,
-              fontSize: '14px',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              opacity: loading ? 0.7 : 1,
-            }}
+            className="login-submit"
+            style={{ opacity: loading ? 0.7 : 1 }}
           >
             {loading ? 'Checking...' : 'Enter'}
           </button>

@@ -1,4 +1,4 @@
-import { DATES, daysUntil, BASELINE } from './health-data';
+import { DATES, daysUntil, daysSinceStart, BASELINE } from './health-data';
 
 export type Milestone = {
   label: string;
@@ -32,6 +32,15 @@ export function getMilestones(): Milestone[] {
     { label: 'Birthday', date: DATES.birthday, days: daysUntil(DATES.birthday) },
   ];
   return items;
+}
+
+export function getPhase1Progress() {
+  const day = daysSinceStart(DATES.start);
+  const daysLeft = Math.max(0, daysUntil(DATES.phase1End));
+  const start = new Date(DATES.start + 'T00:00:00');
+  const end = new Date(DATES.phase1End + 'T00:00:00');
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+  return { day, daysLeft, totalDays };
 }
 
 export function getNextMilestone(): Milestone | null {
@@ -162,10 +171,23 @@ export function calculateStreak(days: Record<string, any> | undefined): number {
   return streak;
 }
 
-export function formatDelta(value: number, unit: string, invert = false): string {
+export function formatDelta(value: number, unit: string, lowerIsBetter = true): string {
   const sign = value > 0 ? '+' : '';
-  const arrow = invert
+  const arrow = lowerIsBetter
     ? value < 0 ? ' ↓' : value > 0 ? ' ↑' : ''
     : value > 0 ? ' ↑' : value < 0 ? ' ↓' : '';
   return `${sign}${value.toFixed(1)}${unit}${arrow}`;
+}
+
+export const COLOR_GOOD = '#5fc878';
+export const COLOR_BAD = '#ff4e1b';
+export const COLOR_NEUTRAL = '#a09ccc';
+
+export type DeltaDirection = 'lower-is-better' | 'higher-is-better';
+
+/** Green = good for your goal, red = bad (e.g. fat up = red, muscle up = green). */
+export function deltaColor(delta: number | null | undefined, direction: DeltaDirection): string {
+  if (delta == null || delta === 0) return COLOR_NEUTRAL;
+  const good = direction === 'lower-is-better' ? delta < 0 : delta > 0;
+  return good ? COLOR_GOOD : COLOR_BAD;
 }
