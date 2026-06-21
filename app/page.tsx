@@ -503,7 +503,7 @@ export default function Home() {
                   )}
 
                   {/* Daily trackers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 20 }}>
                     {/* Water */}
                     <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                       <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
@@ -527,6 +527,35 @@ export default function Home() {
                           />
                         ))}
                       </div>
+                    </div>
+
+                    {/* Calories */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                        CALORIES · {todayCalories} / {TARGETS.cals}
+                      </h3>
+                      <ProgressBar current={todayCalories} target={TARGETS.cals} label="Progress" />
+                      <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {today.protein || 0}g P · {today.carbs || 0}g C · {today.fat || 0}g F
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentSection('fuel')}
+                        style={{
+                          marginTop: 10,
+                          background: '#262358',
+                          border: '1px solid #3a3778',
+                          color: '#ede9e0',
+                          padding: '6px 10px',
+                          borderRadius: 2,
+                          fontSize: 11,
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          width: '100%',
+                        }}
+                      >
+                        LOG MEAL IN FUEL →
+                      </button>
                     </div>
 
                     {/* Protein */}
