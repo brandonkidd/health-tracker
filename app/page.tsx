@@ -1574,7 +1574,7 @@ export default function Home() {
           <div>
             <h1 className="page-title">PLAN</h1>
             <div style={{ color: '#a09ccc', fontSize: 14, marginBottom: 20, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-              RECOMP · 195 → 178 · ATHLETIC LEAN
+              RECOMP · 194 → 178 · ATHLETIC LEAN
             </div>
 
             {/* Goal */}

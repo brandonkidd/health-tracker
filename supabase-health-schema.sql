@@ -104,13 +104,13 @@ CREATE POLICY "Allow all operations" ON workout_logs FOR ALL USING (true);
 CREATE POLICY "Allow all operations" ON body_composition FOR ALL USING (true);
 CREATE POLICY "Allow all operations" ON meal_logs FOR ALL USING (true);
 
--- Insert baseline body composition (April 19, 2026)
+-- Insert baseline body composition (recomp start: June 21, 2026 · 194 lbs, lean held at 151.8)
 INSERT INTO body_composition (
   date, weight, bmi, body_fat, lean_mass, muscle_mass,
   skeletal_muscle, body_water, subcutaneous_fat, visceral_fat,
   bone_mass, protein, bmr, metabolic_age
 ) VALUES (
-  '2026-04-19', 191.8, 26.0, 20.9, 151.8, 144.2,
+  '2026-06-21', 194, 26.3, 21.8, 151.8, 144.2,
   51.2, 57.2, 18.2, 9,
   7.6, 18.0, 1856, 41
 ) ON CONFLICT (date) DO NOTHING;

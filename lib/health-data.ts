@@ -10,9 +10,9 @@ export const DATES = {
 export const BASELINE = {
   age: 41,
   height: "6'0\"",
-  weight: 191.8,
-  bmi: 26.0,
-  bodyFat: 20.9,
+  weight: 194,
+  bmi: 26.3,
+  bodyFat: 21.8,
   leanMass: 151.8,
   muscleMass: 144.2,
   bodyWater: 57.2,
@@ -612,12 +612,12 @@ export const LIFTING_DAY = [
 ];
 
 // ============================================================
-// RECOMP PROGRAM — 195 → 178, athletic lean
+// RECOMP PROGRAM — 194 → 178, athletic lean
 // Built around foot recovery. Birthday (9/7) = "look athletic" checkpoint.
 // ============================================================
 
 export const RECOMP_GOAL = {
-  start: "~195 lbs · ~19% body fat (≈37 lbs fat, ≈158 lbs lean)",
+  start: "194 lbs · ~21.8% body fat (≈42 lbs fat, ≈152 lbs lean)",
   target: "178–182 lbs · 11–12% body fat",
   framing: "This isn't weight loss — it's fat loss while holding every pound of muscle.",
   coreIdea: [
