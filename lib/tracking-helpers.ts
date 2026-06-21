@@ -1,9 +1,27 @@
-import { DATES, daysUntil } from './health-data';
+import { DATES, daysUntil, BASELINE } from './health-data';
 
 export type Milestone = {
   label: string;
   date: string;
   days: number;
+};
+
+export type WeightEntry = { date: string; weight: number };
+
+export type BodyCompSnapshot = {
+  weight: number;
+  bodyFatPct: number;
+  fatMass: number;
+  leanMass: number;
+  muscleMass: number;
+  musclePct: number;
+  source: 'scan' | 'estimate';
+};
+
+export const RECOMP_TARGETS = {
+  weight: 180,
+  bodyFat: 11.5,
+  muscleMass: BASELINE.muscleMass,
 };
 
 export function getMilestones(): Milestone[] {
@@ -56,4 +74,98 @@ export function getUpNext(schedule: ScheduleItem[]): ScheduleItem | null {
     }
   }
   return schedule[0] || null;
+}
+
+export function getWeightHistory(days: Record<string, any> | undefined): WeightEntry[] {
+  if (!days) return [];
+  return Object.entries(days)
+    .filter(([, d]) => d?.weight != null && d.weight > 0)
+    .map(([date, d]) => ({ date, weight: d.weight as number }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function rollingAverage(values: number[], count: number): number | null {
+  if (values.length === 0) return null;
+  const slice = values.slice(-count);
+  return Math.round((slice.reduce((sum, v) => sum + v, 0) / slice.length) * 10) / 10;
+}
+
+/** Latest logged weight, or null */
+export function getLatestWeight(days: Record<string, any> | undefined): number | null {
+  const history = getWeightHistory(days);
+  return history.length > 0 ? history[history.length - 1].weight : null;
+}
+
+/** Body comp from latest scan fields on a day, or lean-mass-held estimate from weight */
+export function getBodyComp(
+  weight: number,
+  day?: { bodyFat?: number | null; muscleMass?: number | null; leanMass?: number | null } | null,
+): BodyCompSnapshot {
+  if (day?.bodyFat != null && day.bodyFat > 0) {
+    const bodyFatPct = day.bodyFat;
+    const fatMass = (weight * bodyFatPct) / 100;
+    const leanMass = day.leanMass ?? weight - fatMass;
+    const muscleMass = day.muscleMass ?? BASELINE.muscleMass;
+    return {
+      weight,
+      bodyFatPct,
+      fatMass: Math.round(fatMass * 10) / 10,
+      leanMass: Math.round(leanMass * 10) / 10,
+      muscleMass,
+      musclePct: Math.round((muscleMass / weight) * 1000) / 10,
+      source: 'scan',
+    };
+  }
+
+  const leanMass = BASELINE.leanMass;
+  const fatMass = Math.max(0, weight - leanMass);
+  const bodyFatPct = weight > 0 ? (fatMass / weight) * 100 : BASELINE.bodyFat;
+  const muscleMass = BASELINE.muscleMass;
+  return {
+    weight,
+    bodyFatPct: Math.round(bodyFatPct * 10) / 10,
+    fatMass: Math.round(fatMass * 10) / 10,
+    leanMass,
+    muscleMass,
+    musclePct: Math.round((muscleMass / weight) * 1000) / 10,
+    source: 'estimate',
+  };
+}
+
+export function getStartBodyComp(): BodyCompSnapshot {
+  return getBodyComp(BASELINE.weight, {
+    bodyFat: BASELINE.bodyFat,
+    muscleMass: BASELINE.muscleMass,
+    leanMass: BASELINE.leanMass,
+  });
+}
+
+export function calculateStreak(days: Record<string, any> | undefined): number {
+  if (!days) return 0;
+  let streak = 0;
+  const currentDate = new Date();
+
+  for (let i = 0; i < 365; i++) {
+    const checkDate = new Date(currentDate);
+    checkDate.setDate(checkDate.getDate() - i);
+    const key = checkDate.toISOString().slice(0, 10);
+    const day = days[key];
+    if (!day) break;
+
+    const waterGoal = (day.water || 0) >= 3;
+    const proteinGoal = (day.protein || 0) >= 170;
+    const suppGoal = Object.values(day.supps || {}).filter(Boolean).length >= 6;
+
+    if (waterGoal && proteinGoal && suppGoal) streak++;
+    else break;
+  }
+  return streak;
+}
+
+export function formatDelta(value: number, unit: string, invert = false): string {
+  const sign = value > 0 ? '+' : '';
+  const arrow = invert
+    ? value < 0 ? ' ↓' : value > 0 ? ' ↑' : ''
+    : value > 0 ? ' ↑' : value < 0 ? ' ↓' : '';
+  return `${sign}${value.toFixed(1)}${unit}${arrow}`;
 }

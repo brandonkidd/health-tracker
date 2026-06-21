@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import './globals.css';
-import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, daysUntil, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
-import { getMilestones, getNextMilestone, getUpNext, progressPct, progressColor, macroCalories } from '@/lib/tracking-helpers';
+import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
+import { getUpNext, progressPct, progressColor, macroCalories, getMilestones, getNextMilestone, getWeightHistory, rollingAverage, getLatestWeight, getBodyComp, getStartBodyComp, calculateStreak, formatDelta, RECOMP_TARGETS } from '@/lib/tracking-helpers';
 import type { FoodPreset, LabComparison } from '@/lib/health-data';
 
 const STORE_KEY = "brandon_gameplan_v1";
@@ -18,12 +18,15 @@ function matchesLabFilter(lab: LabComparison, filter: LabFilter | null): boolean
 
 const NAV_SECTIONS = [
   { id: 'today', label: 'Today' },
+  { id: 'progress', label: 'Progress' },
   { id: 'fuel', label: 'Fuel' },
   { id: 'train', label: 'Train' },
   { id: 'plan', label: 'Plan' },
   { id: 'labs', label: 'Labs' },
-  { id: 'home', label: 'Home' },
 ] as const;
+
+const TARGET_WEIGHT = RECOMP_TARGETS.weight;
+const START_WEIGHT = BASELINE.weight;
 
 type SectionId = (typeof NAV_SECTIONS)[number]['id'];
 
@@ -38,6 +41,43 @@ function ProgressBar({ current, target, label }: { current: number; target: numb
       </div>
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+function WeightTrendChart({ entries, startWeight, targetWeight }: { entries: { date: string; weight: number }[]; startWeight: number; targetWeight: number }) {
+  if (entries.length === 0) {
+    return (
+      <div style={{ color: '#6864a0', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>
+        Log weight on Today to see your trend.
+      </div>
+    );
+  }
+
+  const weights = entries.map((e) => e.weight);
+  const minW = Math.min(...weights, targetWeight) - 2;
+  const maxW = Math.max(...weights, startWeight) + 2;
+  const range = maxW - minW || 1;
+
+  return (
+    <div className="weight-chart">
+      <div className="weight-chart-bars">
+        {entries.map((entry) => {
+          const h = ((entry.weight - minW) / range) * 100;
+          const isGoal = entry.weight <= targetWeight + 0.5;
+          return (
+            <div key={entry.date} className="weight-chart-col" title={`${entry.date}: ${entry.weight} lbs`}>
+              <div className="weight-chart-bar" style={{ height: `${Math.max(8, h)}%`, background: isGoal ? '#5fc878' : '#ff4e1b' }} />
+              <div className="weight-chart-label">{entry.date.slice(5)}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="weight-chart-legend">
+        <span><span className="weight-chart-dot" style={{ background: '#ff4e1b' }} /> Logged</span>
+        <span><span className="weight-chart-dot" style={{ background: '#5fc878' }} /> At/below goal</span>
+        <span>Start {startWeight} → Goal {targetWeight}</span>
       </div>
     </div>
   );
@@ -124,6 +164,17 @@ export default function Home() {
       const d = getDayFrom(days, key);
       if (amount === -999) d.protein = 0;
       else d.protein = Math.max(0, (d.protein || 0) + amount);
+      days[key] = d;
+      return { ...prev, days };
+    });
+  };
+
+  const setTodayWeight = (lbs: number | null) => {
+    const key = todayKey();
+    updateState((prev: any) => {
+      const days = { ...(prev.days || {}) };
+      const d = getDayFrom(days, key);
+      d.weight = lbs;
       days[key] = d;
       return { ...prev, days };
     });
@@ -263,34 +314,27 @@ export default function Home() {
   const suppsDone = Object.values(today.supps || {}).filter(Boolean).length;
   const suppsTotal = SUPPLEMENTS_DAILY.filter(s => s.tier === 1).length;
 
-  // Calculate streak (consecutive days hitting goals)
-  const calculateStreak = () => {
-    if (!state.days) return 0;
-    let streak = 0;
-    const currentDate = new Date();
-    
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(currentDate);
-      checkDate.setDate(checkDate.getDate() - i);
-      const key = checkDate.toISOString().slice(0, 10);
-      const day = state.days[key];
-      
-      if (!day) break;
-      
-      const waterGoal = (day.water || 0) >= 3; // At least 3L
-      const proteinGoal = (day.protein || 0) >= 170; // At least 170g (90% of target)
-      const suppGoal = Object.values(day.supps || {}).filter(Boolean).length >= 6; // At least 6 supps
-      
-      if (waterGoal && proteinGoal && suppGoal) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  };
-
-  const streak = calculateStreak();
+  const milestones = getMilestones();
+  const nextMilestone = getNextMilestone();
+  const streak = calculateStreak(state.days);
+  const weightHistory = getWeightHistory(state.days);
+  const latestWeight = getLatestWeight(state.days);
+  const weightValues = weightHistory.map((e) => e.weight);
+  const avg7Weight = rollingAverage(weightValues, 7);
+  const startComp = getStartBodyComp();
+  const latestDay = latestWeight != null ? state.days?.[weightHistory[weightHistory.length - 1]?.date] : null;
+  const currentComp = latestWeight != null ? getBodyComp(latestWeight, latestDay) : null;
+  const fatLost = currentComp ? startComp.fatMass - currentComp.fatMass : 0;
+  const bfDelta = currentComp ? currentComp.bodyFatPct - startComp.bodyFatPct : 0;
+  const musclePctGain = currentComp ? currentComp.musclePct - startComp.musclePct : 0;
+  const weightDelta = latestWeight != null ? latestWeight - START_WEIGHT : null;
+  const weightToGoal = latestWeight != null ? latestWeight - TARGET_WEIGHT : null;
+  const weightProgressPct = latestWeight != null
+    ? Math.min(100, Math.round(((START_WEIGHT - latestWeight) / (START_WEIGHT - TARGET_WEIGHT)) * 100))
+    : 0;
+  const fatProgressPct = currentComp
+    ? Math.min(100, Math.round((fatLost / (startComp.fatMass - (TARGET_WEIGHT * RECOMP_TARGETS.bodyFat / 100))) * 100))
+    : 0;
 
   const labColor = (cls: string | null) => {
     if (cls === 'red') return '#ff3b2d';
@@ -309,8 +353,6 @@ export default function Home() {
   const togglePlan = (key: string) => setCollapsedPlan((prev) => ({ ...prev, [key]: !planSectionOpen(key, key === 'phases') }));
 
   const labCategories = Array.from(new Set(LAB_COMPARISONS.map((lab) => lab.category)));
-  const milestones = getMilestones();
-  const nextMilestone = getNextMilestone();
   const tierOneSupps = SUPPLEMENTS_DAILY.filter((s) => s.tier === 1);
   const foodLog = today.foodLog || [];
 
@@ -382,88 +424,6 @@ export default function Home() {
       <div style={{ height: 2, background: 'linear-gradient(90deg,#ff4e1b 0%,#ff4e1b 45%,#5d58c7 100%)' }} />
 
       <main className="app-main">
-        {currentSection === 'home' && (
-          <div>
-            <div style={{ background: 'radial-gradient(circle at 80% 20%,rgba(255,78,27,.32) 0%,transparent 50%),radial-gradient(circle at 15% 85%,rgba(93,88,199,.4) 0%,transparent 55%),linear-gradient(135deg,#1c1945 0%,#252352 60%,#2e2466 100%)', border: '1px solid #2e2b5e', borderRadius: 4, padding: '48px 36px', marginBottom: 22, borderLeft: '4px solid #ff4e1b' }}>
-              <h4 style={{ color: '#ff4e1b', marginBottom: 16, fontSize: 12, letterSpacing: 3, fontWeight: 800 }}>— THE BRANDON PROJECT · 2026</h4>
-              <h1 className="hero-title" style={{ fontSize: 72, lineHeight: 0.9, letterSpacing: -3, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic' }}>
-                NO DAYS<br />OFF<span style={{ color: '#ff4e1b' }}>.</span>
-              </h1>
-              <div style={{ color: '#ede9e0', opacity: 0.85, marginTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
-                HEALTH · FITNESS · FUEL · HORMONES — BIRTHDAY SEPT 2026
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginTop: 28 }}>
-                <div style={{ background: 'rgba(26,24,64,.55)', backdropFilter: 'blur(6px)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>TODAY</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0', marginTop: 8 }}>{todayKey()}</div>
-                </div>
-                <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(95,200,120,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #5fc878', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#5fc878' }}>
-                    {streak}
-                    <span style={{ fontSize: 16, marginLeft: 4 }}>🔥</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Day Streak</div>
-                </div>
-                <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #ff4e1b', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ff4e1b' }}>
-                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? '✓' : milestones.find((m) => m.label === 'Phase 1')!.days}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>
-                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? 'Phase 1 Complete' : 'Days to Phase 1 End'}
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0' }}>
-                    {nextMilestone ? nextMilestone.days : '✓'}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>
-                    {nextMilestone ? `Days to ${nextMilestone.label}` : 'All milestones passed'}
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0' }}>{daysUntil(DATES.birthday) >= 0 ? daysUntil(DATES.birthday) : '✓'}</div>
-                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Days to Birthday</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
-                <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Live Numbers</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
-                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                      {Math.round((today.water || 0) * 8)}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {targetWater} oz</span>
-                    </div>
-                    <ProgressBar current={(today.water || 0) * 8} target={targetWater} label="Water" />
-                  </div>
-                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                      {today.protein || 0}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {targetProtein}g</span>
-                    </div>
-                    <ProgressBar current={today.protein || 0} target={targetProtein} label="Protein" />
-                  </div>
-                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                      {suppsDone}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {suppsTotal}</span>
-                    </div>
-                    <ProgressBar current={suppsDone} target={suppsTotal} label="Supplements" />
-                  </div>
-                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
-                      {todayCalories}<span style={{ fontSize: 14, color: '#a09ccc' }}> / {TARGETS.cals}</span>
-                    </div>
-                    <ProgressBar current={todayCalories} target={TARGETS.cals} label="Calories" />
-                  </div>
-                </div>
-                <p style={{ marginTop: 18, fontSize: 13, color: '#a09ccc' }}>
-                  Head to <button onClick={() => setCurrentSection('today')} style={{ background: 'none', border: 'none', color: '#ff4e1b', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>Today →</button> to attack the checklist.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {currentSection === 'today' && (
           <div>
             <h1 style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', marginBottom: 14 }}>TODAY</h1>
@@ -502,8 +462,8 @@ export default function Home() {
                     </button>
                   )}
 
-                  {/* Daily trackers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 20 }}>
+                  {/* Daily trackers — water | protein | calories */}
+                  <div className="today-tracker-grid" style={{ marginBottom: 20 }}>
                     {/* Water */}
                     <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
                       <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
@@ -527,35 +487,6 @@ export default function Home() {
                           />
                         ))}
                       </div>
-                    </div>
-
-                    {/* Calories */}
-                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
-                        CALORIES · {todayCalories} / {TARGETS.cals}
-                      </h3>
-                      <ProgressBar current={todayCalories} target={TARGETS.cals} label="Progress" />
-                      <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        {today.protein || 0}g P · {today.carbs || 0}g C · {today.fat || 0}g F
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setCurrentSection('fuel')}
-                        style={{
-                          marginTop: 10,
-                          background: '#262358',
-                          border: '1px solid #3a3778',
-                          color: '#ede9e0',
-                          padding: '6px 10px',
-                          borderRadius: 2,
-                          fontSize: 11,
-                          fontWeight: 900,
-                          cursor: 'pointer',
-                          width: '100%',
-                        }}
-                      >
-                        LOG MEAL IN FUEL →
-                      </button>
                     </div>
 
                     {/* Protein */}
@@ -607,6 +538,143 @@ export default function Home() {
                           RESET
                         </button>
                       </div>
+                    </div>
+
+                    {/* Weight */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                        WEIGHT · {today.weight != null ? today.weight.toFixed(1) : '—'} / {TARGET_WEIGHT} LBS
+                      </h3>
+                      {today.weight != null && (
+                        <ProgressBar
+                          current={Math.round(((START_WEIGHT - today.weight) / (START_WEIGHT - TARGET_WEIGHT)) * 100)}
+                          target={100}
+                          label="To Goal"
+                        />
+                      )}
+                      <div style={{ display: 'flex', gap: 6, marginTop: 10, alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="100"
+                          max="400"
+                          placeholder="e.g. 187.4"
+                          defaultValue={today.weight ?? ''}
+                          key={today.weight ?? 'empty'}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = parseFloat((e.target as HTMLInputElement).value);
+                              if (!isNaN(val) && val > 0) setTodayWeight(val);
+                            }
+                          }}
+                          style={{
+                            flex: 1,
+                            background: '#1a1840',
+                            border: '1px solid #3a3778',
+                            borderRadius: 2,
+                            color: '#ede9e0',
+                            padding: '8px 10px',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            fontFamily: 'inherit',
+                            minWidth: 0,
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                            const val = parseFloat(input.value);
+                            if (!isNaN(val) && val > 0) setTodayWeight(val);
+                          }}
+                          style={{
+                            background: '#ff4e1b',
+                            border: '1px solid #ff4e1b',
+                            color: '#fff',
+                            padding: '8px 12px',
+                            borderRadius: 2,
+                            fontSize: 11,
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                          }}
+                        >
+                          LOG
+                        </button>
+                      </div>
+                      {today.weight != null && (
+                        <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 8, fontWeight: 700 }}>
+                          {(today.weight - START_WEIGHT).toFixed(1)} lbs from start ({START_WEIGHT})
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Calories */}
+                    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 4, fontWeight: 900, textTransform: 'uppercase' }}>
+                        CALORIES · {todayCalories} / {TARGETS.cals}
+                      </h3>
+                      <ProgressBar current={todayCalories} target={TARGETS.cals} label="Progress" />
+                      <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {today.protein || 0}g P · {today.carbs || 0}g C · {today.fat || 0}g F
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                        {FOOD_PRESETS.filter((p) => ['meal-shake', 'quick-eggs', 'quick-chicken', 'meal-pre-wo'].includes(p.id)).map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => addFoodPreset(preset)}
+                            style={{
+                              background: '#262358',
+                              border: '1px solid #3a3778',
+                              color: '#ede9e0',
+                              padding: '6px 10px',
+                              borderRadius: 2,
+                              fontSize: 11,
+                              fontWeight: 900,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            +{macroCalories(preset.p, preset.c, preset.f)} {preset.label.split(' ')[0].toUpperCase()}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => resetMacro('calories')}
+                          style={{
+                            background: '#ff3b2d',
+                            border: '1px solid #ff3b2d',
+                            color: '#ede9e0',
+                            padding: '6px 10px',
+                            borderRadius: 2,
+                            fontSize: 11,
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          UNDO LAST
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentSection('fuel')}
+                        style={{
+                          marginTop: 10,
+                          width: '100%',
+                          background: 'transparent',
+                          border: '1px solid #ff4e1b',
+                          color: '#ff4e1b',
+                          padding: '8px 10px',
+                          borderRadius: 2,
+                          fontSize: 11,
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        More meals in Fuel →
+                      </button>
                     </div>
 
                     {/* Supplements — upfront checklist */}

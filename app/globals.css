@@ -389,6 +389,24 @@ h3 {
   flex: 1 1 calc(50% - 8px);
 }
 
+.today-tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .today-tracker-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .today-tracker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (min-width: 769px) {
   .preset-btn {
     flex: 0 1 auto;
