@@ -130,7 +130,7 @@ function WeightLogger({
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {weightDelta != null && (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b' }}>{formatDelta(weightDelta, '', true)}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b' }}>{formatDelta(weightDelta, ' lbs', true)}</div>
               <div style={{ fontSize: 9, color: '#6864a0', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>From Start</div>
             </div>
           )}
@@ -1095,6 +1095,19 @@ export default function Home() {
               </div>
             </div>
 
+            <WeightLogger
+              todayWeight={today.weight ?? null}
+              onLog={setTodayWeight}
+              onClear={() => setTodayWeight(null)}
+              startWeight={START_WEIGHT}
+              targetWeight={TARGET_WEIGHT}
+              latestWeight={latestWeight}
+              avg7Weight={avg7Weight}
+              weightDelta={weightDelta}
+              weightToGoal={weightToGoal}
+              weightProgressPct={weightProgressPct}
+            />
+
             <h2 style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', marginBottom: 14 }}>Body Recomp</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 22 }}>
               <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
@@ -1171,6 +1184,12 @@ export default function Home() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
                   <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
                     <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
+                      {latestWeight != null ? latestWeight.toFixed(1) : '—'}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {TARGET_WEIGHT} lbs</span>
+                    </div>
+                    <ProgressBar current={weightProgressPct} target={100} label="Weight" />
+                  </div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
                       {Math.round((today.water || 0) * 8)}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {targetWater} oz</span>
                     </div>
                     <ProgressBar current={(today.water || 0) * 8} target={targetWater} label="Water" />
@@ -1216,7 +1235,7 @@ export default function Home() {
                   ))}
                 </div>
                 <p style={{ marginTop: 14, fontSize: 11, color: '#6864a0', lineHeight: 1.5 }}>
-                  Log weight daily on <button type="button" onClick={() => setCurrentSection('today')} style={{ background: 'none', border: 'none', color: '#ff4e1b', fontWeight: 700, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Today</button>. Body fat estimates assume lean mass held at {BASELINE.leanMass} lbs until your next scan.
+                  Weigh in daily using the tracker above or on <button type="button" onClick={() => setCurrentSection('today')} style={{ background: 'none', border: 'none', color: '#ff4e1b', fontWeight: 700, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Today</button>. Body fat estimates assume lean mass held at {BASELINE.leanMass} lbs until your next scan.
                 </p>
               </div>
             </div>
