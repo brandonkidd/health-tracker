@@ -50,7 +50,7 @@ function WeightTrendChart({ entries, startWeight, targetWeight }: { entries: { d
   if (entries.length === 0) {
     return (
       <div style={{ color: '#6864a0', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>
-        Log weight on Today to see your trend.
+        Log your weight below to see your trend.
       </div>
     );
   }
@@ -79,6 +79,146 @@ function WeightTrendChart({ entries, startWeight, targetWeight }: { entries: { d
         <span><span className="weight-chart-dot" style={{ background: '#5fc878' }} /> At/below goal</span>
         <span>Start {startWeight} → Goal {targetWeight}</span>
       </div>
+    </div>
+  );
+}
+
+function WeightLogger({
+  todayWeight,
+  onLog,
+  onClear,
+  startWeight,
+  targetWeight,
+  latestWeight,
+  avg7Weight,
+  weightDelta,
+  weightToGoal,
+  weightProgressPct,
+}: {
+  todayWeight: number | null;
+  onLog: (lbs: number) => void;
+  onClear: () => void;
+  startWeight: number;
+  targetWeight: number;
+  latestWeight: number | null;
+  avg7Weight: number | null;
+  weightDelta: number | null;
+  weightToGoal: number | null;
+  weightProgressPct: number;
+}) {
+  const displayWeight = todayWeight ?? latestWeight;
+
+  const submitWeight = (input: HTMLInputElement | null) => {
+    if (!input) return;
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0) onLog(val);
+  };
+
+  return (
+    <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderLeft: '4px solid #5fc878', borderRadius: 4, padding: '22px 24px', marginBottom: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 10, color: '#5fc878', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: 6 }}>Weight Tracker</div>
+          <div style={{ fontSize: 44, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0', lineHeight: 1 }}>
+            {displayWeight != null ? displayWeight.toFixed(1) : '—'}
+            <span style={{ fontSize: 16, color: '#a09ccc' }}> lbs</span>
+          </div>
+          <div style={{ fontSize: 12, color: '#a09ccc', marginTop: 6, fontWeight: 700 }}>
+            Goal {targetWeight} lbs · Started {startWeight} lbs
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {weightDelta != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b' }}>{formatDelta(weightDelta, '', true)}</div>
+              <div style={{ fontSize: 9, color: '#6864a0', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>From Start</div>
+            </div>
+          )}
+          {weightToGoal != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: '#ff4e1b' }}>{weightToGoal > 0 ? weightToGoal.toFixed(1) : '✓'}</div>
+              <div style={{ fontSize: 9, color: '#6864a0', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>To Goal</div>
+            </div>
+          )}
+          {avg7Weight != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: '#ede9e0' }}>{avg7Weight}</div>
+              <div style={{ fontSize: 9, color: '#6864a0', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>7-Day Avg</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ProgressBar current={weightProgressPct} target={100} label={`Progress to ${targetWeight} lbs`} />
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="number"
+          step="0.1"
+          min="100"
+          max="400"
+          placeholder="Today's weight (e.g. 187.4)"
+          defaultValue={todayWeight ?? ''}
+          key={`weight-input-${todayWeight ?? 'empty'}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submitWeight(e.currentTarget);
+          }}
+          style={{
+            flex: 1,
+            minWidth: 160,
+            background: '#1a1840',
+            border: '1px solid #3a3778',
+            borderRadius: 4,
+            color: '#ede9e0',
+            padding: '12px 14px',
+            fontSize: 14,
+            fontWeight: 700,
+            fontFamily: 'inherit',
+          }}
+        />
+        <button
+          type="button"
+          onClick={(e) => submitWeight(e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement)}
+          style={{
+            background: '#5fc878',
+            border: '1px solid #5fc878',
+            color: '#13112e',
+            padding: '12px 18px',
+            borderRadius: 4,
+            fontSize: 12,
+            fontWeight: 900,
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Log Weight
+        </button>
+        {todayWeight != null && (
+          <button
+            type="button"
+            onClick={onClear}
+            style={{
+              background: 'transparent',
+              border: '1px solid #3a3778',
+              color: '#a09ccc',
+              padding: '12px 14px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+            }}
+          >
+            Clear Today
+          </button>
+        )}
+      </div>
+      {todayWeight == null && latestWeight != null && (
+        <div style={{ fontSize: 11, color: '#6864a0', marginTop: 10 }}>
+          Last logged {latestWeight.toFixed(1)} lbs — enter today&apos;s weigh-in above.
+        </div>
+      )}
     </div>
   );
 }
@@ -910,6 +1050,193 @@ export default function Home() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {currentSection === 'progress' && (
+          <div>
+            <div style={{ background: 'radial-gradient(circle at 80% 20%,rgba(255,78,27,.32) 0%,transparent 50%),radial-gradient(circle at 15% 85%,rgba(93,88,199,.4) 0%,transparent 55%),linear-gradient(135deg,#1c1945 0%,#252352 60%,#2e2466 100%)', border: '1px solid #2e2b5e', borderRadius: 4, padding: '48px 36px', marginBottom: 22, borderLeft: '4px solid #ff4e1b' }}>
+              <h4 style={{ color: '#ff4e1b', marginBottom: 16, fontSize: 12, letterSpacing: 3, fontWeight: 800 }}>— THE BRANDON PROJECT · 2026</h4>
+              <h1 className="hero-title" style={{ fontSize: 72, lineHeight: 0.9, letterSpacing: -3, fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic' }}>
+                NO DAYS<br />OFF<span style={{ color: '#ff4e1b' }}>.</span>
+              </h1>
+              <div style={{ color: '#ede9e0', opacity: 0.85, marginTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
+                RECOMP · FAT DOWN · MUSCLE HELD · BIRTHDAY SEPT 2026
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginTop: 28 }}>
+                <div style={{ background: 'rgba(26,24,64,.55)', backdropFilter: 'blur(6px)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#5fc878' }}>
+                    {streak}<span style={{ fontSize: 16, marginLeft: 4 }}>🔥</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Day Streak</div>
+                </div>
+                <div style={{ background: 'radial-gradient(circle at 50% 120%,rgba(255,78,27,.22) 0%,transparent 60%),rgba(26,24,64,.55)', border: '1px solid #ff4e1b', borderRadius: 4, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ff4e1b' }}>
+                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? '✓' : milestones.find((m) => m.label === 'Phase 1')!.days}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>
+                    {milestones.find((m) => m.label === 'Phase 1')!.days < 0 ? 'Phase 1 Complete' : 'Days to Phase 1 End'}
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0' }}>
+                    {nextMilestone ? nextMilestone.days : '✓'}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>
+                    {nextMilestone ? `Days to ${nextMilestone.label}` : 'All milestones passed'}
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(26,24,64,.55)', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, fontStyle: 'italic', letterSpacing: -2, color: '#ede9e0' }}>
+                    {(() => { const d = milestones.find((m) => m.label === 'Birthday'); return d && d.days >= 0 ? d.days : '✓'; })()}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#a09ccc', textTransform: 'uppercase', letterSpacing: 2, marginTop: 8, fontWeight: 800 }}>Days to Birthday</div>
+                </div>
+              </div>
+            </div>
+
+            <h2 style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', marginBottom: 14 }}>Body Recomp</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 22 }}>
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                <div style={{ fontSize: 10, color: '#a09ccc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Weight</div>
+                <div style={{ fontSize: 36, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0', lineHeight: 1 }}>
+                  {latestWeight != null ? latestWeight.toFixed(1) : '—'}
+                  <span style={{ fontSize: 14, color: '#a09ccc' }}> lbs</span>
+                </div>
+                {weightDelta != null && (
+                  <div style={{ fontSize: 13, color: weightDelta <= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, marginTop: 8 }}>
+                    {formatDelta(weightDelta, ' lbs', true)} from start
+                  </div>
+                )}
+                {avg7Weight != null && (
+                  <div style={{ fontSize: 11, color: '#6864a0', marginTop: 4 }}>7-day avg: {avg7Weight} lbs</div>
+                )}
+                {weightToGoal != null && (
+                  <div style={{ fontSize: 11, color: '#a09ccc', marginTop: 4 }}>
+                    {weightToGoal > 0 ? `${weightToGoal.toFixed(1)} lbs to goal` : 'At goal weight'}
+                  </div>
+                )}
+                <div style={{ marginTop: 12 }}>
+                  <ProgressBar current={weightProgressPct} target={100} label="To 180 lbs" />
+                </div>
+              </div>
+
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                <div style={{ fontSize: 10, color: '#a09ccc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Body Fat</div>
+                <div style={{ fontSize: 36, fontWeight: 900, fontStyle: 'italic', color: '#ff4e1b', lineHeight: 1 }}>
+                  {currentComp ? currentComp.bodyFatPct.toFixed(1) : BASELINE.bodyFat}
+                  <span style={{ fontSize: 14, color: '#a09ccc' }}>%</span>
+                </div>
+                {currentComp && (
+                  <div style={{ fontSize: 13, color: '#5fc878', fontWeight: 800, marginTop: 8 }}>
+                    {formatDelta(bfDelta, '%', true)} from start ({BASELINE.bodyFat}%)
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: '#6864a0', marginTop: 4 }}>
+                  Fat mass: {currentComp ? `${currentComp.fatMass} lbs` : `${startComp.fatMass} lbs`}
+                  {fatLost > 0 && <span style={{ color: '#5fc878' }}> · {fatLost.toFixed(1)} lbs lost</span>}
+                </div>
+                <div style={{ fontSize: 10, color: '#6864a0', marginTop: 6 }}>Goal: {RECOMP_TARGETS.bodyFat}% · {currentComp?.source === 'estimate' ? 'Est. (lean held)' : 'Scan'}</div>
+                <div style={{ marginTop: 12 }}>
+                  <ProgressBar current={Math.max(0, fatProgressPct)} target={100} label="Fat loss progress" />
+                </div>
+              </div>
+
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 20 }}>
+                <div style={{ fontSize: 10, color: '#a09ccc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Muscle</div>
+                <div style={{ fontSize: 36, fontWeight: 900, fontStyle: 'italic', color: '#5fc878', lineHeight: 1 }}>
+                  {currentComp ? currentComp.muscleMass.toFixed(1) : BASELINE.muscleMass}
+                  <span style={{ fontSize: 14, color: '#a09ccc' }}> lbs</span>
+                </div>
+                <div style={{ fontSize: 13, color: musclePctGain >= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, marginTop: 8 }}>
+                  {formatDelta(musclePctGain, '%', false)} muscle % of bodyweight
+                </div>
+                <div style={{ fontSize: 11, color: '#6864a0', marginTop: 4 }}>
+                  {currentComp ? `${currentComp.musclePct}% of bodyweight` : `${startComp.musclePct}%`} · target: hold {RECOMP_TARGETS.muscleMass} lbs
+                </div>
+                <div style={{ fontSize: 10, color: '#6864a0', marginTop: 6, lineHeight: 1.5 }}>
+                  {RECOMP_GOAL.framing}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26, marginBottom: 22 }}>
+              <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Weight Trend</h3>
+              <WeightTrendChart entries={weightHistory.slice(-14)} startWeight={START_WEIGHT} targetWeight={TARGET_WEIGHT} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 22 }}>
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+                <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Live Numbers</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
+                      {Math.round((today.water || 0) * 8)}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {targetWater} oz</span>
+                    </div>
+                    <ProgressBar current={(today.water || 0) * 8} target={targetWater} label="Water" />
+                  </div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
+                      {today.protein || 0}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {targetProtein}g</span>
+                    </div>
+                    <ProgressBar current={today.protein || 0} target={targetProtein} label="Protein" />
+                  </div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
+                      {suppsDone}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {suppsTotal}</span>
+                    </div>
+                    <ProgressBar current={suppsDone} target={suppsTotal} label="Supplements" />
+                  </div>
+                  <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderRadius: 4, padding: 14 }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', color: '#ede9e0' }}>
+                      {todayCalories}<span style={{ fontSize: 12, color: '#a09ccc' }}> / {TARGETS.cals}</span>
+                    </div>
+                    <ProgressBar current={todayCalories} target={TARGETS.cals} label="Calories" />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+                <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Baseline → Now</h3>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {[
+                    { label: 'Weight', start: `${START_WEIGHT} lbs`, now: latestWeight != null ? `${latestWeight.toFixed(1)} lbs` : '—', delta: weightDelta, good: weightDelta != null && weightDelta < 0 },
+                    { label: 'Body fat %', start: `${BASELINE.bodyFat}%`, now: currentComp ? `${currentComp.bodyFatPct}%` : '—', delta: bfDelta, good: bfDelta < 0 },
+                    { label: 'Fat mass', start: `${startComp.fatMass} lbs`, now: currentComp ? `${currentComp.fatMass} lbs` : '—', delta: fatLost > 0 ? -fatLost : 0, good: fatLost > 0 },
+                    { label: 'Muscle %', start: `${startComp.musclePct}%`, now: currentComp ? `${currentComp.musclePct}%` : '—', delta: musclePctGain, good: musclePctGain >= 0 },
+                  ].map((row) => (
+                    <div key={row.label} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '10px 12px', background: '#1a1840', borderRadius: 4, border: '1px solid #2e2b5e', fontSize: 12 }}>
+                      <span style={{ fontWeight: 800, color: '#a09ccc', textTransform: 'uppercase', fontSize: 10 }}>{row.label}</span>
+                      <span style={{ color: '#6864a0' }}>{row.start}</span>
+                      <span style={{ fontWeight: 800, color: '#ede9e0' }}>{row.now}</span>
+                      <span style={{ fontWeight: 900, color: row.good ? '#5fc878' : '#6864a0', minWidth: 52, textAlign: 'right' }}>
+                        {row.delta != null && row.delta !== 0 ? formatDelta(row.delta, row.label.includes('%') ? '%' : row.label.includes('fat') && row.label !== 'Body fat %' ? ' lbs' : row.label === 'Weight' ? ' lbs' : '%', row.label !== 'Muscle %') : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ marginTop: 14, fontSize: 11, color: '#6864a0', lineHeight: 1.5 }}>
+                  Log weight daily on <button type="button" onClick={() => setCurrentSection('today')} style={{ background: 'none', border: 'none', color: '#ff4e1b', fontWeight: 700, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Today</button>. Body fat estimates assume lean mass held at {BASELINE.leanMass} lbs until your next scan.
+                </p>
+              </div>
+            </div>
+
+            {weightHistory.length > 0 && (
+              <div style={{ background: '#1e1c47', border: '1px solid #2e2b5e', borderRadius: 4, padding: 26 }}>
+                <h3 style={{ fontSize: 17, marginBottom: 14, fontWeight: 900, textTransform: 'uppercase' }}>Weight Log</h3>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {[...weightHistory].reverse().slice(0, 10).map((entry) => (
+                    <div key={entry.date} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#1a1840', borderRadius: 4, border: '1px solid #2e2b5e', fontSize: 13 }}>
+                      <span style={{ color: '#a09ccc' }}>{entry.date}</span>
+                      <span style={{ fontWeight: 900, color: '#ede9e0' }}>{entry.weight.toFixed(1)} lbs</span>
+                      <span style={{ color: entry.weight - START_WEIGHT <= 0 ? '#5fc878' : '#ff4e1b', fontWeight: 800, fontSize: 12 }}>
+                        {formatDelta(entry.weight - START_WEIGHT, ' lbs', true)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
