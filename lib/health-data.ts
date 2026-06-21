@@ -105,7 +105,7 @@ export const NON_NEGOTIABLES = [
   "Hit 190g protein — every single day",
   "Drink 3–4 L water — Peloton + runs dehydrate heavily",
   "Eat within 1 hour of waking",
-  "ZERO alcohol for 8 weeks (April 19 → June 15)",
+  "ZERO alcohol for 8 weeks (June 21 → August 16)",
   "8,000–12,000 steps daily — treadmill desk counts",
   "Coffee cut-off: 2:00 pm sharp",
   "Moon Brew + Mg every night — no skipping",
