@@ -1,3 +1,7 @@
+import { MEAL_CATALOG_META, RESTAURANT_PRESETS } from '@/lib/meal-catalog';
+
+export { MEAL_CATALOG_META };
+
 // Complete health plan data extracted from original HTML
 export const DATES = {
   start: "2026-06-21",
@@ -26,10 +30,10 @@ export const BASELINE = {
 };
 
 export const TARGETS = {
-  cals: 2100,
+  cals: 1750,
   protein: 190,
-  carbs: 140,
-  fat: 70,
+  carbs: 115,
+  fat: 65,
   fiber: 25,
   water: 4,
   steps: 10000
@@ -190,9 +194,11 @@ export type FoodPreset = {
   f: number;
   fiber?: number;
   notes?: string;
+  source?: string;
+  verifiedMacros?: boolean;
 };
 
-/** Recomp preset meals — from data/recomp-meals.xlsx */
+/** Home + quick presets; restaurant picks from data/meal-catalog.json */
 export const FOOD_PRESETS: FoodPreset[] = [
   // Home — breakfast
   { id: 'bf-simple', label: 'Breakfast Simple', say: 'eggs avocado', category: 'breakfast', cals: 336, p: 20, c: 7, f: 25, fiber: 5 },
@@ -223,26 +229,8 @@ export const FOOD_PRESETS: FoodPreset[] = [
   { id: 'quick-salmon', label: '6oz Salmon', say: 'salmon', category: 'quick', cals: 350, p: 40, c: 0, f: 20 },
   { id: 'quick-avocado', label: '½ Avocado', say: 'avocado', category: 'quick', cals: 120, p: 2, c: 6, f: 11, fiber: 5 },
   { id: 'quick-rice', label: '½ Cup Brown Rice', say: 'rice', category: 'quick', cals: 108, p: 3, c: 22, f: 1, fiber: 2 },
-  // Cha Cha's Latin Kitchen
-  { id: 'out-chachas-fajitas', label: "Cha Cha's Fajitas", say: 'cha chas fajitas', category: 'restaurant', cals: 600, p: 50, c: 30, f: 28, fiber: 5, notes: '1–2 corn tortillas, pico + guac. Skip rice, beans, chips.' },
-  { id: 'out-chachas-asada', label: "Cha Cha's Carne Asada", say: 'cha chas carne asada', category: 'restaurant', cals: 550, p: 48, c: 18, f: 30, fiber: 4, notes: 'Limit or skip potatoes' },
-  { id: 'out-chachas-yucatan', label: "Cha Cha's Yucatan Chicken", say: 'cha chas yucatan chicken', category: 'restaurant', cals: 520, p: 50, c: 22, f: 22, fiber: 5 },
-  // Baja Fish Tacos
-  { id: 'out-baja-wahoo-salad', label: 'Baja Wahoo Salad', say: 'baja wahoo salad', category: 'restaurant', cals: 450, p: 40, c: 20, f: 22, fiber: 5, notes: 'Charbroiled only, dressing on side' },
-  { id: 'out-baja-fish-tacos', label: 'Baja Fish Tacos x3', say: 'baja fish tacos', category: 'restaurant', cals: 480, p: 38, c: 42, f: 16, fiber: 6, notes: 'Corn tortillas, no rice + beans' },
-  { id: 'out-baja-ceviche', label: 'Baja Wahoo Ceviche', say: 'baja ceviche', category: 'restaurant', cals: 350, p: 35, c: 18, f: 14, fiber: 4 },
-  // Que Vida
-  { id: 'out-quevida-salmon', label: 'Que Vida Salmon Salad', say: 'que vida salmon salad', category: 'restaurant', cals: 520, p: 40, c: 22, f: 28, fiber: 6, notes: 'Skip tortilla strips' },
-  { id: 'out-quevida-shrimp-salad', label: 'Que Vida Shrimp Salad', say: 'que vida shrimp salad', category: 'restaurant', cals: 450, p: 42, c: 18, f: 22, fiber: 5 },
-  { id: 'out-quevida-bowl', label: 'Que Vida Lean Protein Bowl', say: 'que vida protein bowl', category: 'restaurant', cals: 520, p: 55, c: 25, f: 20, fiber: 5, notes: 'Double chicken, extra veg, skip rice + chips' },
-  // Mendocino Farms
-  { id: 'out-mendo-ensalada', label: 'Mendo Ensalada + Chicken', say: 'mendocino ensalada chicken', category: 'restaurant', cals: 600, p: 39, c: 40, f: 35, fiber: 9, notes: 'Dressing on side, use ~half' },
-  { id: 'out-mendo-soup', label: 'Mendo Soup + Side Salad', say: 'mendocino soup salad', category: 'restaurant', cals: 400, p: 28, c: 35, f: 14, fiber: 4 },
-  { id: 'out-mendo-caesar', label: 'Mendo Greens + Chicken', say: 'mendocino caesar chicken', category: 'restaurant', cals: 500, p: 38, c: 18, f: 30, fiber: 5 },
-  // In-N-Out
-  { id: 'out-innout-double', label: 'In-N-Out Double-Double PS', say: 'in n out protein style', category: 'restaurant', cals: 410, p: 30, c: 11, f: 28, fiber: 2, notes: 'No bun, no spread, no fries' },
-  { id: 'out-innout-3x3', label: 'In-N-Out 3x3 PS', say: 'in n out 3x3', category: 'restaurant', cals: 580, p: 45, c: 13, f: 40, fiber: 2, notes: 'Higher protein, higher sodium' },
-  { id: 'out-innout-double-meat', label: 'In-N-Out Double Meat PS', say: 'in n out no cheese', category: 'restaurant', cals: 350, p: 32, c: 8, f: 24, fiber: 2, notes: 'No cheese — leanest In-N-Out build' },
+  // Restaurant — data/meal-catalog.json
+  ...RESTAURANT_PRESETS,
   // Drinks
   { id: 'quick-ag1', label: 'AG1 Scoop', say: 'ag1 greens', category: 'drink', cals: 50, p: 2, c: 6, f: 0 },
   { id: 'quick-coffee', label: 'Black Coffee', say: 'coffee', category: 'drink', cals: 5, p: 0, c: 0, f: 0 },
@@ -629,9 +617,9 @@ export const RECOMP_GOAL = {
 
 export const NUTRITION_FRAMEWORK = {
   protein: "175–190g/day — the single most important number for keeping muscle in a deficit.",
-  calories: "2,050–2,150/day. Sample day in Full Meal Plan hits ~2,020 cal with treat.",
-  fats: "60–80g/day.",
-  carbs: "120–160g/day — flexible. Time more around training days.",
+  calories: "1,750/day target. Sample day in Full Meal Plan is a home-cooking reference — adjust portions to hit your number.",
+  fats: "60–70g/day.",
+  carbs: "110–120g/day — flexible. Time more around training days.",
   fiber: "25g or more per day.",
   adjustmentRules: [
     "Weigh daily, first thing, and track the 7-day average.",

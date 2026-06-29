@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import './globals.css';
-import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, ALCOHOL_PRESETS, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
+import { WORKOUTS, SUPPLEMENTS_DAILY, DATES, BASELINE, TARGETS, NON_NEGOTIABLES, MEALS_PLAN, LAB_COMPARISONS, LABS_MAY_2026_DRAWN, RETEST_PANEL, PELOTON_DAY, LIFTING_DAY, FOOD_PRESETS, FOOD_CATEGORIES, ALCOHOL_PRESETS, MEAL_CATALOG_META, RECOMP_GOAL, NUTRITION_FRAMEWORK, FAST_START, PROGRAM_PHASES, DAILY_REPS, HOME_PROGRAM, HOME_PROGRAM_TIPS, HOME_LOWER_NOTE, GYM_SPLIT, CONDITIONING_PHASES, STEP_TARGET, PROGRESSION, WEEKLY_REVIEW, CHECKPOINTS } from '@/lib/health-data';
 import { getUpNext, progressPct, progressColor, macroCalories, getMilestones, getNextMilestone, getWeightHistory, rollingAverage, getLatestWeight, getBodyComp, getStartBodyComp, calculateStreak, formatDelta, deltaColor, COLOR_GOOD, COLOR_BAD, RECOMP_TARGETS, getPhase1Progress } from '@/lib/tracking-helpers';
 import type { FoodPreset, LabComparison } from '@/lib/health-data';
 
@@ -1393,7 +1393,7 @@ export default function Home() {
             </div>
 
             <div style={{ background: '#1a1840', border: '1px solid #2e2b5e', borderLeft: '3px solid #ff4e1b', padding: '14px 18px', marginBottom: 20, fontSize: 13, color: '#a09ccc', lineHeight: 1.6 }}>
-              <strong style={{ color: '#ff4e1b' }}>Recomp meals:</strong> Tap a preset to log macros. Home meals, restaurant builds, and quick proteins from your meal spreadsheet. Say the keyword under each button when voice-memo logging.
+              <strong style={{ color: '#ff4e1b' }}>Recomp meals:</strong> Tap a preset to log macros. Home meals, restaurant builds from your meal catalog ({MEAL_CATALOG_META.updated}), and quick proteins. Say the keyword under each button when voice-memo logging.
             </div>
 
             <div className="fuel-toolbar">
@@ -1428,7 +1428,7 @@ export default function Home() {
                     <button key={preset.id} type="button" className="preset-btn" onClick={() => addFoodPreset(preset)}>
                       <div style={{ fontWeight: 900, marginBottom: 4 }}>{preset.label}</div>
                       <div style={{ color: '#ff4e1b', fontSize: 10, marginBottom: 4 }}>{macroCalories(preset.p, preset.c, preset.f)} cal · {preset.p}p · {preset.c}c · {preset.f}f</div>
-                      {preset.notes ? <div style={{ color: '#a09ccc', fontSize: 9, marginBottom: 4, lineHeight: 1.4 }}>{preset.notes}</div> : null}
+                      {preset.notes ? <div style={{ color: '#a09ccc', fontSize: 9, marginBottom: 4, lineHeight: 1.4 }}>{preset.notes}{preset.verifiedMacros ? ' · ✓ verified macros' : ''}</div> : null}
                       <div style={{ color: '#6864a0', fontSize: 9, fontStyle: 'italic' }}>&quot;{preset.say}&quot;</div>
                     </button>
                   ))}

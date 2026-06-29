@@ -1,0 +1,356 @@
+{
+  "catalog": "Brandon Meal Catalog",
+  "updated": "2026-06-27",
+  "planContext": {
+    "dailyCalories": 1750,
+    "proteinTargetGrams": 190,
+    "fatTargetGrams": 65,
+    "carbTargetGrams": 115
+  },
+  "howToUse": {
+    "macros": "Calorie, protein, carb, fat, fiber, sugar, saturated fat, and sodium are estimates calculated from standard ingredient portions unless verifiedMacros is true. Treat them as close working figures.",
+    "micros": "Exact vitamin and mineral values are not published for these meals. For real micronutrient tracking, log each meal using the ingredients array below. Your app already has verified USDA data for those whole foods and will compute the micros for you. The microHighlights field names the standouts each meal genuinely delivers based on its ingredients.",
+    "sodiumNote": "Sodium is the micronutrient that matters most for restaurant food and is the hardest to control. Estimates are included and high-sodium items are flagged."
+  },
+  "needFromYou": [
+    "Name of the taco shop on Yorba Linda Blvd that starts with B, so I can add it.",
+    "Which Higo in La Habra: Higo Chicken (Peruvian rotisserie) or Higo Sushi Peruvian Fusion. Catalog currently uses the Peruvian rotisserie picks."
+  ],
+  "foods": [
+    {
+      "id": "panini-chicken-shish-kabob",
+      "name": "Charbroiled Chicken Shish Kabob",
+      "source": "Panini Kabob Grill",
+      "meal": "either",
+      "serving": "1 kabob plate, rice swapped for extra salad",
+      "verifiedMacros": true,
+      "ingredients": [
+        { "item": "charbroiled chicken breast", "qty": "8 oz" },
+        { "item": "grilled vegetables", "qty": "1 cup" },
+        { "item": "mixed green side salad", "qty": "2 cups" },
+        { "item": "lemon vinaigrette", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 460, "protein": 58, "carbs": 12, "fat": 20, "fiber": 4, "sugar": 5, "saturatedFat": 5, "sodiumMg": 1000 },
+      "microHighlights": ["Niacin, B6, and selenium from chicken", "Vitamin K, A, and folate from the greens", "Potassium from vegetables"],
+      "orderTip": "Swap the basmati for a second salad to cut the carbs. Best protein-to-calorie order on your whole list."
+    },
+    {
+      "id": "panini-salmon-salad",
+      "name": "Charbroiled Salmon Salad",
+      "source": "Panini Kabob Grill",
+      "meal": "either",
+      "serving": "1 salad, tzatziki on side",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "charbroiled salmon", "qty": "6 oz" },
+        { "item": "romaine lettuce", "qty": "3 cups" },
+        { "item": "cucumber, tomato, red onion", "qty": "1 cup" },
+        { "item": "avocado", "qty": "1/4" },
+        { "item": "tzatziki", "qty": "2 tbsp, on side" }
+      ],
+      "macros": { "calories": 410, "protein": 38, "carbs": 12, "fat": 22, "fiber": 6, "sugar": 5, "saturatedFat": 5, "sodiumMg": 700 },
+      "microHighlights": ["Vitamin D, B12, and omega-3s from salmon", "Potassium, vitamin E, and folate from avocado", "Vitamin K and A from romaine", "Calcium from tzatziki"],
+      "orderTip": "Easy on the avocado if trimming fat. Tzatziki on the side."
+    },
+    {
+      "id": "board-and-brew-chicken-salad",
+      "name": "Chicken Salad with Spicy Ranch",
+      "source": "Board & Brew",
+      "meal": "dinner",
+      "serving": "1 salad, ~2 tbsp ranch",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "marinated chicken breast", "qty": "6 oz" },
+        { "item": "bacon", "qty": "2 slices" },
+        { "item": "cheddar cheese", "qty": "1 oz" },
+        { "item": "hard-boiled egg", "qty": "1" },
+        { "item": "green leaf lettuce, tomato, cucumber", "qty": "3 cups" },
+        { "item": "spicy ranch", "qty": "2 tbsp, on side" }
+      ],
+      "macros": { "calories": 680, "protein": 71, "carbs": 11, "fat": 36, "fiber": 4, "sugar": 5, "saturatedFat": 12, "sodiumMg": 1400 },
+      "microHighlights": ["B vitamins and selenium from chicken", "Calcium from cheddar", "Choline and selenium from egg", "Vitamin A and K from lettuce, vitamin C from tomato"],
+      "orderTip": "Lean build: skip bacon, halve cheese, 1 tbsp ranch lands ~520 cal, 63g protein. Watch the sodium."
+    },
+    {
+      "id": "baja-chicken-salad",
+      "name": "Grilled Chicken Salad",
+      "source": "Baja Fish Tacos",
+      "meal": "either",
+      "serving": "1 salad, 6 oz charbroiled chicken, light dressing",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "charbroiled chicken breast", "qty": "6 oz" },
+        { "item": "romaine, cucumber, radish, red onion, tomato", "qty": "3 cups" },
+        { "item": "corn", "qty": "1/4 cup" },
+        { "item": "jack cheese", "qty": "1 oz" },
+        { "item": "avocado", "qty": "1/3" },
+        { "item": "dressing", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 540, "protein": 60, "carbs": 19, "fat": 23, "fiber": 6, "sugar": 5, "saturatedFat": 6, "sodiumMg": 800 },
+      "microHighlights": ["B vitamins and selenium from chicken", "Potassium and vitamin E from avocado", "Calcium from jack cheese", "Vitamin C from tomato, fiber and magnesium from corn"],
+      "orderTip": "Charbroiled, dressing on the side, easy on the chips."
+    },
+    {
+      "id": "baja-charbroiled-fish-tacos",
+      "name": "Charbroiled Fish Tacos",
+      "source": "Baja Fish Tacos",
+      "meal": "either",
+      "serving": "2 tacos, charbroiled (not battered)",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "charbroiled white fish", "qty": "5 oz" },
+        { "item": "corn tortillas", "qty": "2" },
+        { "item": "cabbage", "qty": "1/2 cup" },
+        { "item": "baja sauce", "qty": "1 tbsp" }
+      ],
+      "macros": { "calories": 380, "protein": 32, "carbs": 34, "fat": 12, "fiber": 5, "sugar": 3, "saturatedFat": 3, "sodiumMg": 600 },
+      "microHighlights": ["Selenium, B12, and iodine from fish", "Fiber and magnesium from corn tortillas", "Vitamin C and K from cabbage"],
+      "orderTip": "Always charbroiled, never the beer-battered version."
+    },
+    {
+      "id": "que-vida-grilled-chicken-tacos",
+      "name": "Grilled Chicken Tacos",
+      "source": "Que Vida Tacos",
+      "meal": "dinner",
+      "serving": "3 tacos, a la carte on handmade corn tortillas",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled chicken", "qty": "5 oz total" },
+        { "item": "handmade corn tortillas", "qty": "3 small" },
+        { "item": "onion, cilantro, salsa", "qty": "to taste" }
+      ],
+      "macros": { "calories": 430, "protein": 38, "carbs": 36, "fat": 14, "fiber": 5, "sugar": 3, "saturatedFat": 4, "sodiumMg": 700 },
+      "microHighlights": ["B vitamins and selenium from chicken", "Fiber and magnesium from corn masa", "Vitamin C and lycopene from salsa"],
+      "orderTip": "Grilled proteins over fried, salsas instead of crema. Carne asada is a fattier swap."
+    },
+    {
+      "id": "que-vida-salmon-kale-salad",
+      "name": "Salmon Kale Salad",
+      "source": "Que Vida Tacos",
+      "meal": "dinner",
+      "serving": "1 salad, dressing on side",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled salmon", "qty": "6 oz" },
+        { "item": "kale and mixed greens", "qty": "3 cups" },
+        { "item": "mixed vegetables", "qty": "1 cup" },
+        { "item": "dressing", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 450, "protein": 38, "carbs": 18, "fat": 24, "fiber": 5, "sugar": 5, "saturatedFat": 5, "sodiumMg": 700 },
+      "microHighlights": ["Vitamin D, B12, and omega-3s from salmon", "Vitamin K, A, C, and calcium from kale"],
+      "orderTip": "Dressing on the side."
+    },
+    {
+      "id": "que-vida-ceviche",
+      "name": "Ceviche",
+      "source": "Que Vida Tacos",
+      "meal": "dinner",
+      "serving": "1 order",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "white fish cured in lime", "qty": "6 oz" },
+        { "item": "tomato, onion, cilantro", "qty": "1 cup" }
+      ],
+      "macros": { "calories": 200, "protein": 30, "carbs": 12, "fat": 4, "fiber": 2, "sugar": 4, "saturatedFat": 1, "sodiumMg": 600 },
+      "microHighlights": ["Selenium and B12 from fish", "Vitamin C from lime and tomato"],
+      "orderTip": "Leanest high-protein option here. Skip the fried plantain or chips it may come with."
+    },
+    {
+      "id": "chachas-green-salad-salmon",
+      "name": "Organic Green Salad with Grilled Salmon",
+      "source": "Cha Cha's Latin Kitchen",
+      "meal": "dinner",
+      "serving": "1 salad, cilantro-pepita dressing on side",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled salmon", "qty": "6 oz" },
+        { "item": "mixed organic greens", "qty": "3 cups" },
+        { "item": "pepitas", "qty": "1 tbsp" },
+        { "item": "cotija cheese", "qty": "0.5 oz" },
+        { "item": "cilantro-pepita dressing", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 480, "protein": 42, "carbs": 14, "fat": 28, "fiber": 5, "sugar": 5, "saturatedFat": 6, "sodiumMg": 700 },
+      "microHighlights": ["Vitamin D, B12, omega-3s, and selenium from salmon", "Magnesium, zinc, and iron from pepitas", "Vitamin K, A, and folate from greens"],
+      "orderTip": "Swap chicken or shrimp for salmon if you prefer. Dressing on the side, chips off the table."
+    },
+    {
+      "id": "chachas-chicken-fajitas",
+      "name": "Chicken Fajitas",
+      "source": "Cha Cha's Latin Kitchen",
+      "meal": "dinner",
+      "serving": "1 order, protein and veg focus, light on starch",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled chicken", "qty": "7 oz" },
+        { "item": "bell peppers and onions", "qty": "1.5 cups" },
+        { "item": "black beans", "qty": "1/3 cup" },
+        { "item": "corn tortilla", "qty": "1" }
+      ],
+      "macros": { "calories": 550, "protein": 55, "carbs": 35, "fat": 18, "fiber": 8, "sugar": 8, "saturatedFat": 4, "sodiumMg": 1200 },
+      "microHighlights": ["B vitamins from chicken", "Heavy vitamin C from bell peppers", "Folate, fiber, and iron from black beans"],
+      "orderTip": "Eat the protein and the peppers and onions. Keep the rice and tortillas light. Sodium runs high."
+    },
+    {
+      "id": "chachas-shrimp-ceviche",
+      "name": "Shrimp Ceviche or Cocktail",
+      "source": "Cha Cha's Latin Kitchen",
+      "meal": "dinner",
+      "serving": "1 order",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "shrimp", "qty": "6 oz" },
+        { "item": "tomato, onion, cilantro, lime", "qty": "1 cup" },
+        { "item": "avocado", "qty": "1/4" }
+      ],
+      "macros": { "calories": 280, "protein": 32, "carbs": 14, "fat": 12, "fiber": 4, "sugar": 5, "saturatedFat": 2, "sodiumMg": 900 },
+      "microHighlights": ["Selenium, B12, and iodine from shrimp", "Vitamin C and lycopene from tomato", "Potassium from avocado"],
+      "orderTip": "Very lean, high protein. Skip the chips served alongside."
+    },
+    {
+      "id": "innout-double-double-protein",
+      "name": "Double-Double Protein Style",
+      "source": "In-N-Out",
+      "meal": "dinner",
+      "serving": "1 burger, lettuce wrap, light spread",
+      "verifiedMacros": true,
+      "ingredients": [
+        { "item": "beef patties", "qty": "2" },
+        { "item": "American cheese", "qty": "2 slices" },
+        { "item": "lettuce wrap, tomato, onion", "qty": "1" },
+        { "item": "spread", "qty": "light" }
+      ],
+      "macros": { "calories": 520, "protein": 33, "carbs": 11, "fat": 39, "fiber": 3, "sugar": 7, "saturatedFat": 17, "sodiumMg": 1160 },
+      "microHighlights": ["B12, zinc, and iron from beef", "Calcium from cheese"],
+      "orderTip": "Protein Style swaps the bun for lettuce and cuts almost all the carbs. Spread is the fat lever, so go light or sub mustard and ketchup. High saturated fat and sodium, so this is a treat-day order. Skip the fries."
+    },
+    {
+      "id": "innout-4x4-protein",
+      "name": "4x4 Protein Style",
+      "source": "In-N-Out",
+      "meal": "dinner",
+      "serving": "1 burger, lettuce wrap, light spread",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "beef patties", "qty": "4" },
+        { "item": "American cheese", "qty": "4 slices" },
+        { "item": "lettuce wrap, tomato, onion", "qty": "1" },
+        { "item": "spread", "qty": "light" }
+      ],
+      "macros": { "calories": 740, "protein": 56, "carbs": 13, "fat": 55, "fiber": 3, "sugar": 7, "saturatedFat": 26, "sodiumMg": 1600 },
+      "microHighlights": ["B12, zinc, and iron from beef", "Calcium from cheese"],
+      "orderTip": "Big protein hit but very high saturated fat and sodium. Order only on a low-fat day elsewhere."
+    },
+    {
+      "id": "mendocino-modern-caesar-chicken",
+      "name": "Modern Caesar with Chicken",
+      "source": "Mendocino Farms",
+      "meal": "dinner",
+      "serving": "1 salad, dressing on side, add chicken",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "shaved roasted chicken breast", "qty": "4 oz" },
+        { "item": "kale and romaine", "qty": "3 cups" },
+        { "item": "shaved parmesan", "qty": "0.5 oz" },
+        { "item": "avocado", "qty": "1/4" },
+        { "item": "grape tomatoes, red onion", "qty": "1/2 cup" },
+        { "item": "Caesar dressing", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 520, "protein": 40, "carbs": 22, "fat": 28, "fiber": 6, "sugar": 6, "saturatedFat": 7, "sodiumMg": 900 },
+      "microHighlights": ["Vitamin K and A from kale and romaine", "Calcium from parmesan", "Potassium and vitamin E from avocado", "B vitamins from chicken"],
+      "orderTip": "Dressing on the side, skip the krispies. Avoid the Summer GOAT salad except as a treat (750 cal, only ~34g protein, see food-database entry)."
+    },
+    {
+      "id": "green-tomato-grill-chicken-bowl",
+      "name": "Grill Bowl with Chicken (Chimichurri or Teriyaki)",
+      "source": "Green Tomato Grill",
+      "meal": "lunch",
+      "serving": "1 bowl, half rice or greens base",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled chicken", "qty": "6 oz" },
+        { "item": "grilled vegetables", "qty": "1 cup" },
+        { "item": "cilantro-lime rice", "qty": "1/2 cup" },
+        { "item": "chimichurri or teriyaki sauce", "qty": "2 tbsp" }
+      ],
+      "macros": { "calories": 520, "protein": 48, "carbs": 40, "fat": 16, "fiber": 6, "sugar": 8, "saturatedFat": 3, "sodiumMg": 1000 },
+      "microHighlights": ["B vitamins and selenium from chicken", "Vitamin C, A, and K from vegetables"],
+      "orderTip": "Chimichurri is lower sugar than teriyaki. Sub greens for half the rice to drop carbs."
+    },
+    {
+      "id": "green-tomato-grill-baja-salmon-tacos",
+      "name": "Baja Cali Tacos with Salmon",
+      "source": "Green Tomato Grill",
+      "meal": "lunch",
+      "serving": "2 tacos, grilled salmon",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "grilled salmon", "qty": "5 oz" },
+        { "item": "corn tortillas", "qty": "2" },
+        { "item": "cabbage", "qty": "1/2 cup" },
+        { "item": "baja green sauce", "qty": "1 tbsp" }
+      ],
+      "macros": { "calories": 480, "protein": 36, "carbs": 34, "fat": 22, "fiber": 6, "sugar": 5, "saturatedFat": 4, "sodiumMg": 800 },
+      "microHighlights": ["Vitamin D, B12, and omega-3s from salmon", "Vitamin C and K from cabbage", "Fiber from corn tortillas"],
+      "orderTip": "Grilled salmon, sauce light."
+    },
+    {
+      "id": "higo-pollo-a-la-brasa",
+      "name": "Peruvian Rotisserie Chicken (Pollo a la Brasa)",
+      "source": "Higo Chicken (La Habra, Peruvian)",
+      "meal": "lunch",
+      "serving": "1/4 chicken, salad instead of fries, aji on side",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "rotisserie chicken, quarter", "qty": "~7 oz" },
+        { "item": "side salad", "qty": "2 cups" },
+        { "item": "green aji sauce", "qty": "1 tbsp, on side" }
+      ],
+      "macros": { "calories": 450, "protein": 55, "carbs": 6, "fat": 22, "fiber": 2, "sugar": 3, "saturatedFat": 6, "sodiumMg": 900 },
+      "microHighlights": ["Niacin, B6, selenium, and phosphorus from chicken", "Vitamin A and K from the salad"],
+      "orderTip": "Salad or extra veg instead of fries or rice. Remove the skin to cut fat further. Aji sauce on the side."
+    },
+    {
+      "id": "higo-ceviche",
+      "name": "Peruvian Ceviche",
+      "source": "Higo (La Habra, Peruvian)",
+      "meal": "lunch",
+      "serving": "1 order",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "halibut or mixed seafood cured in lime", "qty": "6 oz" },
+        { "item": "red onion, Peruvian chiles, cilantro", "qty": "1/2 cup" }
+      ],
+      "macros": { "calories": 220, "protein": 32, "carbs": 14, "fat": 4, "fiber": 2, "sugar": 4, "saturatedFat": 1, "sodiumMg": 700 },
+      "microHighlights": ["Selenium, B12, and iodine from fish", "Vitamin C from lime and chiles"],
+      "orderTip": "Leanest high-protein pick. Limit the choclo (corn) and sweet potato sides if cutting."
+    },
+    {
+      "id": "higo-lomo-saltado",
+      "name": "Lomo Saltado",
+      "source": "Higo (La Habra, Peruvian)",
+      "meal": "lunch",
+      "serving": "1 order, protein and veg focus",
+      "verifiedMacros": false,
+      "ingredients": [
+        { "item": "stir-fried beef", "qty": "6 oz" },
+        { "item": "onion and tomato", "qty": "1 cup" },
+        { "item": "fries and rice", "qty": "small portion" }
+      ],
+      "macros": { "calories": 600, "protein": 45, "carbs": 45, "fat": 25, "fiber": 4, "sugar": 6, "saturatedFat": 7, "sodiumMg": 1200 },
+      "microHighlights": ["Iron, B12, and zinc from beef", "Vitamin C and potassium from tomato and onion"],
+      "orderTip": "Comes loaded with fries and rice. Eat the beef and vegetables first and treat the starch as a side. Higher carb and sodium."
+    },
+    {
+      "id": "b-taco-shop-placeholder",
+      "name": "PLACEHOLDER, name needed",
+      "source": "Taco shop on Yorba Linda Blvd starting with B",
+      "meal": "lunch",
+      "serving": "TBD",
+      "verifiedMacros": false,
+      "ingredients": [],
+      "macros": {},
+      "microHighlights": [],
+      "orderTip": "Tell me the name and your usual order and I will fill this in. As a default at any taco shop, grilled chicken or carne asada tacos on corn, salsa over crema, skip the chips."
+    }
+  ]
+}
