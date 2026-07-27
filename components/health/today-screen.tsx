@@ -55,19 +55,20 @@ interface PresetDraft {
 
 /* ——— icons ——— */
 
-function PinIcon() {
+function StepsIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 21.4s6.8-5.5 6.8-11A6.8 6.8 0 0 0 5.2 10.4c0 5.5 6.8 11 6.8 11Z" />
-      <circle cx="12" cy="10.4" r="2.4" />
+      <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z" />
+      <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z" />
+      <path d="M16 17h4M4 13h4" />
     </svg>
   );
 }
 
-function TimerIcon() {
+function FlameIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 4.2h3.4M13.6 4.2H17M7 19.8h3.4M13.6 19.8H17M8.7 4.2c0 5.2 6.6 5.2 6.6 7.8s-6.6 2.6-6.6 7.8M15.3 4.2c0 5.2-6.6 5.2-6.6 7.8s6.6 2.6 6.6 7.8" />
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />
     </svg>
   );
 }
@@ -207,11 +208,19 @@ function MonthCalendar({
     const key = `${monthCursor}-${String(index + 1).padStart(2, "0")}`;
     const entry = allDays[key];
     const worked = hasWorkout(entry);
+    const hasData =
+      !!entry &&
+      (worked ||
+        entry.calories > 0 ||
+        entry.protein > 0 ||
+        entry.waterOz > 0 ||
+        entry.steps > 0 ||
+        (entry.sleepHours ?? 0) > 0);
     return {
       key,
       num: index + 1,
       worked,
-      score: worked ? dayScore(entry, targets, supplementList) : null,
+      score: hasData ? dayScore(entry, targets, supplementList) : null,
       future: key > today,
     };
   });
@@ -242,34 +251,56 @@ function MonthCalendar({
         {Array.from({ length: leadingBlanks }, (_, index) => (
           <span key={`blank-${index}`} aria-hidden="true" />
         ))}
-        {cells.map((cell) => (
-          <button
-            key={cell.key}
-            type="button"
-            className={[
-              "hc-month-cell",
-              cell.worked ? "worked" : "",
-              cell.key === selectedDate ? "selected" : "",
-              cell.key === today ? "today" : "",
-              cell.future ? "future" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            aria-label={
-              `${cell.key}${cell.worked ? `, worked out, health score ${cell.score}%` : ""}`
-            }
-            onClick={() => onSelectDate(cell.key)}
-          >
-            <span className="hc-month-num">{cell.num}</span>
-            <small>{cell.score != null ? `${cell.score}%` : "\u00A0"}</small>
-          </button>
-        ))}
+        {cells.map((cell) => {
+          const heat = cell.score != null ? 0.12 + 0.88 * (cell.score / 100) : 0;
+          const hot = cell.score != null && cell.score >= 55;
+          return (
+            <button
+              key={cell.key}
+              type="button"
+              className={[
+                "hc-month-cell",
+                cell.score != null ? "logged" : "",
+                hot ? "hot" : "",
+                cell.key === selectedDate ? "selected" : "",
+                cell.key === today ? "today" : "",
+                cell.future ? "future" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              style={
+                cell.score != null
+                  ? { background: `rgba(246, 104, 62, ${heat.toFixed(2)})` }
+                  : undefined
+              }
+              aria-label={[
+                cell.key,
+                cell.score != null ? `health score ${cell.score}%` : "no data",
+                cell.worked ? "worked out" : "",
+              ]
+                .filter(Boolean)
+                .join(", ")}
+              onClick={() => onSelectDate(cell.key)}
+            >
+              <span className="hc-month-num">{cell.num}</span>
+              <strong>{cell.score != null ? `${cell.score}%` : "\u00A0"}</strong>
+              {cell.worked && <i className="hc-month-flag" aria-hidden="true" />}
+            </button>
+          );
+        })}
       </div>
       <div className="hc-month-legend">
-        <span>
-          <i /> Worked out
+        <span className="hc-month-scale" aria-label="Tile color shows Health Improvement Score">
+          Less
+          <i style={{ opacity: 0.15 }} />
+          <i style={{ opacity: 0.4 }} />
+          <i style={{ opacity: 0.65 }} />
+          <i style={{ opacity: 1 }} />
+          More
         </span>
-        <span>% Health Improvement Score</span>
+        <span>
+          <i className="hc-month-workdot" /> Worked out
+        </span>
       </div>
     </div>
   );
@@ -461,7 +492,7 @@ export function TodayScreen({
   onClear: () => void;
   onDateChange: (next: string) => void;
 }) {
-  const [tab, setTab] = useState<"nutrition" | "activity" | "month">("nutrition");
+  const [tab, setTab] = useState<"daily" | "month">("daily");
   const [editingPresets, setEditingPresets] = useState(false);
   const [presetDraft, setPresetDraft] = useState<PresetDraft | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
@@ -521,12 +552,6 @@ export function TodayScreen({
       ? day.walkingMinutes
       : ACTIVITY_DEFAULT_MINUTES[activity.type];
   const classEstimate = estimateActivityCalories(activity.type, latestWeight, classMinutes);
-
-  const distanceKm = (day.steps * 0.000762).toFixed(1);
-  const activeTime =
-    day.walkingMinutes >= 60
-      ? `${Math.floor(day.walkingMinutes / 60)}h ${day.walkingMinutes % 60}m`
-      : `${day.walkingMinutes}m`;
 
   const score = dayScore(day, targets, supplementList);
 
@@ -765,12 +790,9 @@ export function TodayScreen({
         />
       )}
 
-      <div className="hc-pill-toggle" role="tablist" aria-label="Nutrition, activity, or month">
-        <button className={tab === "nutrition" ? "active" : ""} onClick={() => setTab("nutrition")}>
-          Nutrition
-        </button>
-        <button className={tab === "activity" ? "active" : ""} onClick={() => setTab("activity")}>
-          Activity
+      <div className="hc-pill-toggle" role="tablist" aria-label="Daily or month">
+        <button className={tab === "daily" ? "active" : ""} onClick={() => setTab("daily")}>
+          Daily
         </button>
         <button className={tab === "month" ? "active" : ""} onClick={() => setTab("month")}>
           Month
@@ -789,40 +811,37 @@ export function TodayScreen({
       ) : (
         <>
           <div className="hc-bigstat">
-            <strong>{(tab === "nutrition" ? day.calories : day.steps).toLocaleString()}</strong>
-            <span>{tab === "nutrition" ? "Calories" : "Steps"}</span>
+            <strong>{day.calories.toLocaleString()}</strong>
+            <span>Calories</span>
           </div>
 
-          {tab === "nutrition" ? (
-            <div className="hc-feature-row">
-              <div className="hc-feature-card">
-                <span className="hc-feature-icon"><DumbbellIcon /></span>
-                <span>Protein</span>
-                <strong>{day.protein} g</strong>
-              </div>
-              <div className="hc-feature-card">
-                <span className="hc-feature-icon"><DropIcon /></span>
-                <span>Water</span>
-                <strong>{day.waterOz} oz</strong>
-              </div>
+          <div className="hc-feature-row">
+            <div className="hc-feature-card">
+              <span className="hc-feature-icon"><DumbbellIcon /></span>
+              <span>Protein</span>
+              <strong>{day.protein} g</strong>
             </div>
-          ) : (
-            <div className="hc-feature-row">
-              <div className="hc-feature-card">
-                <span className="hc-feature-icon"><PinIcon /></span>
-                <span>Distance</span>
-                <strong>{distanceKm} km</strong>
-              </div>
-              <div className="hc-feature-card">
-                <span className="hc-feature-icon"><TimerIcon /></span>
-                <span>Active Time</span>
-                <strong>{activeTime}</strong>
-              </div>
+            <div className="hc-feature-card">
+              <span className="hc-feature-icon"><DropIcon /></span>
+              <span>Water</span>
+              <strong>{day.waterOz} oz</strong>
             </div>
-          )}
+            <div className="hc-feature-card">
+              <span className="hc-feature-icon"><StepsIcon /></span>
+              <span>Steps</span>
+              <strong>{day.steps.toLocaleString()}</strong>
+            </div>
+            <div className="hc-feature-card">
+              <span className="hc-feature-icon"><FlameIcon /></span>
+              <span>Burned</span>
+              <strong>{day.estimatedActivityCalories.toLocaleString()} cal</strong>
+            </div>
+          </div>
         </>
       )}
 
+      {tab !== "month" && (
+      <>
       <h2 className="hc-section-title">Daily Updates</h2>
 
       <div className="hc-update-grid">
@@ -1356,6 +1375,8 @@ export function TodayScreen({
         </button>
       </Card>
       </div>
+      </>
+      )}
     </div>
   );
 }
