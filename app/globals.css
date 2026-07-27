@@ -870,6 +870,50 @@ h4 {
   letter-spacing: -0.025em;
 }
 
+/* ——— Collapsible cards ——— */
+.hc-collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hc-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.hc-collapsible > summary .hc-section-header {
+  margin-bottom: 0;
+}
+
+.hc-collapsible-action {
+  display: inline-flex;
+  align-items: center;
+}
+
+.hc-collapse-chevron {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 0.15s ease;
+}
+
+.hc-collapsible[open] > summary .hc-collapse-chevron {
+  transform: rotate(-90deg);
+}
+
+.hc-collapsible-body {
+  margin-top: 16px;
+}
+
 .hc-muted {
   color: var(--muted);
   line-height: 1.55;

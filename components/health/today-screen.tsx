@@ -19,7 +19,7 @@ import {
   type FoodPreset,
 } from "@/lib/health-data";
 import { CoachCard } from "./coach-card";
-import { Card, Field, SectionHeader, StatusBadge } from "./ui";
+import { CollapsibleCard, Field, StatusBadge } from "./ui";
 
 const WATER_SERVING_OZ = 8;
 const WATER_SERVINGS = BODYFI_PLAN.targets.waterOz / WATER_SERVING_OZ;
@@ -1131,16 +1131,15 @@ export function TodayScreen({
       <h2 className="hc-section-title">Log today</h2>
 
       <div className="hc-log-grid">
-      <Card>
-        <SectionHeader
-          eyebrow="Next best action"
-          title={activity.label}
-          action={
-            <StatusBadge tone={day.activityCompleted ? "good" : "neutral"}>
-              {day.activityCompleted ? "Done" : "Open"}
-            </StatusBadge>
-          }
-        />
+      <CollapsibleCard
+        eyebrow="Next best action"
+        title={activity.label}
+        action={
+          <StatusBadge tone={day.activityCompleted ? "good" : "neutral"}>
+            {day.activityCompleted ? "Done" : "Open"}
+          </StatusBadge>
+        }
+      >
         <p className="hc-muted hc-compact-copy">
           Keep the weekly cap at three Alpha classes and two yoga sessions. Walking supports the
           deficit without adding recovery debt.
@@ -1322,10 +1321,9 @@ export function TodayScreen({
               : "Burn estimate is still calibrating — keep logging weight and food and it learns your real metabolism."}
           </small>
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card>
-        <SectionHeader eyebrow="Hydration" title={`${day.waterOz} of ${targets.waterOz} oz`} />
+      <CollapsibleCard eyebrow="Hydration" title={`${day.waterOz} of ${targets.waterOz} oz`}>
         <p className="hc-muted hc-compact-copy">
           Each drop is 8 oz. Tap ahead to add water or tap a filled drop to roll back.
         </p>
@@ -1353,23 +1351,22 @@ export function TodayScreen({
         <button className="hc-text-button" onClick={() => patch({ waterOz: 0 })}>
           Clear hydration
         </button>
-      </Card>
+      </CollapsibleCard>
 
-      <Card>
-        <SectionHeader
-          eyebrow="Fuel"
-          title="Your go-to meals"
-          action={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-              {day.meals.length > 0 && (
-                <button className="hc-danger-link" onClick={clearMeals}>
-                  Clear meals
-                </button>
-              )}
-              <StatusBadge>{day.meals.length} entries</StatusBadge>
-            </span>
-          }
-        />
+      <CollapsibleCard
+        eyebrow="Fuel"
+        title="Your go-to meals"
+        action={
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+            {day.meals.length > 0 && (
+              <button className="hc-danger-link" onClick={clearMeals}>
+                Clear meals
+              </button>
+            )}
+            <StatusBadge>{day.meals.length} entries</StatusBadge>
+          </span>
+        }
+      >
         <div className="hc-macro-summary">
           <span><strong>{day.calories}</strong> cal</span>
           <span><strong>{day.protein}g</strong> protein</span>
@@ -1563,18 +1560,17 @@ export function TodayScreen({
             );
           })}
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card>
-        <SectionHeader
-          eyebrow="Recovery"
-          title="Sleep & readiness"
-          action={
-            day.sleepHours && day.sleepHours >= targets.sleepHours ? (
-              <StatusBadge tone="good">On target</StatusBadge>
-            ) : undefined
-          }
-        />
+      <CollapsibleCard
+        eyebrow="Recovery"
+        title="Sleep & readiness"
+        action={
+          day.sleepHours && day.sleepHours >= targets.sleepHours ? (
+            <StatusBadge tone="good">On target</StatusBadge>
+          ) : undefined
+        }
+      >
         <div className="hc-inline-fields">
           <Field label="Sleep hours">
             <input
@@ -1603,18 +1599,17 @@ export function TodayScreen({
             />
           </Field>
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card>
-        <SectionHeader
-          eyebrow="Daily stack"
-          title="Supplements"
-          action={
-            <StatusBadge tone={supplementsTaken === supplementList.length ? "good" : "neutral"}>
-              {supplementsTaken}/{supplementList.length}
-            </StatusBadge>
-          }
-        />
+      <CollapsibleCard
+        eyebrow="Daily stack"
+        title="Supplements"
+        action={
+          <StatusBadge tone={supplementsTaken === supplementList.length ? "good" : "neutral"}>
+            {supplementsTaken}/{supplementList.length}
+          </StatusBadge>
+        }
+      >
         <div className="hc-check-list">
           {supplementList.map((supplement) => (
             <button
@@ -1637,10 +1632,10 @@ export function TodayScreen({
             </button>
           ))}
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card>
-        <Field label="Daily note">
+      <CollapsibleCard eyebrow="Journal" title="Daily note">
+        <Field label="Note">
           <textarea
             value={day.notes}
             placeholder="What affected your energy, hunger, training, or sleep?"
@@ -1650,19 +1645,19 @@ export function TodayScreen({
         <button className="hc-danger-link" style={{ marginTop: 10 }} onClick={clearDay}>
           Clear this day
         </button>
-      </Card>
+      </CollapsibleCard>
 
       {day.meals.length > 0 && (
-        <Card className="hc-food-log-card">
-          <SectionHeader
-            eyebrow="Fuel"
-            title="Today's log"
-            action={
-              <button className="hc-danger-link" onClick={clearMeals}>
-                Clear meals
-              </button>
-            }
-          />
+        <CollapsibleCard
+          className="hc-food-log-card"
+          eyebrow="Fuel"
+          title={`Today's log (${day.meals.length})`}
+          action={
+            <button className="hc-danger-link" onClick={clearMeals}>
+              Clear meals
+            </button>
+          }
+        >
           <div className="hc-food-log">
             <div className="hc-entry-list">
               {day.meals.slice().reverse().map((meal) => {
@@ -1694,7 +1689,7 @@ export function TodayScreen({
               })}
             </div>
           </div>
-        </Card>
+        </CollapsibleCard>
       )}
       </div>
       </>

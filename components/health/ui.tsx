@@ -30,6 +30,51 @@ export function SectionHeader({
   );
 }
 
+/** A card that collapses to its header row; used for the Log today sections. */
+export function CollapsibleCard({
+  eyebrow,
+  title,
+  action,
+  className = "",
+  defaultOpen = false,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  action?: ReactNode;
+  className?: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details className={`hc-card hc-collapsible ${className}`} open={defaultOpen || undefined}>
+      <summary>
+        <div className="hc-section-header">
+          <div>
+            {eyebrow && <div className="hc-eyebrow">{eyebrow}</div>}
+            <h2>{title}</h2>
+          </div>
+          {action && (
+            <span
+              className="hc-collapsible-action"
+              onClick={(event) => {
+                // Header buttons (e.g. Clear meals) shouldn't toggle the card.
+                event.preventDefault();
+              }}
+            >
+              {action}
+            </span>
+          )}
+          <span className="hc-collapse-chevron" aria-hidden="true">
+            ›
+          </span>
+        </div>
+      </summary>
+      <div className="hc-collapsible-body">{children}</div>
+    </details>
+  );
+}
+
 export function ProgressMetric({
   label,
   value,
