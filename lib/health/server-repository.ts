@@ -1,20 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
-import { emptyHealthState } from "./storage";
+import { emptyDailyLog, emptyHealthState } from "./storage";
 import type {
   BodyScan,
+  DailyInsight,
   DailyLog,
   HealthState,
   LabPanel,
   LabResult,
   MealEntry,
   WeeklyCheckIn,
+  WorkoutScan,
 } from "./types";
 
 function client() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(url, key, {
+    auth: { persistSession: false },
+    global: {
+      // Next.js patches fetch with a data cache; health reads must be live.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
+  });
 }
 
 export function isCloudConfigured(): boolean {
@@ -25,7 +33,7 @@ export async function readCloudState(): Promise<HealthState> {
   const supabase = client();
   if (!supabase) throw new Error("Supabase is not configured.");
 
-  const [days, supplements, meals, checkIns, scans, panels, results] =
+  const [days, supplements, meals, checkIns, scans, panels, results, workouts, insights] =
     await Promise.all([
       supabase.from("daily_logs").select("*"),
       supabase.from("supplement_logs").select("*"),
@@ -34,11 +42,21 @@ export async function readCloudState(): Promise<HealthState> {
       supabase.from("body_composition").select("*"),
       supabase.from("lab_panels").select("*"),
       supabase.from("lab_results").select("*"),
+      supabase.from("workout_scans").select("*"),
+      supabase.from("daily_insights").select("*"),
     ]);
 
-  const firstError = [days, supplements, meals, checkIns, scans, panels, results].find(
-    (result) => result.error
-  )?.error;
+  const firstError = [
+    days,
+    supplements,
+    meals,
+    checkIns,
+    scans,
+    panels,
+    results,
+    workouts,
+    insights,
+  ].find((result) => result.error)?.error;
   if (firstError) throw firstError;
 
   const state = emptyHealthState();
@@ -63,6 +81,7 @@ export async function readCloudState(): Promise<HealthState> {
       soreness: row.soreness ?? undefined,
       supplements: {},
       meals: [],
+      workouts: [],
       notes: row.notes ?? "",
     };
   }
@@ -70,6 +89,30 @@ export async function readCloudState(): Promise<HealthState> {
   for (const row of supplements.data ?? []) {
     const day = state.days[row.date];
     if (day) day.supplements[row.supplement_id] = Boolean(row.taken);
+  }
+
+  for (const row of workouts.data ?? []) {
+    const day = (state.days[row.date] ??= emptyDailyLog(row.date));
+    (day.workouts ??= []).push({
+      id: row.id,
+      at: row.at,
+      activity: row.activity,
+      durationMinutes: row.duration_minutes ?? undefined,
+      calories: row.calories ?? undefined,
+      avgHeartRate: row.avg_heart_rate ?? undefined,
+      maxHeartRate: row.max_heart_rate ?? undefined,
+      exercises: Array.isArray(row.exercises) ? row.exercises : [],
+      summary: row.summary ?? undefined,
+      recommendations: Array.isArray(row.recommendations)
+        ? row.recommendations
+        : [],
+    } satisfies WorkoutScan);
+  }
+
+  state.insights = {};
+  for (const row of insights.data ?? []) {
+    const payload = row.payload as DailyInsight | null;
+    if (payload) state.insights[row.date] = payload;
   }
   for (const row of meals.data ?? []) {
     const day = state.days[row.date];
@@ -186,6 +229,27 @@ export async function writeCloudState(state: HealthState): Promise<void> {
       eaten_at: meal.at,
     }))
   );
+  const workoutRows = Object.values(state.days).flatMap((day) =>
+    (day.workouts ?? []).map((workout: WorkoutScan) => ({
+      id: workout.id,
+      date: day.date,
+      at: workout.at,
+      activity: workout.activity,
+      duration_minutes: workout.durationMinutes ?? null,
+      calories: workout.calories ?? null,
+      avg_heart_rate: workout.avgHeartRate ?? null,
+      max_heart_rate: workout.maxHeartRate ?? null,
+      exercises: workout.exercises ?? [],
+      summary: workout.summary ?? null,
+      recommendations: workout.recommendations ?? [],
+    }))
+  );
+  const insightRows = Object.values(state.insights ?? {}).map((insight) => ({
+    date: insight.date,
+    digest_hash: insight.digestHash,
+    generated_at: insight.generatedAt,
+    payload: insight,
+  }));
   const panelRows = state.labPanels.map((panel) => ({
     id: panel.id,
     date: panel.date,
@@ -211,12 +275,21 @@ export async function writeCloudState(state: HealthState): Promise<void> {
     "lab_panels",
     "meal_logs",
     "supplement_logs",
+    "workout_scans",
     "body_composition",
     "weekly_check_ins",
     "daily_logs",
   ];
   for (const table of tables) {
     const { error } = await supabase.from(table).delete().not("id", "is", null);
+    if (error) throw error;
+  }
+  {
+    // daily_insights is keyed by date, not id.
+    const { error } = await supabase
+      .from("daily_insights")
+      .delete()
+      .not("date", "is", null);
     if (error) throw error;
   }
 
@@ -254,6 +327,8 @@ export async function writeCloudState(state: HealthState): Promise<void> {
         )
       : null,
     panelRows.length ? supabase.from("lab_panels").insert(panelRows) : null,
+    workoutRows.length ? supabase.from("workout_scans").insert(workoutRows) : null,
+    insightRows.length ? supabase.from("daily_insights").insert(insightRows) : null,
   ].filter(Boolean);
 
   for (const write of writes) {

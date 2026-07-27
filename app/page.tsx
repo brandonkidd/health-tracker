@@ -9,6 +9,7 @@ import { TrendsScreen } from "@/components/health/trends-screen";
 import { useHealthState } from "@/hooks/use-health-state";
 import { emptyDailyLog } from "@/lib/health/storage";
 import type { DailyLog, HealthState } from "@/lib/health/types";
+import type { FoodPreset } from "@/lib/health-data";
 
 function HomeIcon() {
   return (
@@ -90,7 +91,17 @@ function localDate() {
 }
 
 export default function HealthCommandCenter() {
-  const { state, updateState, ready, syncState, importBackup } = useHealthState();
+  const {
+    state,
+    updateState,
+    ready,
+    syncState,
+    importBackup,
+    engine,
+    insight,
+    insightStatus,
+    refreshInsight,
+  } = useHealthState();
   const [view, setView] = useState<View>("today");
   const [date, setDate] = useState(localDate);
   const day = useMemo(() => state.days[date] ?? emptyDailyLog(date), [state.days, date]);
@@ -112,6 +123,10 @@ export default function HealthCommandCenter() {
 
   function replaceState(next: HealthState) {
     updateState(() => next);
+  }
+
+  function updateCustomPresets(next: FoodPreset[]) {
+    updateState((current) => ({ ...current, customPresets: next }));
   }
 
   if (!ready) {
@@ -153,13 +168,19 @@ export default function HealthCommandCenter() {
             day={day}
             allDays={state.days}
             archivedSupplements={state.archivedSupplements}
+            customPresets={state.customPresets ?? []}
+            onUpdatePresets={updateCustomPresets}
+            engine={engine}
+            insight={insight}
+            insightStatus={insightStatus}
+            onRefreshInsight={refreshInsight}
             onChange={updateDay}
             onClear={clearDay}
             onDateChange={setDate}
           />
         )}
-        {view === "trends" && <TrendsScreen state={state} />}
-        {view === "body" && <BodyScreen state={state} onChange={replaceState} />}
+        {view === "trends" && <TrendsScreen state={state} engine={engine} />}
+        {view === "body" && <BodyScreen state={state} engine={engine} onChange={replaceState} />}
         {view === "labs" && <LabsScreen state={state} onChange={replaceState} />}
         {view === "plan" && (
           <PlanScreen

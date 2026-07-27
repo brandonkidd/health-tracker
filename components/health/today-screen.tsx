@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ACTIVITY_DEFAULT_MINUTES,
   BODYFI_PLAN,
@@ -8,7 +8,9 @@ import {
   plannedActivity,
 } from "@/lib/health/config";
 import { estimatedDeficit } from "@/lib/health/projections";
-import type { DailyLog, WorkoutScan } from "@/lib/health/types";
+import type { EngineSnapshot } from "@/lib/health/engine";
+import type { InsightStatus } from "@/hooks/use-health-state";
+import type { DailyInsight, DailyLog, WorkoutScan } from "@/lib/health/types";
 import {
   ALCOHOL_PRESETS,
   FOOD_CATEGORIES,
@@ -16,6 +18,7 @@ import {
   SUPPLEMENTS_DAILY,
   type FoodPreset,
 } from "@/lib/health-data";
+import { CoachCard } from "./coach-card";
 import { Card, Field, SectionHeader, StatusBadge } from "./ui";
 
 const WATER_SERVING_OZ = 8;
@@ -32,6 +35,23 @@ const CATEGORY_LABELS: Record<FoodPreset["category"], string> = {
   drink: "Drinks",
   alcohol: "Alcohol",
 };
+
+const BUILTIN_PRESETS: FoodPreset[] = [...FOOD_PRESETS, ...ALCOHOL_PRESETS];
+const BUILTIN_PRESET_IDS = new Set(BUILTIN_PRESETS.map((preset) => preset.id));
+
+/** Form draft for adding or editing a preset; numbers stay strings while typing. */
+interface PresetDraft {
+  id: string | null;
+  label: string;
+  category: FoodPreset["category"];
+  cals: string;
+  p: string;
+  c: string;
+  f: string;
+  fiber: string;
+  notes: string;
+  source?: string;
+}
 
 /* ——— icons ——— */
 
@@ -123,6 +143,136 @@ function strengthHistory(allDays: Record<string, DailyLog>, before: string) {
       )
     )
     .slice(0, 40);
+}
+
+/* ——— score helpers ——— */
+
+type Targets = {
+  protein: number;
+  calories: number;
+  waterOz: number;
+  steps: number;
+  sleepHours: number;
+};
+
+/** Health Improvement Score: % of daily targets hit. */
+function dayScore(day: DailyLog, targets: Targets, supplementList: { id: string }[]): number {
+  const supplementsTaken = supplementList.filter((item) => day.supplements[item.id]).length;
+  const checks = [
+    day.protein >= targets.protein,
+    day.calories > 0 && day.calories <= targets.calories,
+    day.waterOz >= targets.waterOz,
+    day.steps >= targets.steps,
+    (day.sleepHours ?? 0) >= targets.sleepHours,
+    day.activityCompleted,
+    supplementList.length > 0 && supplementsTaken === supplementList.length,
+  ];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+function hasWorkout(day: DailyLog | undefined): day is DailyLog {
+  return !!day && (day.activityCompleted || (day.workouts ?? []).length > 0);
+}
+
+/* ——— month calendar ——— */
+
+function MonthCalendar({
+  allDays,
+  targets,
+  supplementList,
+  selectedDate,
+  today,
+  onSelectDate,
+}: {
+  allDays: Record<string, DailyLog>;
+  targets: Targets;
+  supplementList: { id: string }[];
+  selectedDate: string;
+  today: string;
+  onSelectDate: (next: string) => void;
+}) {
+  const [monthCursor, setMonthCursor] = useState(() => selectedDate.slice(0, 7));
+  const [year, month] = monthCursor.split("-").map(Number);
+  const firstOfMonth = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const leadingBlanks = firstOfMonth.getDay();
+  const label = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  function shiftMonth(delta: number) {
+    const next = new Date(year, month - 1 + delta, 1);
+    setMonthCursor(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
+  }
+
+  const cells = Array.from({ length: daysInMonth }, (_, index) => {
+    const key = `${monthCursor}-${String(index + 1).padStart(2, "0")}`;
+    const entry = allDays[key];
+    const worked = hasWorkout(entry);
+    return {
+      key,
+      num: index + 1,
+      worked,
+      score: worked ? dayScore(entry, targets, supplementList) : null,
+      future: key > today,
+    };
+  });
+  const workoutCount = cells.filter((cell) => cell.worked).length;
+
+  return (
+    <div className="hc-month-cal">
+      <div className="hc-month-head">
+        <button type="button" aria-label="Previous month" onClick={() => shiftMonth(-1)}>
+          ‹
+        </button>
+        <div className="hc-month-title">
+          <strong>{label}</strong>
+          <small>
+            {workoutCount} workout {workoutCount === 1 ? "day" : "days"}
+          </small>
+        </div>
+        <button type="button" aria-label="Next month" onClick={() => shiftMonth(1)}>
+          ›
+        </button>
+      </div>
+      <div className="hc-month-grid">
+        {["S", "M", "T", "W", "T", "F", "S"].map((dow, index) => (
+          <span key={index} className="hc-month-dow">
+            {dow}
+          </span>
+        ))}
+        {Array.from({ length: leadingBlanks }, (_, index) => (
+          <span key={`blank-${index}`} aria-hidden="true" />
+        ))}
+        {cells.map((cell) => (
+          <button
+            key={cell.key}
+            type="button"
+            className={[
+              "hc-month-cell",
+              cell.worked ? "worked" : "",
+              cell.key === selectedDate ? "selected" : "",
+              cell.key === today ? "today" : "",
+              cell.future ? "future" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-label={
+              `${cell.key}${cell.worked ? `, worked out, health score ${cell.score}%` : ""}`
+            }
+            onClick={() => onSelectDate(cell.key)}
+          >
+            <span className="hc-month-num">{cell.num}</span>
+            <small>{cell.score != null ? `${cell.score}%` : "\u00A0"}</small>
+          </button>
+        ))}
+      </div>
+      <div className="hc-month-legend">
+        <span>
+          <i /> Worked out
+        </span>
+        <span>% Health Improvement Score</span>
+      </div>
+    </div>
+  );
 }
 
 /* ——— history helpers ——— */
@@ -287,6 +437,12 @@ export function TodayScreen({
   day,
   allDays,
   archivedSupplements,
+  customPresets,
+  onUpdatePresets,
+  engine,
+  insight,
+  insightStatus,
+  onRefreshInsight,
   onChange,
   onClear,
   onDateChange,
@@ -295,11 +451,19 @@ export function TodayScreen({
   day: DailyLog;
   allDays: Record<string, DailyLog>;
   archivedSupplements: string[];
+  customPresets: FoodPreset[];
+  onUpdatePresets: (next: FoodPreset[]) => void;
+  engine: EngineSnapshot | null;
+  insight: DailyInsight | null;
+  insightStatus: InsightStatus;
+  onRefreshInsight: () => void;
   onChange: (next: DailyLog) => void;
   onClear: () => void;
   onDateChange: (next: string) => void;
 }) {
-  const [tab, setTab] = useState<"nutrition" | "activity">("nutrition");
+  const [tab, setTab] = useState<"nutrition" | "activity" | "month">("nutrition");
+  const [editingPresets, setEditingPresets] = useState(false);
+  const [presetDraft, setPresetDraft] = useState<PresetDraft | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -308,8 +472,9 @@ export function TodayScreen({
     (item) => item.tier === 1 && !archivedSupplements.includes(item.id)
   );
   const supplementsTaken = supplementList.filter((item) => day.supplements[item.id]).length;
-  const deficit = estimatedDeficit(day);
-  const targets = BODYFI_PLAN.targets;
+  // Adaptive: deficit against the learned TDEE; static estimate as fallback.
+  const deficit = engine ? engine.tdee.tdee - day.calories : estimatedDeficit(day);
+  const targets = engine?.targets ?? BODYFI_PLAN.targets;
 
   const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60_000)
     .toISOString()
@@ -363,16 +528,7 @@ export function TodayScreen({
       ? `${Math.floor(day.walkingMinutes / 60)}h ${day.walkingMinutes % 60}m`
       : `${day.walkingMinutes}m`;
 
-  const scoreChecks = [
-    day.protein >= targets.protein,
-    day.calories > 0 && day.calories <= targets.calories,
-    day.waterOz >= targets.waterOz,
-    day.steps >= targets.steps,
-    (day.sleepHours ?? 0) >= targets.sleepHours,
-    day.activityCompleted,
-    supplementList.length > 0 && supplementsTaken === supplementList.length,
-  ];
-  const score = Math.round((scoreChecks.filter(Boolean).length / scoreChecks.length) * 100);
+  const score = dayScore(day, targets, supplementList);
 
   function patch(updates: Partial<DailyLog>) {
     onChange({ ...day, ...updates });
@@ -505,10 +661,75 @@ export function TodayScreen({
     }
   }
 
-  const mealPresets = (category: FoodPreset["category"]) =>
-    FOOD_PRESETS.filter((preset) => preset.category === category).concat(
-      category === "alcohol" ? ALCOHOL_PRESETS : []
+  // Built-ins with user edits applied, plus user-added presets at the end.
+  const allPresets = useMemo(() => {
+    const overrides = new Map(customPresets.map((preset) => [preset.id, preset]));
+    return BUILTIN_PRESETS.map((preset) => overrides.get(preset.id) ?? preset).concat(
+      customPresets.filter((preset) => !BUILTIN_PRESET_IDS.has(preset.id))
     );
+  }, [customPresets]);
+
+  const mealPresets = (category: FoodPreset["category"]) =>
+    allPresets.filter((preset) => preset.category === category);
+
+  function startNewPreset() {
+    setPresetDraft({
+      id: null,
+      label: "",
+      category: "snack",
+      cals: "",
+      p: "",
+      c: "",
+      f: "",
+      fiber: "",
+      notes: "",
+    });
+  }
+
+  function startEditPreset(meal: FoodPreset) {
+    setPresetDraft({
+      id: meal.id,
+      label: meal.label,
+      category: meal.category,
+      cals: String(meal.cals),
+      p: String(meal.p),
+      c: String(meal.c),
+      f: String(meal.f),
+      fiber: meal.fiber != null ? String(meal.fiber) : "",
+      notes: meal.notes ?? "",
+      source: meal.source,
+    });
+  }
+
+  function savePresetDraft() {
+    if (!presetDraft || !presetDraft.label.trim()) return;
+    const preset: FoodPreset = {
+      id: presetDraft.id ?? `custom-${crypto.randomUUID()}`,
+      label: presetDraft.label.trim(),
+      say: presetDraft.label.trim().toLowerCase(),
+      category: presetDraft.category,
+      cals: Number(presetDraft.cals) || 0,
+      p: Number(presetDraft.p) || 0,
+      c: Number(presetDraft.c) || 0,
+      f: Number(presetDraft.f) || 0,
+      fiber: presetDraft.fiber.trim() === "" ? undefined : Number(presetDraft.fiber) || 0,
+      notes: presetDraft.notes.trim() || undefined,
+      source: presetDraft.source,
+    };
+    onUpdatePresets([...customPresets.filter((entry) => entry.id !== preset.id), preset]);
+    setPresetDraft(null);
+  }
+
+  /** Removes a custom preset, or drops the override to restore a built-in. */
+  function removePresetDraft() {
+    if (!presetDraft?.id) return;
+    onUpdatePresets(customPresets.filter((entry) => entry.id !== presetDraft.id));
+    setPresetDraft(null);
+  }
+
+  const draftIsBuiltin = presetDraft?.id != null && BUILTIN_PRESET_IDS.has(presetDraft.id);
+  const draftHasOverride =
+    presetDraft?.id != null && customPresets.some((entry) => entry.id === presetDraft.id);
 
   return (
     <div className="hc-stack">
@@ -534,46 +755,72 @@ export function TodayScreen({
         </button>
       )}
 
-      <div className="hc-pill-toggle" role="tablist" aria-label="Nutrition or activity">
+      {date === today && (
+        <CoachCard
+          engine={engine}
+          insight={insight}
+          status={insightStatus}
+          todayCalories={day.calories}
+          onRefresh={onRefreshInsight}
+        />
+      )}
+
+      <div className="hc-pill-toggle" role="tablist" aria-label="Nutrition, activity, or month">
         <button className={tab === "nutrition" ? "active" : ""} onClick={() => setTab("nutrition")}>
           Nutrition
         </button>
         <button className={tab === "activity" ? "active" : ""} onClick={() => setTab("activity")}>
           Activity
         </button>
+        <button className={tab === "month" ? "active" : ""} onClick={() => setTab("month")}>
+          Month
+        </button>
       </div>
 
-      <div className="hc-bigstat">
-        <strong>{(tab === "nutrition" ? day.calories : day.steps).toLocaleString()}</strong>
-        <span>{tab === "nutrition" ? "Calories" : "Steps"}</span>
-      </div>
-
-      {tab === "nutrition" ? (
-        <div className="hc-feature-row">
-          <div className="hc-feature-card">
-            <span className="hc-feature-icon"><DumbbellIcon /></span>
-            <span>Protein</span>
-            <strong>{day.protein} g</strong>
-          </div>
-          <div className="hc-feature-card">
-            <span className="hc-feature-icon"><DropIcon /></span>
-            <span>Water</span>
-            <strong>{day.waterOz} oz</strong>
-          </div>
-        </div>
+      {tab === "month" ? (
+        <MonthCalendar
+          allDays={allDays ?? {}}
+          targets={targets}
+          supplementList={supplementList}
+          selectedDate={date}
+          today={today}
+          onSelectDate={onDateChange}
+        />
       ) : (
-        <div className="hc-feature-row">
-          <div className="hc-feature-card">
-            <span className="hc-feature-icon"><PinIcon /></span>
-            <span>Distance</span>
-            <strong>{distanceKm} km</strong>
+        <>
+          <div className="hc-bigstat">
+            <strong>{(tab === "nutrition" ? day.calories : day.steps).toLocaleString()}</strong>
+            <span>{tab === "nutrition" ? "Calories" : "Steps"}</span>
           </div>
-          <div className="hc-feature-card">
-            <span className="hc-feature-icon"><TimerIcon /></span>
-            <span>Active Time</span>
-            <strong>{activeTime}</strong>
-          </div>
-        </div>
+
+          {tab === "nutrition" ? (
+            <div className="hc-feature-row">
+              <div className="hc-feature-card">
+                <span className="hc-feature-icon"><DumbbellIcon /></span>
+                <span>Protein</span>
+                <strong>{day.protein} g</strong>
+              </div>
+              <div className="hc-feature-card">
+                <span className="hc-feature-icon"><DropIcon /></span>
+                <span>Water</span>
+                <strong>{day.waterOz} oz</strong>
+              </div>
+            </div>
+          ) : (
+            <div className="hc-feature-row">
+              <div className="hc-feature-card">
+                <span className="hc-feature-icon"><PinIcon /></span>
+                <span>Distance</span>
+                <strong>{distanceKm} km</strong>
+              </div>
+              <div className="hc-feature-card">
+                <span className="hc-feature-icon"><TimerIcon /></span>
+                <span>Active Time</span>
+                <strong>{activeTime}</strong>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <h2 className="hc-section-title">Daily Updates</h2>
@@ -794,7 +1041,11 @@ export function TodayScreen({
         </div>
         <div className="hc-callout">
           Estimated daily deficit: <strong>{deficit > 0 ? deficit : 0} cal</strong>
-          <small>Maintenance and wearable burn are estimates; use your 7-day weight trend to steer.</small>
+          <small>
+            {engine && engine.tdee.confidence >= 0.4
+              ? `Measured against your learned burn of ${engine.tdee.tdee.toLocaleString()} cal/day (from ${engine.tdee.windowDays} days of weight + intake data).`
+              : "Burn estimate is still calibrating — keep logging weight and food and it learns your real metabolism."}
+          </small>
         </div>
       </Card>
 
@@ -852,8 +1103,109 @@ export function TodayScreen({
           <span><strong>{day.fiber}g</strong> fiber</span>
         </div>
         <p className="hc-muted hc-compact-copy">
-          Tap any meal to log its complete calories, protein, carbs, fat, and fiber.
+          {editingPresets
+            ? "Tap any meal to edit its name, macros, category, or notes."
+            : "Tap any meal to log its complete calories, protein, carbs, fat, and fiber."}
         </p>
+        <div className="hc-preset-toolbar">
+          <button
+            className={editingPresets ? "hc-text-button active" : "hc-text-button"}
+            onClick={() => {
+              setEditingPresets(!editingPresets);
+              setPresetDraft(null);
+            }}
+          >
+            {editingPresets ? "Done editing" : "Edit presets"}
+          </button>
+          <button className="hc-text-button" onClick={startNewPreset}>
+            + Add a preset
+          </button>
+        </div>
+        {presetDraft && (
+          <div className="hc-preset-editor">
+            <strong>{presetDraft.id == null ? "Add a preset" : "Edit preset"}</strong>
+            <Field label="Name">
+              <input
+                value={presetDraft.label}
+                placeholder="e.g. Turkey Sandwich"
+                onChange={(event) =>
+                  setPresetDraft({ ...presetDraft, label: event.target.value })
+                }
+              />
+            </Field>
+            <Field label="Category">
+              <select
+                value={presetDraft.category}
+                onChange={(event) =>
+                  setPresetDraft({
+                    ...presetDraft,
+                    category: event.target.value as FoodPreset["category"],
+                  })
+                }
+              >
+                {FOOD_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="hc-inline-fields">
+              {(
+                [
+                  ["cals", "Calories"],
+                  ["p", "Protein (g)"],
+                  ["c", "Carbs (g)"],
+                  ["f", "Fat (g)"],
+                  ["fiber", "Fiber (g)"],
+                ] as const
+              ).map(([key, label]) => (
+                <Field key={key} label={label}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={presetDraft[key]}
+                    onChange={(event) =>
+                      setPresetDraft({ ...presetDraft, [key]: event.target.value })
+                    }
+                  />
+                </Field>
+              ))}
+            </div>
+            <Field label="Notes (optional)">
+              <input
+                value={presetDraft.notes}
+                placeholder="e.g. Dressing on the side"
+                onChange={(event) =>
+                  setPresetDraft({ ...presetDraft, notes: event.target.value })
+                }
+              />
+            </Field>
+            <div className="hc-button-row">
+              <button
+                className="hc-button"
+                onClick={savePresetDraft}
+                disabled={!presetDraft.label.trim()}
+              >
+                Save preset
+              </button>
+              <button className="hc-text-button" onClick={() => setPresetDraft(null)}>
+                Cancel
+              </button>
+              {draftIsBuiltin && draftHasOverride && (
+                <button className="hc-danger-link" onClick={removePresetDraft}>
+                  Reset to original
+                </button>
+              )}
+              {presetDraft.id != null && !draftIsBuiltin && (
+                <button className="hc-danger-link" onClick={removePresetDraft}>
+                  Delete preset
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="hc-meal-catalog">
           {FOOD_CATEGORIES.map((category) => {
             const presets = mealPresets(category);
@@ -866,7 +1218,11 @@ export function TodayScreen({
                 </summary>
                 <div className="hc-meal-grid">
                   {presets.map((meal) => (
-                    <button className="hc-meal-option" key={meal.id} onClick={() => addMeal(meal)}>
+                    <button
+                      className="hc-meal-option"
+                      key={meal.id}
+                      onClick={() => (editingPresets ? startEditPreset(meal) : addMeal(meal))}
+                    >
                       <strong>{meal.label}</strong>
                       {meal.source && <small>{meal.source}</small>}
                       <span>
@@ -874,6 +1230,15 @@ export function TodayScreen({
                         {meal.fiber != null ? ` · ${meal.fiber}g fiber` : ""}
                       </span>
                       {meal.notes && <small>{meal.notes}</small>}
+                      {editingPresets && (
+                        <small className="hc-preset-tag">
+                          {BUILTIN_PRESET_IDS.has(meal.id)
+                            ? customPresets.some((entry) => entry.id === meal.id)
+                              ? "Edited — tap to change"
+                              : "Tap to edit"
+                            : "Custom — tap to edit"}
+                        </small>
+                      )}
                     </button>
                   ))}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
+import type { EngineSnapshot } from "@/lib/health/engine";
 import { emptyDailyLog } from "@/lib/health/storage";
 import type { DailyLog, HealthState } from "@/lib/health/types";
 import { Card, EmptyState, SectionHeader, StatusBadge } from "./ui";
@@ -114,7 +115,13 @@ function StepsHeatmap({ days }: { days: DailyLog[] }) {
   );
 }
 
-export function TrendsScreen({ state }: { state: HealthState }) {
+export function TrendsScreen({
+  state,
+  engine,
+}: {
+  state: HealthState;
+  engine: EngineSnapshot | null;
+}) {
   const [range, setRange] = useState<7 | 30>(7);
   const heatmap = heatmapDays(state, range);
   const days = Object.values(state.days)
@@ -203,6 +210,42 @@ export function TrendsScreen({ state }: { state: HealthState }) {
           </p>
         </Card>
       </div>
+
+      <Card>
+        <SectionHeader
+          eyebrow="What your data connects"
+          title="Your patterns"
+          action={
+            engine?.correlations.findings.length ? (
+              <StatusBadge tone="good">
+                {engine.correlations.findings.length} found
+              </StatusBadge>
+            ) : undefined
+          }
+        />
+        {engine && engine.correlations.findings.length > 0 ? (
+          <div className="hc-pattern-list">
+            {engine.correlations.findings.map((finding) => (
+              <div key={finding.id} className="hc-pattern-row">
+                <div className="hc-pattern-head">
+                  <strong>{finding.title}</strong>
+                  <span className={`hc-pattern-strength ${finding.strength}`}>
+                    {finding.strength} · r {finding.r > 0 ? "+" : ""}
+                    {finding.r} · {finding.n} days
+                  </span>
+                </div>
+                <p>{finding.description}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState>
+            The engine checks sleep, steps, alcohol, training, and eating against each other
+            every day. Once a pattern clears the statistical bar (8+ days of paired data), it
+            shows up here in plain language.
+          </EmptyState>
+        )}
+      </Card>
 
       <Card>
         <SectionHeader eyebrow="Daily history" title="Recent scorecard" />

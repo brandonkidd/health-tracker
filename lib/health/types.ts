@@ -1,4 +1,5 @@
 import type { ActivityType } from "./config";
+import type { FoodPreset } from "@/lib/health-data";
 
 export type SyncState = "local" | "syncing" | "synced" | "error";
 export type MetricStatus = "optimal" | "watch" | "follow-up" | "unrated";
@@ -103,6 +104,24 @@ export interface LabPanel {
   results: LabResult[];
 }
 
+export interface InsightRecommendation {
+  title: string;
+  detail: string;
+}
+
+/** AI-generated daily analysis, cached per date and keyed to the data digest. */
+export interface DailyInsight {
+  date: string;
+  digestHash: string;
+  generatedAt: string;
+  headline: string;
+  summary: string;
+  wins: string[];
+  risks: string[];
+  recommendations: InsightRecommendation[];
+  outlook: string;
+}
+
 export interface HealthState {
   version: 2;
   days: Record<string, DailyLog>;
@@ -110,6 +129,13 @@ export interface HealthState {
   bodyScans: BodyScan[];
   labPanels: LabPanel[];
   archivedSupplements: string[];
+  /** Optional so pre-existing saved states without the field still parse. */
+  insights?: Record<string, DailyInsight>;
+  /**
+   * User-created and user-edited meal presets. An entry whose id matches a
+   * built-in preset overrides it; any other entry is an added preset.
+   */
+  customPresets?: FoodPreset[];
 }
 
 export interface ProjectionPoint {

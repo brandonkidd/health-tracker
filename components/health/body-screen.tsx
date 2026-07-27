@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
 import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
+import type { AdaptiveForecast, EngineSnapshot } from "@/lib/health/engine";
 import type { BodyScan, DailyLog, HealthState, WeeklyCheckIn } from "@/lib/health/types";
 import { Card, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
 import { BodyModel } from "./body-model";
@@ -54,15 +55,24 @@ function strengthProgress(days: Record<string, DailyLog>): StrengthRow[] {
 function ArcChart({
   entries,
   fullArc,
+  forecast,
 }: {
   entries: WeeklyCheckIn[];
   fullArc: boolean;
+  forecast?: AdaptiveForecast | null;
 }) {
   const maxWeek = fullArc ? 182 : 26;
   const projected = Array.from({ length: 40 }, (_, index) =>
     projectionAtWeek((index / 39) * maxWeek)
   );
-  const allWeights = [...projected.map((point) => point.weight), ...entries.flatMap((entry) => entry.weight ? [entry.weight] : [])];
+  const forecastInRange = (forecast?.points ?? [])
+    .map((point) => ({ ...point, week: planWeek(point.date) }))
+    .filter((point) => point.week <= maxWeek);
+  const allWeights = [
+    ...projected.map((point) => point.weight),
+    ...entries.flatMap((entry) => (entry.weight ? [entry.weight] : [])),
+    ...forecastInRange.flatMap((point) => [point.low, point.high]),
+  ];
   const min = Math.min(...allWeights) - 3;
   const max = Math.max(...allWeights) + 3;
   const x = (week: number) => (week / maxWeek) * 100;
@@ -73,11 +83,28 @@ function ArcChart({
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((entry) => `${x(planWeek(entry.date))},${y(entry.weight!)}`)
     .join(" ");
+  const forecastPoints = forecastInRange
+    .map((point) => `${x(point.week)},${y(point.weight)}`)
+    .join(" ");
+  const bandPoints =
+    forecastInRange.length > 1
+      ? [
+          ...forecastInRange.map((point) => `${x(point.week)},${y(point.high)}`),
+          ...forecastInRange
+            .slice()
+            .reverse()
+            .map((point) => `${x(point.week)},${y(point.low)}`),
+        ].join(" ")
+      : "";
 
   return (
     <svg className="hc-arc-chart" viewBox="0 0 100 62" preserveAspectRatio="none" aria-label="Actual versus projected weight">
       <line x1="0" y1="58" x2="100" y2="58" />
+      {bandPoints && <polygon className="forecast-band" points={bandPoints} />}
       <polyline className="projection" points={projectionPoints} fill="none" vectorEffect="non-scaling-stroke" />
+      {forecastPoints && (
+        <polyline className="forecast" points={forecastPoints} fill="none" vectorEffect="non-scaling-stroke" />
+      )}
       {actualPoints && <polyline className="actual" points={actualPoints} fill="none" vectorEffect="non-scaling-stroke" />}
     </svg>
   );
@@ -85,9 +112,11 @@ function ArcChart({
 
 export function BodyScreen({
   state,
+  engine,
   onChange,
 }: {
   state: HealthState;
+  engine: EngineSnapshot | null;
   onChange: (next: HealthState) => void;
 }) {
   const [fullArc, setFullArc] = useState(false);
@@ -97,6 +126,15 @@ export function BodyScreen({
   const latest = state.weeklyCheckIns.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const latestScan = state.bodyScans.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const delta = latest ? checkInDelta(latest) : undefined;
+  const forecast = engine?.forecast ?? null;
+  const etaLabel = (() => {
+    if (!forecast || forecast.etaDate == null) return "—";
+    if (forecast.etaWeeks === 0) return "Now";
+    return new Date(`${forecast.etaDate}T12:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  })();
 
   function submitCheckIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -167,10 +205,10 @@ export function BodyScreen({
       )}
 
       <div className="hc-status-rail">
-        <Card><span>Latest weight</span><strong>{latest?.weight ?? "—"}<small> lb</small></strong></Card>
+        <Card><span>Trend weight</span><strong>{engine?.trendWeight ?? latest?.weight ?? "—"}<small> lb</small></strong></Card>
         <Card><span>Latest waist</span><strong>{latest?.waist ?? "—"}<small> in</small></strong></Card>
-        <Card><span>Vs projection</span><strong>{delta?.weight == null ? "—" : `${delta.weight > 0 ? "+" : ""}${delta.weight}`}<small> lb</small></strong></Card>
-        <Card><span>Plan week</span><strong>{planWeek(new Date().toISOString().slice(0, 10))}</strong></Card>
+        <Card><span>Vs plan</span><strong>{forecast ? `${forecast.deltaVsPlan > 0 ? "+" : ""}${forecast.deltaVsPlan}` : delta?.weight == null ? "—" : `${delta.weight > 0 ? "+" : ""}${delta.weight}`}<small> lb</small></strong></Card>
+        <Card><span>{forecast ? `ETA ${forecast.goalWeight} lb` : "Plan week"}</span><strong>{forecast ? etaLabel : planWeek(new Date().toISOString().slice(0, 10))}</strong></Card>
       </div>
 
       <BodyModel latestCheckIn={latest} latestScan={latestScan} />
@@ -187,8 +225,25 @@ export function BodyScreen({
             </div>
           }
         />
-        <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} />
-        <div className="hc-chart-legend"><span className="projected">Projected</span><span className="actual">Actual</span></div>
+        <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} forecast={forecast} />
+        <div className="hc-chart-legend">
+          <span className="projected">Plan</span>
+          <span className="actual">Actual</span>
+          {forecast && <span className="forecasted">Your pace</span>}
+        </div>
+        {forecast && (
+          <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
+            At your current pace ({forecast.projectedRatePerWeek > 0 ? "+" : ""}
+            {forecast.projectedRatePerWeek} lb/week from a {forecast.startTrendWeight} lb trend
+            weight), you reach <strong>{forecast.goalWeight} lb</strong>
+            {forecast.etaWeeks != null && forecast.etaWeeks > 0
+              ? ` in about ${Math.round(forecast.etaWeeks)} weeks (${etaLabel}). `
+              : forecast.etaWeeks === 0
+                ? " — you're there. "
+                : " — pace has stalled; see the coach's recommendations. "}
+            The shaded band shows the uncertainty from day-to-day scale noise.
+          </p>
+        )}
       </Card>
 
       <Card>

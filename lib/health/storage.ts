@@ -11,6 +11,8 @@ export const emptyHealthState = (): HealthState => ({
   bodyScans: [],
   labPanels: [],
   archivedSupplements: [],
+  insights: {},
+  customPresets: [],
 });
 
 export function emptyDailyLog(date: string): DailyLog {
