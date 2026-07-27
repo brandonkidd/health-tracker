@@ -14,6 +14,27 @@ export interface MealEntry {
   at: string;
 }
 
+export interface WorkoutExercise {
+  name: string;
+  weightLbs?: number;
+  sets?: number;
+  reps?: number;
+}
+
+/** A workout captured by photographing a class screen or watch summary. */
+export interface WorkoutScan {
+  id: string;
+  at: string;
+  activity: string;
+  durationMinutes?: number;
+  calories?: number;
+  avgHeartRate?: number;
+  maxHeartRate?: number;
+  exercises: WorkoutExercise[];
+  summary?: string;
+  recommendations?: string[];
+}
+
 export interface DailyLog {
   date: string;
   waterOz: number;
@@ -34,6 +55,8 @@ export interface DailyLog {
   soreness?: number;
   supplements: Record<string, boolean>;
   meals: MealEntry[];
+  /** Optional so pre-existing saved days without the field still parse. */
+  workouts?: WorkoutScan[];
   notes: string;
 }
 

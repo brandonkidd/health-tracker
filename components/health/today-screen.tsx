@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ACTIVITY_DEFAULT_MINUTES,
   BODYFI_PLAN,
@@ -8,7 +8,7 @@ import {
   plannedActivity,
 } from "@/lib/health/config";
 import { estimatedDeficit } from "@/lib/health/projections";
-import type { DailyLog } from "@/lib/health/types";
+import type { DailyLog, WorkoutScan } from "@/lib/health/types";
 import {
   ALCOHOL_PRESETS,
   FOOD_CATEGORIES,
@@ -24,6 +24,7 @@ const WATER_SERVINGS = BODYFI_PLAN.targets.waterOz / WATER_SERVING_OZ;
 const CATEGORY_LABELS: Record<FoodPreset["category"], string> = {
   breakfast: "Breakfast",
   snack: "Snacks",
+  smoothie: "Smoothies & protein shakes",
   lunch: "Lunch",
   dinner: "Dinner",
   restaurant: "Restaurant go-tos",
@@ -67,6 +68,61 @@ function DropIcon() {
       <path d="M12 2.9S5.6 9.8 5.6 14.4a6.4 6.4 0 0 0 12.8 0C18.4 9.8 12 2.9 12 2.9Z" />
     </svg>
   );
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M4 7.5h2.6l1.5-2.3h7.8l1.5 2.3H20a1.6 1.6 0 0 1 1.6 1.6v8.6A1.6 1.6 0 0 1 20 19.3H4a1.6 1.6 0 0 1-1.6-1.6V9.1A1.6 1.6 0 0 1 4 7.5Z" />
+      <circle cx="12" cy="13" r="3.4" />
+    </svg>
+  );
+}
+
+/* ——— photo scan helpers ——— */
+
+interface ScanResponse {
+  isWorkoutScreen: boolean;
+  activity: string;
+  durationMinutes: number | null;
+  calories: number | null;
+  avgHeartRate: number | null;
+  maxHeartRate: number | null;
+  exercises: { name: string; weightLbs: number | null; sets: number | null; reps: number | null }[];
+  summary: string;
+  recommendations: string[];
+  error?: string;
+}
+
+/** Shrink the photo client-side so uploads stay fast and cheap. */
+async function fileToDataUrl(file: File, maxDim = 1400): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+/** Recent strength entries across all days, newest first, for progression advice. */
+function strengthHistory(allDays: Record<string, DailyLog>, before: string) {
+  return Object.values(allDays ?? {})
+    .filter((entry) => entry.date <= before)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .flatMap((entry) =>
+      (entry.workouts ?? []).flatMap((scan) =>
+        scan.exercises.map((exercise) => ({
+          date: entry.date,
+          name: exercise.name,
+          weightLbs: exercise.weightLbs,
+          sets: exercise.sets,
+          reps: exercise.reps,
+        }))
+      )
+    )
+    .slice(0, 40);
 }
 
 /* ——— history helpers ——— */
@@ -244,6 +300,9 @@ export function TodayScreen({
   onDateChange: (next: string) => void;
 }) {
   const [tab, setTab] = useState<"nutrition" | "activity">("nutrition");
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
   const activity = plannedActivity(date);
   const supplementList = SUPPLEMENTS_DAILY.filter(
     (item) => item.tier === 1 && !archivedSupplements.includes(item.id)
@@ -317,6 +376,70 @@ export function TodayScreen({
 
   function patch(updates: Partial<DailyLog>) {
     onChange({ ...day, ...updates });
+  }
+
+  async function scanWorkoutPhoto(file: File) {
+    setScanBusy(true);
+    setScanError(null);
+    try {
+      const image = await fileToDataUrl(file);
+      const response = await fetch("/api/scan-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image,
+          weightLb: latestWeight,
+          plannedActivity: activity.label,
+          history: strengthHistory(allDays, date),
+        }),
+      });
+      const result = (await response.json()) as ScanResponse;
+      if (!response.ok) throw new Error(result.error ?? "Scan failed — try again.");
+      if (!result.isWorkoutScreen) {
+        throw new Error(
+          "That photo doesn't look like a workout screen. Try a clearer shot of the class display or watch summary."
+        );
+      }
+
+      const scan: WorkoutScan = {
+        id: crypto.randomUUID(),
+        at: new Date().toISOString(),
+        activity: result.activity || activity.label,
+        durationMinutes: result.durationMinutes ?? undefined,
+        calories: result.calories ?? undefined,
+        avgHeartRate: result.avgHeartRate ?? undefined,
+        maxHeartRate: result.maxHeartRate ?? undefined,
+        exercises: (result.exercises ?? []).map((exercise) => ({
+          name: exercise.name,
+          weightLbs: exercise.weightLbs ?? undefined,
+          sets: exercise.sets ?? undefined,
+          reps: exercise.reps ?? undefined,
+        })),
+        summary: result.summary || undefined,
+        recommendations: result.recommendations?.length ? result.recommendations : undefined,
+      };
+
+      // Prefer the calories on the screen; fall back to a MET estimate for the scanned duration.
+      const calories =
+        scan.calories ??
+        (scan.durationMinutes
+          ? estimateActivityCalories(activity.type, latestWeight, scan.durationMinutes)
+          : classEstimate);
+
+      patch({
+        workouts: [...(day.workouts ?? []), scan],
+        activityCompleted: true,
+        estimatedActivityCalories: Math.round(calories),
+      });
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Scan failed — try again.");
+    } finally {
+      setScanBusy(false);
+    }
+  }
+
+  function removeScan(id: string) {
+    patch({ workouts: (day.workouts ?? []).filter((scan) => scan.id !== id) });
   }
 
   function addMeal(meal: FoodPreset) {
@@ -582,6 +705,77 @@ export function TodayScreen({
             )}
           </p>
         )}
+        <div className="hc-scan-block">
+          <input
+            ref={scanInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void scanWorkoutPhoto(file);
+            }}
+          />
+          <button
+            className="hc-scan-button"
+            onClick={() => scanInputRef.current?.click()}
+            disabled={scanBusy}
+          >
+            <CameraIcon />
+            {scanBusy ? "Reading your screen…" : "Scan class screen"}
+          </button>
+          <small>
+            Snap the class display or your watch summary — calories, time, heart rate, and weights
+            get logged automatically.
+          </small>
+          {scanError && <p className="hc-scan-error">{scanError}</p>}
+        </div>
+        {(day.workouts ?? []).length > 0 && (
+          <div className="hc-scan-results">
+            {(day.workouts ?? []).map((scan) => (
+              <div key={scan.id} className="hc-scan-result">
+                <div className="hc-scan-result-head">
+                  <strong>{scan.activity}</strong>
+                  <button className="hc-danger-link" onClick={() => removeScan(scan.id)}>
+                    Remove
+                  </button>
+                </div>
+                <span className="hc-scan-metrics">
+                  {[
+                    scan.durationMinutes ? `${scan.durationMinutes} min` : null,
+                    scan.calories ? `${scan.calories} cal` : null,
+                    scan.avgHeartRate ? `${scan.avgHeartRate} bpm avg` : null,
+                    scan.maxHeartRate ? `${scan.maxHeartRate} bpm max` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+                {scan.exercises.length > 0 && (
+                  <div className="hc-scan-chips">
+                    {scan.exercises.map((exercise, index) => (
+                      <span key={index}>
+                        {exercise.name}
+                        {exercise.weightLbs ? ` ${exercise.weightLbs} lb` : ""}
+                        {exercise.sets && exercise.reps
+                          ? ` ${exercise.sets}×${exercise.reps}`
+                          : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {scan.recommendations && (
+                  <ul className="hc-scan-tips">
+                    {scan.recommendations.map((tip, index) => (
+                      <li key={index}>{tip}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="hc-inline-fields" style={{ marginTop: 12 }}>
           <Field label="Walking minutes">
             <input
@@ -639,7 +833,16 @@ export function TodayScreen({
         <SectionHeader
           eyebrow="Fuel"
           title="Your go-to meals"
-          action={<StatusBadge>{day.meals.length} entries</StatusBadge>}
+          action={
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+              {day.meals.length > 0 && (
+                <button className="hc-danger-link" onClick={clearMeals}>
+                  Clear meals
+                </button>
+              )}
+              <StatusBadge>{day.meals.length} entries</StatusBadge>
+            </span>
+          }
         />
         <div className="hc-macro-summary">
           <span><strong>{day.calories}</strong> cal</span>
@@ -656,7 +859,7 @@ export function TodayScreen({
             const presets = mealPresets(category);
             if (presets.length === 0) return null;
             return (
-              <details key={category} open={["breakfast", "lunch", "dinner"].includes(category)}>
+              <details key={category}>
                 <summary>
                   <span>{CATEGORY_LABELS[category]}</span>
                   <small>{presets.length} options</small>

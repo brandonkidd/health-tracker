@@ -807,6 +807,158 @@ h4 {
   font-weight: 700;
 }
 
+/* ——— Workout photo scan ——— */
+.hc-scan-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 5%, var(--white));
+}
+
+.hc-scan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  min-height: var(--touch-min);
+  padding: 11px 20px;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.hc-scan-button:disabled {
+  opacity: 0.55;
+}
+
+.hc-scan-block small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hc-scan-error {
+  margin: 0;
+  color: #cf4632;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hc-scan-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.hc-scan-result {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.hc-scan-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hc-scan-result-head strong {
+  font-size: 14px;
+}
+
+.hc-scan-metrics {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hc-scan-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hc-scan-chips span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hc-scan-tips {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+/* ——— Strength progression ——— */
+.hc-strength-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hc-strength-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.hc-strength-row strong {
+  display: block;
+  font-size: 14px;
+}
+
+.hc-strength-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hc-strength-weight {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hc-strength-weight small {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hc-strength-delta {
+  min-width: 52px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.hc-strength-delta.up {
+  color: #2f8a4c;
+}
+
+.hc-strength-delta.down {
+  color: #cf4632;
+}
+
 /* ——— Fields ——— */
 .hc-field {
   display: grid;

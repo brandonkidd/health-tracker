@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
 import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
-import type { BodyScan, HealthState, WeeklyCheckIn } from "@/lib/health/types";
+import type { BodyScan, DailyLog, HealthState, WeeklyCheckIn } from "@/lib/health/types";
 import { Card, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
 import { BodyModel } from "./body-model";
 import { PhotoTimeline } from "./photo-timeline";
@@ -11,6 +11,44 @@ import { PhotoTimeline } from "./photo-timeline";
 function numberValue(data: FormData, name: string): number | undefined {
   const value = data.get(name);
   return value ? Number(value) : undefined;
+}
+
+interface StrengthRow {
+  name: string;
+  latestWeight: number;
+  latestDate: string;
+  previousWeight?: number;
+  sessions: number;
+}
+
+/** Per-exercise latest working weight vs the previous session, from scanned workouts. */
+function strengthProgress(days: Record<string, DailyLog>): StrengthRow[] {
+  const byName = new Map<string, { name: string; entries: { date: string; weightLbs: number }[] }>();
+  for (const day of Object.values(days)) {
+    for (const scan of day.workouts ?? []) {
+      for (const exercise of scan.exercises) {
+        if (!exercise.weightLbs) continue;
+        const key = exercise.name.trim().toLowerCase();
+        const group = byName.get(key) ?? { name: exercise.name.trim(), entries: [] };
+        group.entries.push({ date: day.date, weightLbs: exercise.weightLbs });
+        byName.set(key, group);
+      }
+    }
+  }
+  const rows: StrengthRow[] = [];
+  for (const { name, entries } of Array.from(byName.values())) {
+    entries.sort((a, b) => b.date.localeCompare(a.date));
+    const latest = entries[0];
+    const previous = entries.find((entry) => entry.date !== latest.date);
+    rows.push({
+      name,
+      latestWeight: latest.weightLbs,
+      latestDate: latest.date,
+      previousWeight: previous?.weightLbs,
+      sessions: new Set(entries.map((entry) => entry.date)).size,
+    });
+  }
+  return rows.sort((a, b) => b.latestDate.localeCompare(a.latestDate)).slice(0, 12);
 }
 
 function ArcChart({
@@ -55,6 +93,7 @@ export function BodyScreen({
   const [fullArc, setFullArc] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [showScan, setShowScan] = useState(false);
+  const strengthRows = strengthProgress(state.days);
   const latest = state.weeklyCheckIns.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const latestScan = state.bodyScans.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const delta = latest ? checkInDelta(latest) : undefined;
@@ -150,6 +189,50 @@ export function BodyScreen({
         />
         <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} />
         <div className="hc-chart-legend"><span className="projected">Projected</span><span className="actual">Actual</span></div>
+      </Card>
+
+      <Card>
+        <SectionHeader eyebrow="From scanned workouts" title="Strength progression" />
+        {strengthRows.length ? (
+          <div className="hc-strength-list">
+            {strengthRows.map((row) => {
+              const delta =
+                row.previousWeight != null ? row.latestWeight - row.previousWeight : null;
+              return (
+                <div key={row.name} className="hc-strength-row">
+                  <div>
+                    <strong>{row.name}</strong>
+                    <small>
+                      {row.sessions} session{row.sessions === 1 ? "" : "s"} · last {row.latestDate}
+                    </small>
+                  </div>
+                  <span className="hc-strength-weight">
+                    {row.latestWeight}
+                    <small> lb</small>
+                  </span>
+                  {delta != null && (
+                    <span
+                      className={
+                        delta > 0
+                          ? "hc-strength-delta up"
+                          : delta < 0
+                            ? "hc-strength-delta down"
+                            : "hc-strength-delta"
+                      }
+                    >
+                      {delta > 0 ? `+${delta}` : delta === 0 ? "same" : delta} {delta !== 0 ? "lb" : ""}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState>
+            Scan a class screen from the Today tab and any weights it shows will start building
+            your progression history here.
+          </EmptyState>
+        )}
       </Card>
 
       <Card>

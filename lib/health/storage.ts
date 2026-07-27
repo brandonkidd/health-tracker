@@ -29,6 +29,7 @@ export function emptyDailyLog(date: string): DailyLog {
     estimatedActivityCalories: 0,
     supplements: {},
     meals: [],
+    workouts: [],
     notes: "",
   };
 }
