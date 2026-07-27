@@ -10,7 +10,7 @@ import {
 import { estimatedDeficit } from "@/lib/health/projections";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
-import type { DailyInsight, DailyLog, WorkoutScan } from "@/lib/health/types";
+import type { DailyInsight, DailyLog, MealEntry, WorkoutScan } from "@/lib/health/types";
 import {
   ALCOHOL_PRESETS,
   FOOD_CATEGORIES,
@@ -114,6 +114,8 @@ interface ScanResponse {
   recommendations: string[];
   error?: string;
 }
+
+type DescribeResponse = Omit<ScanResponse, "isWorkoutScreen"> & { isWorkout: boolean };
 
 /** Shrink the photo client-side so uploads stay fast and cheap. */
 async function fileToDataUrl(file: File, maxDim = 1400): Promise<string> {
@@ -560,6 +562,13 @@ export function TodayScreen({
   const [presetDraft, setPresetDraft] = useState<PresetDraft | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [describeOpen, setDescribeOpen] = useState(false);
+  const [describeText, setDescribeText] = useState("");
+  const [describeBusy, setDescribeBusy] = useState(false);
+  const [foodAiOpen, setFoodAiOpen] = useState(false);
+  const [foodAiText, setFoodAiText] = useState("");
+  const [foodAiBusy, setFoodAiBusy] = useState(false);
+  const [foodAiError, setFoodAiError] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const activity = plannedActivity(date);
   const supplementList = SUPPLEMENTS_DAILY.filter(
@@ -686,6 +695,62 @@ export function TodayScreen({
     patch({ workouts: (day.workouts ?? []).filter((scan) => scan.id !== id) });
   }
 
+  async function logDescribedWorkout() {
+    const description = describeText.trim();
+    if (!description) return;
+    setDescribeBusy(true);
+    setScanError(null);
+    try {
+      const response = await fetch("/api/log-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description,
+          weightLb: latestWeight,
+          plannedActivity: activity.label,
+          history: strengthHistory(allDays, date),
+        }),
+      });
+      const result = (await response.json()) as DescribeResponse;
+      if (!response.ok) throw new Error(result.error ?? "Couldn't log that workout — try again.");
+      if (!result.isWorkout) {
+        throw new Error("That doesn't sound like a workout. Describe what you did, e.g. '30 min spin class'.");
+      }
+
+      const scan: WorkoutScan = {
+        id: crypto.randomUUID(),
+        at: new Date().toISOString(),
+        activity: result.activity || "Workout",
+        durationMinutes: result.durationMinutes ?? undefined,
+        calories: result.calories ?? undefined,
+        avgHeartRate: result.avgHeartRate ?? undefined,
+        maxHeartRate: result.maxHeartRate ?? undefined,
+        exercises: (result.exercises ?? []).map((exercise) => ({
+          name: exercise.name,
+          weightLbs: exercise.weightLbs ?? undefined,
+          sets: exercise.sets ?? undefined,
+          reps: exercise.reps ?? undefined,
+        })),
+        summary: result.summary || undefined,
+        recommendations: result.recommendations?.length ? result.recommendations : undefined,
+      };
+
+      // Added workouts stack on top of the class estimate instead of replacing it.
+      patch({
+        workouts: [...(day.workouts ?? []), scan],
+        activityCompleted: true,
+        estimatedActivityCalories:
+          day.estimatedActivityCalories + Math.round(result.calories ?? 0),
+      });
+      setDescribeText("");
+      setDescribeOpen(false);
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Couldn't log that workout — try again.");
+    } finally {
+      setDescribeBusy(false);
+    }
+  }
+
   function addMeal(meal: FoodPreset) {
     const entry = {
       id: `${meal.id}-${crypto.randomUUID()}`,
@@ -705,6 +770,90 @@ export function TodayScreen({
       fat: day.fat + meal.f,
       fiber: day.fiber + (meal.fiber ?? 0),
     });
+  }
+
+  async function logDescribedMeal() {
+    const description = foodAiText.trim();
+    if (!description) return;
+    setFoodAiBusy(true);
+    setFoodAiError(null);
+    try {
+      const response = await fetch("/api/log-meal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description,
+          timeOfDay: new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
+        }),
+      });
+      const result = (await response.json()) as {
+        isFood: boolean;
+        label: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        fiber: number | null;
+        category: FoodPreset["category"];
+        notes: string | null;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(result.error ?? "Couldn't log that meal — try again.");
+      if (!result.isFood) {
+        throw new Error("That doesn't sound like food. Describe what you ate, e.g. 'chicken burrito bowl'.");
+      }
+
+      const entry: MealEntry = {
+        id: `ai-${crypto.randomUUID()}`,
+        label: result.label,
+        calories: Math.round(result.calories),
+        protein: Math.round(result.protein),
+        carbs: Math.round(result.carbs),
+        fat: Math.round(result.fat),
+        fiber: result.fiber != null ? Math.round(result.fiber) : undefined,
+        at: new Date().toISOString(),
+        category: result.category,
+      };
+      patch({
+        meals: [...day.meals, entry],
+        calories: day.calories + entry.calories,
+        protein: day.protein + entry.protein,
+        carbs: day.carbs + entry.carbs,
+        fat: day.fat + entry.fat,
+        fiber: day.fiber + (entry.fiber ?? 0),
+      });
+      setFoodAiText("");
+      setFoodAiOpen(false);
+    } catch (error) {
+      setFoodAiError(error instanceof Error ? error.message : "Couldn't log that meal — try again.");
+    } finally {
+      setFoodAiBusy(false);
+    }
+  }
+
+  /** Rough category from the entry's logged time, for favorites missing an AI category. */
+  function inferMealCategory(at: string): FoodPreset["category"] {
+    const hour = new Date(at).getHours();
+    if (hour < 11) return "breakfast";
+    if (hour < 15) return "lunch";
+    if (hour < 17) return "snack";
+    if (hour < 22) return "dinner";
+    return "snack";
+  }
+
+  function favoriteMeal(meal: MealEntry) {
+    const preset: FoodPreset = {
+      id: `custom-${crypto.randomUUID()}`,
+      label: meal.label,
+      say: meal.label.toLowerCase(),
+      category: meal.category ?? inferMealCategory(meal.at),
+      cals: meal.calories,
+      p: meal.protein,
+      c: meal.carbs,
+      f: meal.fat,
+      fiber: meal.fiber,
+    };
+    onUpdatePresets([...customPresets, preset]);
   }
 
   function removeMeal(id: string) {
@@ -759,6 +908,11 @@ export function TodayScreen({
 
   const mealPresets = (category: FoodPreset["category"]) =>
     allPresets.filter((preset) => preset.category === category);
+
+  const presetLabelSet = useMemo(
+    () => new Set(allPresets.map((preset) => preset.label.toLowerCase())),
+    [allPresets]
+  );
 
   function startNewPreset() {
     setPresetDraft({
@@ -1050,7 +1204,7 @@ export function TodayScreen({
           <button
             className="hc-scan-button"
             onClick={() => scanInputRef.current?.click()}
-            disabled={scanBusy}
+            disabled={scanBusy || describeBusy}
           >
             <CameraIcon />
             {scanBusy ? "Reading your screen…" : "Scan class screen"}
@@ -1059,6 +1213,45 @@ export function TodayScreen({
             Snap the class display or your watch summary — calories, time, heart rate, and weights
             get logged automatically.
           </small>
+          {!describeOpen ? (
+            <button
+              className="hc-text-button hc-describe-toggle"
+              onClick={() => setDescribeOpen(true)}
+              disabled={scanBusy || describeBusy}
+            >
+              No screen to scan? Describe the workout instead
+            </button>
+          ) : (
+            <div className="hc-describe-form">
+              <textarea
+                className="hc-describe-input"
+                rows={2}
+                placeholder="e.g. 45 min spin class, pushed hard — or leg day: goblet squats 3×10 at 50 lb"
+                value={describeText}
+                autoFocus
+                onChange={(event) => setDescribeText(event.target.value)}
+              />
+              <div className="hc-button-row">
+                <button
+                  className="hc-button"
+                  onClick={() => void logDescribedWorkout()}
+                  disabled={describeBusy || !describeText.trim()}
+                >
+                  {describeBusy ? "Estimating…" : "Log with AI"}
+                </button>
+                <button
+                  className="hc-text-button"
+                  onClick={() => {
+                    setDescribeOpen(false);
+                    setDescribeText("");
+                  }}
+                  disabled={describeBusy}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
           {scanError && <p className="hc-scan-error">{scanError}</p>}
         </div>
         {(day.workouts ?? []).length > 0 && (
@@ -1202,7 +1395,49 @@ export function TodayScreen({
           <button className="hc-text-button" onClick={startNewPreset}>
             + Add a preset
           </button>
+          <button
+            className={foodAiOpen ? "hc-text-button active" : "hc-text-button"}
+            onClick={() => {
+              setFoodAiOpen(!foodAiOpen);
+              setFoodAiError(null);
+            }}
+          >
+            Describe it — AI logs the macros
+          </button>
         </div>
+        {foodAiOpen && (
+          <div className="hc-describe-form hc-food-ai-form">
+            <textarea
+              className="hc-describe-input"
+              rows={2}
+              placeholder="e.g. chipotle chicken bowl with brown rice, no cheese — or 2 eggs and sourdough toast with butter"
+              value={foodAiText}
+              autoFocus
+              onChange={(event) => setFoodAiText(event.target.value)}
+            />
+            <div className="hc-button-row">
+              <button
+                className="hc-button"
+                onClick={() => void logDescribedMeal()}
+                disabled={foodAiBusy || !foodAiText.trim()}
+              >
+                {foodAiBusy ? "Estimating…" : "Log with AI"}
+              </button>
+              <button
+                className="hc-text-button"
+                onClick={() => {
+                  setFoodAiOpen(false);
+                  setFoodAiText("");
+                  setFoodAiError(null);
+                }}
+                disabled={foodAiBusy}
+              >
+                Cancel
+              </button>
+            </div>
+            {foodAiError && <p className="hc-scan-error">{foodAiError}</p>}
+          </div>
+        )}
         {presetDraft && (
           <div className="hc-preset-editor">
             <strong>{presetDraft.id == null ? "Add a preset" : "Edit preset"}</strong>
@@ -1328,27 +1563,6 @@ export function TodayScreen({
             );
           })}
         </div>
-        {day.meals.length > 0 && (
-          <div className="hc-food-log">
-            <div className="hc-food-log-heading">
-              <strong>Today&apos;s log</strong>
-              <button className="hc-danger-link" onClick={clearMeals}>Clear meals</button>
-            </div>
-            <div className="hc-entry-list">
-              {day.meals.slice().reverse().map((meal) => (
-                <div key={meal.id}>
-                  <span>
-                    <strong>{meal.label}</strong>
-                    <small>
-                      {meal.calories} cal · {meal.protein}g P · {meal.carbs}g C · {meal.fat}g F
-                    </small>
-                  </span>
-                  <button className="hc-danger-link" onClick={() => removeMeal(meal.id)}>Remove</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </Card>
 
       <Card>
@@ -1437,6 +1651,51 @@ export function TodayScreen({
           Clear this day
         </button>
       </Card>
+
+      {day.meals.length > 0 && (
+        <Card className="hc-food-log-card">
+          <SectionHeader
+            eyebrow="Fuel"
+            title="Today's log"
+            action={
+              <button className="hc-danger-link" onClick={clearMeals}>
+                Clear meals
+              </button>
+            }
+          />
+          <div className="hc-food-log">
+            <div className="hc-entry-list">
+              {day.meals.slice().reverse().map((meal) => {
+                const saved = presetLabelSet.has(meal.label.toLowerCase());
+                return (
+                  <div key={meal.id}>
+                    <span>
+                      <strong>{meal.label}</strong>
+                      <small>
+                        {meal.calories} cal · {meal.protein}g P · {meal.carbs}g C · {meal.fat}g F
+                      </small>
+                    </span>
+                    <span className="hc-entry-actions">
+                      {saved ? (
+                        <span className="hc-fav-saved" title="In your presets">★</span>
+                      ) : (
+                        <button
+                          className="hc-fav-button"
+                          aria-label={`Save ${meal.label} as a preset`}
+                          onClick={() => favoriteMeal(meal)}
+                        >
+                          ☆ Save
+                        </button>
+                      )}
+                      <button className="hc-danger-link" onClick={() => removeMeal(meal.id)}>Remove</button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+      )}
       </div>
       </>
       )}

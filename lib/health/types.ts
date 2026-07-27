@@ -13,6 +13,8 @@ export interface MealEntry {
   fat: number;
   fiber?: number;
   at: string;
+  /** AI-suggested preset category; session-only (not persisted to Supabase). */
+  category?: FoodPreset["category"];
 }
 
 export interface WorkoutExercise {
