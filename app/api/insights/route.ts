@@ -4,7 +4,11 @@ import { z } from "zod";
 
 export const maxDuration = 60;
 
-const MODEL = "google/gemini-2.5-flash";
+// Quality-first: frontier model for the daily coaching analysis (one cached
+// call per day, so flagship pricing is still pennies). Falls back to OpenAI's
+// flagship if Anthropic is unavailable.
+const MODEL = "anthropic/claude-opus-5";
+const FALLBACK_MODEL = "openai/gpt-5.6-sol";
 
 const insightSchema = z.object({
   headline: z
@@ -45,9 +49,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Send the engine digest." }, { status: 400 });
   }
 
-  try {
+  const generateWith = async (model: string) => {
     const { output } = await generateText({
-      model: MODEL,
+      model,
       output: Output.object({ schema: insightSchema }),
       instructions:
         "You are the analytical coach inside a personal recomposition app. The user is on a structured cut " +
@@ -73,7 +77,17 @@ export async function POST(request: Request) {
         gateway: { tags: ["feature:daily-insight"] },
       },
     });
+    return output;
+  };
 
+  try {
+    let output;
+    try {
+      output = await generateWith(MODEL);
+    } catch (primaryError) {
+      console.error(`insights: ${MODEL} failed, trying ${FALLBACK_MODEL}`, primaryError);
+      output = await generateWith(FALLBACK_MODEL);
+    }
     return NextResponse.json(output);
   } catch (error) {
     console.error("insights failed", error);

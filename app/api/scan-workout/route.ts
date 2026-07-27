@@ -4,8 +4,9 @@ import { z } from "zod";
 
 export const maxDuration = 60;
 
-// Vision-capable and available on the AI Gateway free tier.
-const MODEL = "google/gemini-2.5-flash";
+// Vision-capable and fast: scanning is interactive (user waits at the gym),
+// so Flash-class latency matters more than flagship reasoning here.
+const MODEL = "google/gemini-3.6-flash";
 
 const scanSchema = z.object({
   isWorkoutScreen: z
