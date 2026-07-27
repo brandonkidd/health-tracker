@@ -4,39 +4,39 @@ export { MEAL_CATALOG_META };
 
 // Complete health plan data extracted from original HTML
 export const DATES = {
-  start: "2026-06-21",
-  phase1End: "2026-08-16",
-  maui: "2026-07-15",
-  lifeTime: "2026-07-01",
+  start: "2026-07-24",
+  phase1End: "2026-12-11",
+  maui: "2026-07-24",
+  lifeTime: "2026-07-24",
   birthday: "2026-09-15"
 };
 
 export const BASELINE = {
   age: 41,
-  height: "6'0\"",
-  weight: 194,
-  bmi: 26.3,
-  bodyFat: 21.8,
-  leanMass: 151.8,
-  muscleMass: 144.2,
-  bodyWater: 57.2,
-  skeletalMuscle: 51.2,
-  subcutaneousFat: 18.2,
-  visceralFat: 9,
-  boneMass: 7.6,
-  protein: 18.0,
-  bmr: 1856,
-  metabolicAge: 41
+  height: "5'11\"",
+  weight: 192.9,
+  waist: 42,
+  bmi: 26.9,
+  bodyFat: 21.5,
+  bodyFatMass: 41.4,
+  leanMass: 151.5,
+  muscleMass: 87.1,
+  bodyWater: 110.7,
+  intracellularWater: 70.1,
+  extracellularWater: 40.6,
+  skeletalMuscle: 87.1,
+  visceralFat: 8,
+  inBodyScore: 81
 };
 
 export const TARGETS = {
-  cals: 1750,
-  protein: 190,
-  carbs: 115,
-  fat: 65,
-  fiber: 25,
-  water: 4,
-  steps: 10000
+  cals: 2100,
+  protein: 180,
+  carbs: 190,
+  fat: 70,
+  fiber: 30,
+  water: 128,
+  steps: 9000
 };
 
 export const SUPPLEMENTS_DAILY = [

@@ -1,63 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addWater, addProtein, toggleSupplement, getTodayLog, getTodaySupplements } from '@/lib/supabase';
+import { readCloudState, writeCloudState } from '@/lib/health/server-repository';
+import { emptyDailyLog } from '@/lib/health/storage';
+import { BODYFI_PLAN } from '@/lib/health/config';
+import { AUTH_COOKIE, isValidAuthToken } from '@/lib/auth';
+
+async function isAuthorized(request: NextRequest) {
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (process.env.LOG_API_TOKEN && bearer === process.env.LOG_API_TOKEN) return true;
+  return isValidAuthToken(request.cookies.get(AUTH_COOKIE)?.value);
+}
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isAuthorized(request))) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { action, value, supplementId, supplementName } = body;
+    const state = await readCloudState();
+    const today = new Date().toISOString().slice(0, 10);
+    const log = state.days[today] ?? emptyDailyLog(today);
+    state.days[today] = log;
 
     switch (action) {
       case 'water': {
-        const log = await addWater(value);
+        log.waterOz = Math.max(0, log.waterOz + Number(value));
+        await writeCloudState(state);
         return NextResponse.json({
           success: true,
-          water: log.water,
-          target: 4,
-          message: `✅ Logged ${value}L water. Total today: ${log.water?.toFixed(2)}L / 4L`
+          waterOz: log.waterOz,
+          target: BODYFI_PLAN.targets.waterOz,
+          message: `Logged ${value} oz water. Total: ${log.waterOz} oz.`
         });
       }
 
       case 'protein': {
-        const log = await addProtein(value);
+        log.protein = Math.max(0, log.protein + Number(value));
+        await writeCloudState(state);
         return NextResponse.json({
           success: true,
           protein: log.protein,
-          target: 190,
-          message: `✅ Logged ${value}g protein. Total today: ${log.protein}g / 190g`
+          target: BODYFI_PLAN.targets.protein,
+          message: `Logged ${value}g protein. Total: ${log.protein}g.`
         });
       }
 
       case 'supplement': {
-        const taken = await toggleSupplement(supplementId, supplementName);
-        const supplements = await getTodaySupplements();
+        const taken = !log.supplements[supplementId];
+        log.supplements[supplementId] = taken;
+        await writeCloudState(state);
+        const count = Object.values(log.supplements).filter(Boolean).length;
         return NextResponse.json({
           success: true,
           taken,
-          count: supplements.length,
-          target: 8,
+          supplementName,
+          count,
           message: taken
-            ? `✅ ${supplementName} logged. ${supplements.length}/8 supplements today`
-            : `❌ ${supplementName} unmarked`
+            ? `${supplementName} logged.`
+            : `${supplementName} unmarked.`
         });
       }
 
       case 'status': {
-        const log = await getTodayLog();
-        const supplements = await getTodaySupplements();
+        const supplements = Object.values(log.supplements).filter(Boolean).length;
         return NextResponse.json({
           success: true,
           data: {
-            water: log.water,
-            waterTarget: 4,
+            waterOz: log.waterOz,
+            waterTarget: BODYFI_PLAN.targets.waterOz,
             protein: log.protein,
-            proteinTarget: 190,
-            supplements: supplements.length,
-            supplementsTarget: 8,
+            proteinTarget: BODYFI_PLAN.targets.protein,
+            supplements,
             weight: log.weight,
-            sleep: log.sleep,
+            sleep: log.sleepHours,
             energy: log.energy,
           },
-          message: `📊 Today: ${log.water?.toFixed(1)}L water | ${log.protein}g protein | ${supplements.length}/8 supps`
+          message: `Today: ${log.waterOz} oz water | ${log.protein}g protein | ${supplements} supplements`
         });
       }
 
@@ -78,20 +96,24 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const log = await getTodayLog();
-    const supplements = await getTodaySupplements();
+    if (!(await isAuthorized(request))) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const state = await readCloudState();
+    const today = new Date().toISOString().slice(0, 10);
+    const log = state.days[today] ?? emptyDailyLog(today);
+    const supplements = Object.values(log.supplements).filter(Boolean).length;
 
     return NextResponse.json({
       success: true,
       data: {
-        water: log.water,
-        waterTarget: 4,
+        waterOz: log.waterOz,
+        waterTarget: BODYFI_PLAN.targets.waterOz,
         protein: log.protein,
-        proteinTarget: 190,
-        supplements: supplements.length,
-        supplementsTarget: 8,
+        proteinTarget: BODYFI_PLAN.targets.protein,
+        supplements,
         weight: log.weight,
-        sleep: log.sleep,
+        sleep: log.sleepHours,
         energy: log.energy,
         mood: log.mood,
       }

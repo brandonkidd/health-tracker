@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'BRANDON.FIT - Health Tracker',
-  description: 'Personal health and fitness tracking dashboard',
+  title: 'BFIT — Private Health System',
+  description: 'Personal health, body composition, training, and lab tracking',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'BRANDON.FIT',
+    title: 'BFIT',
   },
 };
 
@@ -17,7 +18,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#13112e',
+  themeColor: '#ecebe8',
 };
 
 export default function RootLayout({
@@ -27,14 +28,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );
