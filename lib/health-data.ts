@@ -187,7 +187,7 @@ export type FoodPreset = {
   id: string;
   label: string;
   say: string;
-  category: 'breakfast' | 'snack' | 'lunch' | 'dinner' | 'restaurant' | 'quick' | 'drink' | 'alcohol';
+  category: 'breakfast' | 'snack' | 'smoothie' | 'lunch' | 'dinner' | 'restaurant' | 'quick' | 'drink' | 'alcohol';
   cals: number;
   p: number;
   c: number;
@@ -201,22 +201,24 @@ export type FoodPreset = {
 /** Home + quick presets; restaurant picks from data/meal-catalog.json */
 export const FOOD_PRESETS: FoodPreset[] = [
   // Home — breakfast
-  { id: 'bf-simple', label: 'Breakfast Simple', say: 'eggs avocado', category: 'breakfast', cals: 336, p: 20, c: 7, f: 25, fiber: 5 },
-  { id: 'bf-eggs-avo', label: 'Eggs & Avo (Full)', say: 'eggs avocado sourdough', category: 'breakfast', cals: 426, p: 23, c: 22, f: 27, fiber: 6 },
-  { id: 'bf-high-protein', label: 'High Protein Breakfast', say: 'eggs yogurt breakfast', category: 'breakfast', cals: 521, p: 39, c: 28, f: 27, fiber: 6 },
-  { id: 'bf-greek-bowl', label: 'Greek Yogurt Bowl', say: 'greek yogurt berries', category: 'breakfast', cals: 360, p: 36, c: 35, f: 8, fiber: 4, notes: '1.5 cup nonfat Greek yogurt, berries, honey, nuts' },
+  { id: 'bf-simple', label: '3 Eggs + ½ Avocado', say: 'eggs avocado', category: 'breakfast', cals: 336, p: 20, c: 7, f: 25, fiber: 5 },
+  { id: 'bf-eggs-avo', label: '3 Eggs, ½ Avo + Sourdough', say: 'eggs avocado sourdough', category: 'breakfast', cals: 426, p: 23, c: 22, f: 27, fiber: 6, notes: '3 eggs, ½ avocado, 1 slice sourdough' },
+  { id: 'bf-high-protein', label: '3 Eggs, ½ Avo + Greek Yogurt', say: 'eggs yogurt breakfast', category: 'breakfast', cals: 521, p: 39, c: 28, f: 27, fiber: 6, notes: '3 eggs, ½ avo, ¾ cup Greek yogurt, ½ slice sourdough, salsa, coffee + oat milk' },
+  { id: 'bf-greek-bowl', label: 'Greek Yogurt, Berries + Nuts', say: 'greek yogurt berries', category: 'breakfast', cals: 360, p: 36, c: 35, f: 8, fiber: 4, notes: '1.5 cup nonfat Greek yogurt, berries, honey, nuts' },
   // Home — lunch
-  { id: 'lunch-power-bowl', label: 'Chicken Power Bowl', say: 'chicken rice bowl lunch', category: 'lunch', cals: 558, p: 57, c: 32, f: 21, fiber: 5 },
+  { id: 'lunch-power-bowl', label: '6oz Chicken, Rice + Greens', say: 'chicken rice bowl lunch', category: 'lunch', cals: 558, p: 57, c: 32, f: 21, fiber: 5, notes: '6 oz grilled chicken, ½ cup brown rice, 2 cups greens/veg, 1 tbsp olive oil' },
   { id: 'lunch-baja-salad', label: 'Baja Salad + Chicken', say: 'baja salad chicken', category: 'lunch', cals: 590, p: 60, c: 31, f: 26, fiber: 11, notes: 'Dressing on side or halved' },
   // Home — snack
-  { id: 'snack-shake-apple', label: 'Whey Shake + Apple', say: 'protein shake apple', category: 'snack', cals: 215, p: 26, c: 28, f: 2, fiber: 4 },
   { id: 'snack-cottage-berries', label: 'Cottage Cheese + Berries', say: 'cottage cheese berries', category: 'snack', cals: 215, p: 25, c: 17, f: 5, fiber: 2 },
-  { id: 'snack-moonbrew', label: 'Whey + Moon Brew', say: 'moon brew shake night', category: 'snack', cals: 140, p: 25, c: 5, f: 2, fiber: 1, notes: 'Nighttime protein before bed' },
+  // Smoothies & protein shakes
+  { id: 'smoothie-lt-dynamic', label: 'Life Time Dynamic Shake', say: 'lifetime dynamic smoothie shake', category: 'smoothie', cals: 290, p: 41, c: 21, f: 5, fiber: 2, source: 'LifeCafe', notes: 'Almond milk, banana, blueberries, 2 scoops LTH whey, collagen, creatine, glutamine', verifiedMacros: true },
+  { id: 'snack-shake-apple', label: 'Whey Shake + Apple', say: 'protein shake apple', category: 'smoothie', cals: 215, p: 26, c: 28, f: 2, fiber: 4, notes: '1 scoop whey, 1 medium apple' },
+  { id: 'snack-moonbrew', label: 'Whey + Moon Brew', say: 'moon brew shake night', category: 'smoothie', cals: 140, p: 25, c: 5, f: 2, fiber: 1, notes: 'Nighttime protein before bed' },
   // Home — dinner
-  { id: 'dinner-sirloin', label: 'Sirloin + Potatoes + Veg', say: 'sirloin steak dinner', category: 'dinner', cals: 600, p: 62, c: 40, f: 21, fiber: 7 },
-  { id: 'dinner-salmon', label: 'Salmon + Rice + Veg', say: 'salmon rice dinner', category: 'dinner', cals: 600, p: 48, c: 43, f: 26, fiber: 7 },
+  { id: 'dinner-sirloin', label: '7oz Sirloin, Potatoes + Veg', say: 'sirloin steak dinner', category: 'dinner', cals: 600, p: 62, c: 40, f: 21, fiber: 7, notes: '7 oz lean sirloin, 1 cup boiled potatoes, 1.5 cups roasted veg + 1 tsp oil' },
+  { id: 'dinner-salmon', label: '6oz Salmon, Rice + Veg', say: 'salmon rice dinner', category: 'dinner', cals: 600, p: 48, c: 43, f: 26, fiber: 7, notes: '6 oz salmon, ½ cup rice, roasted veg' },
   { id: 'dinner-kabobs', label: 'Chicken Kabobs + Veg', say: 'chicken kabobs', category: 'dinner', cals: 515, p: 64, c: 14, f: 22, fiber: 4 },
-  { id: 'dinner-burger-bowl', label: 'Hamburger Bowl', say: 'burger bowl bunless', category: 'dinner', cals: 485, p: 55, c: 10, f: 26, fiber: 2 },
+  { id: 'dinner-burger-bowl', label: 'Hamburger Bowl (No Bun)', say: 'burger bowl bunless', category: 'dinner', cals: 485, p: 55, c: 10, f: 26, fiber: 2, notes: 'Bunless burger patties over greens + toppings' },
   { id: 'dinner-mexican-bowl', label: 'Ground Chicken Mexican Bowl', say: 'mexican chicken bowl', category: 'dinner', cals: 583, p: 57, c: 44, f: 22, fiber: 10 },
   { id: 'dinner-turkey-tacos', label: 'Turkey Taco Lettuce Wraps', say: 'turkey tacos lettuce', category: 'dinner', cals: 450, p: 48, c: 12, f: 22, fiber: 5 },
   { id: 'dinner-shrimp-stirfry', label: 'Shrimp Stir-Fry', say: 'shrimp stir fry', category: 'dinner', cals: 450, p: 48, c: 40, f: 8, fiber: 5, notes: 'Cauliflower rice to cut carbs' },
@@ -244,7 +246,7 @@ export const ALCOHOL_PRESETS: FoodPreset[] = [
   { id: 'alc-wine', label: 'Glass of Wine', say: 'glass of wine', category: 'alcohol', cals: 125, p: 0, c: 4, f: 0, notes: '5 oz pour' },
 ];
 
-export const FOOD_CATEGORIES: FoodPreset['category'][] = ['breakfast', 'snack', 'lunch', 'dinner', 'restaurant', 'quick', 'drink', 'alcohol'];
+export const FOOD_CATEGORIES: FoodPreset['category'][] = ['breakfast', 'snack', 'smoothie', 'lunch', 'dinner', 'restaurant', 'quick', 'drink', 'alcohol'];
 
 export const LABS_2023 = [
   { marker: "Total Testosterone", result: "468 ng/dL", range: "250–827", pct: "38th", verdict: "Low-normal", cls: "orange" },
