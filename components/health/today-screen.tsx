@@ -210,12 +210,12 @@ function MonthCalendar({
     const worked = hasWorkout(entry);
     const hasData =
       !!entry &&
-      (worked ||
-        entry.calories > 0 ||
+      (entry.calories > 0 ||
         entry.protein > 0 ||
         entry.waterOz > 0 ||
         entry.steps > 0 ||
-        (entry.sleepHours ?? 0) > 0);
+        (entry.sleepHours ?? 0) > 0 ||
+        worked);
     return {
       key,
       num: index + 1,
