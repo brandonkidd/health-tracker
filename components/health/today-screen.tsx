@@ -193,6 +193,7 @@ function MonthCalendar({
   onSelectDate: (next: string) => void;
 }) {
   const [monthCursor, setMonthCursor] = useState(() => selectedDate.slice(0, 7));
+  const [metric, setMetric] = useState<"score" | "deficit" | "weight">("score");
   const [year, month] = monthCursor.split("-").map(Number);
   const firstOfMonth = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -221,10 +222,49 @@ function MonthCalendar({
       num: index + 1,
       worked,
       score: hasData ? dayScore(entry, targets, supplementList) : null,
+      deficit: entry && entry.calories > 0 ? estimatedDeficit(entry) : null,
+      weight: entry?.weight ?? null,
       future: key > today,
     };
   });
   const workoutCount = cells.filter((cell) => cell.worked).length;
+
+  // Month-wide weight range so tiles can shade toward the lighter end.
+  const monthWeights = cells
+    .map((cell) => cell.weight)
+    .filter((weight): weight is number => weight != null);
+  const minWeight = Math.min(...monthWeights);
+  const maxWeight = Math.max(...monthWeights);
+
+  function cellValue(cell: (typeof cells)[number]): number | null {
+    if (metric === "score") return cell.score;
+    if (metric === "deficit") return cell.deficit;
+    return cell.weight;
+  }
+
+  function cellLabel(cell: (typeof cells)[number]): string {
+    const value = cellValue(cell);
+    if (value == null) return "\u00A0";
+    if (metric === "score") return `${value}%`;
+    if (metric === "deficit") return `${value >= 0 ? "−" : "+"}${Math.abs(Math.round(value))}`;
+    return `${value}`;
+  }
+
+  /** 0..1 intensity of the tile fill for the active metric. */
+  function cellHeat(cell: (typeof cells)[number]): number | null {
+    const value = cellValue(cell);
+    if (value == null) return null;
+    if (metric === "score") return value / 100;
+    if (metric === "deficit") return Math.max(0, Math.min(1, value / 750));
+    if (maxWeight === minWeight) return 0.5;
+    return 1 - (value - minWeight) / (maxWeight - minWeight);
+  }
+
+  const scaleEnds: Record<typeof metric, [string, string]> = {
+    score: ["Less", "More"],
+    deficit: ["Surplus", "Deficit"],
+    weight: ["Heavier", "Lighter"],
+  };
 
   return (
     <div className="hc-month-cal">
@@ -242,6 +282,24 @@ function MonthCalendar({
           ›
         </button>
       </div>
+      <div className="hc-month-metric" role="tablist" aria-label="Metric shown on the calendar">
+        {(
+          [
+            ["score", "Score"],
+            ["deficit", "Deficit"],
+            ["weight", "Weight"],
+          ] as const
+        ).map(([key, text]) => (
+          <button
+            key={key}
+            type="button"
+            className={metric === key ? "active" : ""}
+            onClick={() => setMetric(key)}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
       <div className="hc-month-grid">
         {["S", "M", "T", "W", "T", "F", "S"].map((dow, index) => (
           <span key={index} className="hc-month-dow">
@@ -252,15 +310,16 @@ function MonthCalendar({
           <span key={`blank-${index}`} aria-hidden="true" />
         ))}
         {cells.map((cell) => {
-          const heat = cell.score != null ? 0.12 + 0.88 * (cell.score / 100) : 0;
-          const hot = cell.score != null && cell.score >= 55;
+          const intensity = cellHeat(cell);
+          const alpha = intensity != null ? 0.12 + 0.88 * intensity : 0;
+          const hot = intensity != null && alpha >= 0.6;
           return (
             <button
               key={cell.key}
               type="button"
               className={[
                 "hc-month-cell",
-                cell.score != null ? "logged" : "",
+                intensity != null ? "logged" : "",
                 hot ? "hot" : "",
                 cell.key === selectedDate ? "selected" : "",
                 cell.key === today ? "today" : "",
@@ -269,13 +328,17 @@ function MonthCalendar({
                 .filter(Boolean)
                 .join(" ")}
               style={
-                cell.score != null
-                  ? { background: `rgba(246, 104, 62, ${heat.toFixed(2)})` }
+                intensity != null
+                  ? { background: `rgba(246, 104, 62, ${alpha.toFixed(2)})` }
                   : undefined
               }
               aria-label={[
                 cell.key,
                 cell.score != null ? `health score ${cell.score}%` : "no data",
+                cell.deficit != null
+                  ? `${cell.deficit >= 0 ? "deficit" : "surplus"} ${Math.abs(Math.round(cell.deficit))} calories`
+                  : "",
+                cell.weight != null ? `weight ${cell.weight} pounds` : "",
                 cell.worked ? "worked out" : "",
               ]
                 .filter(Boolean)
@@ -283,20 +346,20 @@ function MonthCalendar({
               onClick={() => onSelectDate(cell.key)}
             >
               <span className="hc-month-num">{cell.num}</span>
-              <strong>{cell.score != null ? `${cell.score}%` : "\u00A0"}</strong>
+              <strong>{cellLabel(cell)}</strong>
               {cell.worked && <i className="hc-month-flag" aria-hidden="true" />}
             </button>
           );
         })}
       </div>
       <div className="hc-month-legend">
-        <span className="hc-month-scale" aria-label="Tile color shows Health Improvement Score">
-          Less
+        <span className="hc-month-scale">
+          {scaleEnds[metric][0]}
           <i style={{ opacity: 0.15 }} />
           <i style={{ opacity: 0.4 }} />
           <i style={{ opacity: 0.65 }} />
           <i style={{ opacity: 1 }} />
-          More
+          {scaleEnds[metric][1]}
         </span>
         <span>
           <i className="hc-month-workdot" /> Worked out

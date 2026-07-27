@@ -1,4 +1,5 @@
 export const AUTH_COOKIE = 'brandon_fit_auth';
+export const OAUTH_STATE_COOKIE = 'brandon_fit_oauth_state';
 const SESSION_MESSAGE = 'brandon-fit-session';
 
 export function isAuthConfigured(): boolean {
@@ -31,6 +32,27 @@ export async function isValidAuthToken(token: string | undefined): Promise<boole
   if (!token || !process.env.AUTH_SECRET) return false;
   const expected = await signSession(process.env.AUTH_SECRET);
   return timingSafeEqual(token, expected);
+}
+
+/** Google sign-in is only enabled when credentials AND an email allowlist exist. */
+export function isGoogleConfigured(): boolean {
+  return Boolean(
+    process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET &&
+      process.env.AUTH_SECRET &&
+      allowedGoogleEmails().length > 0
+  );
+}
+
+export function allowedGoogleEmails(): string[] {
+  return (process.env.ALLOWED_GOOGLE_EMAILS ?? '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isAllowedGoogleEmail(email: string): boolean {
+  return allowedGoogleEmails().includes(email.trim().toLowerCase());
 }
 
 export function isValidPassword(password: string): boolean {

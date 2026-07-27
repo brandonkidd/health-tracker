@@ -100,13 +100,6 @@ export function CoachCard({
         ))}
       </div>
 
-      {status === "insufficient" && (
-        <p className="hc-muted hc-compact-copy">
-          Log a few days of food, weight, and sleep and the AI coach will start
-          connecting the dots — your true burn rate, what&apos;s helping, and
-          what to adjust.
-        </p>
-      )}
       {status === "error" && (
         <p className="hc-scan-error">
           Couldn&apos;t generate today&apos;s analysis.{" "}
