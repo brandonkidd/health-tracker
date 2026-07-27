@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { BODYFI_PLAN, plannedActivity } from "@/lib/health/config";
+import {
+  ACTIVITY_DEFAULT_MINUTES,
+  BODYFI_PLAN,
+  estimateActivityCalories,
+  plannedActivity,
+} from "@/lib/health/config";
 import { estimatedDeficit } from "@/lib/health/projections";
 import type { DailyLog } from "@/lib/health/types";
 import {
@@ -274,6 +279,25 @@ export function TodayScreen({
     return recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : 0;
   };
 
+  // Latest known weight (scan back from the selected date), for calorie estimates.
+  const latestWeight = (() => {
+    const dates = Object.keys(allDays ?? {})
+      .filter((key) => key <= date)
+      .sort()
+      .reverse();
+    for (const key of dates) {
+      const weight = allDays[key]?.weight;
+      if (weight) return weight;
+    }
+    return BODYFI_PLAN.baseline.weight;
+  })();
+
+  const classMinutes =
+    activity.type === "walk" && day.walkingMinutes > 0
+      ? day.walkingMinutes
+      : ACTIVITY_DEFAULT_MINUTES[activity.type];
+  const classEstimate = estimateActivityCalories(activity.type, latestWeight, classMinutes);
+
   const distanceKm = (day.steps * 0.000762).toFixed(1);
   const activeTime =
     day.walkingMinutes >= 60
@@ -518,7 +542,16 @@ export function TodayScreen({
         <div className="hc-button-row">
           <button
             className={day.activityCompleted ? "hc-button hc-button-done" : "hc-button"}
-            onClick={() => patch({ activityCompleted: !day.activityCompleted })}
+            onClick={() =>
+              patch({
+                activityCompleted: !day.activityCompleted,
+                // Fill in the class estimate automatically on completion.
+                estimatedActivityCalories:
+                  !day.activityCompleted && !day.estimatedActivityCalories
+                    ? classEstimate
+                    : day.estimatedActivityCalories,
+              })
+            }
           >
             {day.activityCompleted ? "Completed" : "Mark complete"}
           </button>
@@ -527,13 +560,28 @@ export function TodayScreen({
               type="number"
               inputMode="numeric"
               value={day.estimatedActivityCalories || ""}
-              placeholder="e.g. 420"
+              placeholder={`≈ ${classEstimate}`}
               onChange={(event) =>
                 patch({ estimatedActivityCalories: Number(event.target.value) || 0 })
               }
             />
           </Field>
         </div>
+        {classEstimate > 0 && (
+          <p className="hc-muted" style={{ marginTop: 10 }}>
+            {activity.label} for {classMinutes} min at {Math.round(latestWeight)} lb burns
+            roughly <strong>{classEstimate} cal</strong>.{" "}
+            {day.estimatedActivityCalories !== classEstimate && (
+              <button
+                className="hc-text-button"
+                style={{ padding: 0, color: "var(--accent)" }}
+                onClick={() => patch({ estimatedActivityCalories: classEstimate })}
+              >
+                Use estimate
+              </button>
+            )}
+          </p>
+        )}
         <div className="hc-inline-fields" style={{ marginTop: 12 }}>
           <Field label="Walking minutes">
             <input

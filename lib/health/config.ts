@@ -59,6 +59,34 @@ export const BODYFI_PLAN = {
 
 export type ActivityType = "alpha" | "yoga" | "walk" | "rest";
 
+/**
+ * MET (metabolic equivalent) values per activity type.
+ * Alpha (Life Time) is vigorous interval strength/conditioning ≈ HIIT.
+ */
+export const ACTIVITY_METS: Record<ActivityType, number> = {
+  alpha: 8.5,
+  yoga: 4.0,
+  walk: 3.5,
+  rest: 0,
+};
+
+export const ACTIVITY_DEFAULT_MINUTES: Record<ActivityType, number> = {
+  alpha: 60,
+  yoga: 60,
+  walk: 45,
+  rest: 0,
+};
+
+/** Calories = MET × body mass (kg) × hours. */
+export function estimateActivityCalories(
+  type: ActivityType,
+  weightLb: number,
+  minutes: number = ACTIVITY_DEFAULT_MINUTES[type]
+): number {
+  const kg = weightLb * 0.453592;
+  return Math.round(ACTIVITY_METS[type] * kg * (minutes / 60));
+}
+
 export function plannedActivity(date: string): {
   label: string;
   type: ActivityType;
