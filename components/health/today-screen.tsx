@@ -158,19 +158,37 @@ type Targets = {
   sleepHours: number;
 };
 
-/** Health Improvement Score: % of daily targets hit. */
+/**
+ * Health Improvement Score: weighted daily adherence with partial credit.
+ * Weights reflect what moves body-recomp results most — calories 30%,
+ * protein 20%, training 20%, sleep 15%, steps/water/supplements 5% each.
+ */
 function dayScore(day: DailyLog, targets: Targets, supplementList: { id: string }[]): number {
-  const supplementsTaken = supplementList.filter((item) => day.supplements[item.id]).length;
-  const checks = [
-    day.protein >= targets.protein,
-    day.calories > 0 && day.calories <= targets.calories,
-    day.waterOz >= targets.waterOz,
-    day.steps >= targets.steps,
-    (day.sleepHours ?? 0) >= targets.sleepHours,
-    day.activityCompleted,
-    supplementList.length > 0 && supplementsTaken === supplementList.length,
+  const ratio = (value: number, target: number) => (target > 0 ? Math.min(1, value / target) : 0);
+
+  // Full credit for logging at/under target; overage decays to zero at +25%.
+  const calorieCredit =
+    day.calories <= 0
+      ? 0
+      : day.calories <= targets.calories
+        ? 1
+        : Math.max(0, 1 - (day.calories - targets.calories) / (targets.calories * 0.25));
+
+  const supplementCredit =
+    supplementList.length > 0
+      ? supplementList.filter((item) => day.supplements[item.id]).length / supplementList.length
+      : 0;
+
+  const parts: [weight: number, credit: number][] = [
+    [30, calorieCredit],
+    [20, ratio(day.protein, targets.protein)],
+    [20, day.activityCompleted ? 1 : 0],
+    [15, ratio(day.sleepHours ?? 0, targets.sleepHours)],
+    [5, ratio(day.steps, targets.steps)],
+    [5, ratio(day.waterOz, targets.waterOz)],
+    [5, supplementCredit],
   ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  return Math.round(parts.reduce((sum, [weight, credit]) => sum + weight * credit, 0));
 }
 
 function hasWorkout(day: DailyLog | undefined): day is DailyLog {
@@ -600,11 +618,6 @@ export function TodayScreen({
   const calorieSeries = history((entry) => entry.calories);
   const sleepSeries = history((entry) => entry.sleepHours ?? 0);
   const waterSeries = history((entry) => entry.waterOz);
-
-  const avg7 = (values: number[]) => {
-    const recent = values.slice(-7).filter((value) => value > 0);
-    return recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : 0;
-  };
 
   // Latest known weight (scan back from the selected date), for calorie estimates.
   const latestWeight = (() => {
@@ -1065,8 +1078,14 @@ export function TodayScreen({
         <UpdateCard
           label="Protein"
           delta={weeklyDelta(proteinSeries)}
-          status={avg7(proteinSeries) >= targets.protein * 0.85 ? "Normal" : "Low"}
-          statusLow={avg7(proteinSeries) < targets.protein * 0.85}
+          status={
+            day.protein >= targets.protein
+              ? "Excellent"
+              : day.protein >= targets.protein * 0.9
+                ? "Great"
+                : "Low"
+          }
+          statusLow={day.protein < targets.protein * 0.9}
           value={String(day.protein)}
           unit="g"
         >
@@ -1076,8 +1095,8 @@ export function TodayScreen({
         <UpdateCard
           label="Calories"
           delta={weeklyDelta(calorieSeries)}
-          status={avg7(calorieSeries) <= targets.calories * 1.05 ? "On plan" : "High"}
-          statusLow={avg7(calorieSeries) > targets.calories * 1.05}
+          status={day.calories <= targets.calories * 1.05 ? "On plan" : "High"}
+          statusLow={day.calories > targets.calories * 1.05}
           value={day.calories.toLocaleString()}
           unit="cal"
         >
@@ -1087,8 +1106,8 @@ export function TodayScreen({
         <UpdateCard
           label="Sleep"
           delta={weeklyDelta(sleepSeries)}
-          status={avg7(sleepSeries) >= targets.sleepHours ? "Normal" : "Low"}
-          statusLow={avg7(sleepSeries) < targets.sleepHours}
+          status={(day.sleepHours ?? 0) >= targets.sleepHours * 0.9 ? "Normal" : "Low"}
+          statusLow={(day.sleepHours ?? 0) < targets.sleepHours * 0.9}
           value={String(day.sleepHours ?? 0)}
           unit="hr"
         >
@@ -1098,8 +1117,8 @@ export function TodayScreen({
         <UpdateCard
           label="Water"
           delta={weeklyDelta(waterSeries)}
-          status={avg7(waterSeries) >= targets.waterOz * 0.8 ? "Normal" : "Low"}
-          statusLow={avg7(waterSeries) < targets.waterOz * 0.8}
+          status={day.waterOz >= targets.waterOz * 0.8 ? "Normal" : "Low"}
+          statusLow={day.waterOz < targets.waterOz * 0.8}
           value={String(day.waterOz)}
           unit="oz"
         >
@@ -1121,9 +1140,9 @@ export function TodayScreen({
             </div>
           </div>
           <p>
-            This indicator reflects how many of today&apos;s targets you hit—protein, calories,
-            water, steps, sleep, training, and supplements—and provides an objective daily
-            adherence read.
+            Weighted by what moves results most — calories 30%, protein 20%, training 20%,
+            sleep 15%, then steps, water, and supplements at 5% each — with partial credit
+            inside every category, so a near-miss still counts.
           </p>
         </div>
       </div>
