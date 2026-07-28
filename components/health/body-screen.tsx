@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
 import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
 import type { AdaptiveForecast, EngineSnapshot } from "@/lib/health/engine";
@@ -12,6 +12,42 @@ import { PhotoTimeline } from "./photo-timeline";
 function numberValue(data: FormData, name: string): number | undefined {
   const value = data.get(name);
   return value ? Number(value) : undefined;
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M4 7.5h2.6l1.5-2.3h7.8l1.5 2.3H20a1.6 1.6 0 0 1 1.6 1.6v8.6A1.6 1.6 0 0 1 20 19.3H4a1.6 1.6 0 0 1-1.6-1.6V9.1A1.6 1.6 0 0 1 4 7.5Z" />
+      <circle cx="12" cy="13" r="3.4" />
+    </svg>
+  );
+}
+
+/** Shrink the photo client-side so uploads stay fast and cheap. */
+async function fileToDataUrl(file: File, maxDim = 1400): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+interface InBodyScanResponse {
+  isBodyScan: boolean;
+  date: string | null;
+  weightLb: number | null;
+  bodyFatPercent: number | null;
+  leanMassLb: number | null;
+  muscleMassLb: number | null;
+  skeletalMuscleLb: number | null;
+  visceralFatLevel: number | null;
+  bmr: number | null;
+  inBodyScore: number | null;
+  summary: string;
+  error?: string;
 }
 
 interface StrengthRow {
@@ -122,6 +158,11 @@ export function BodyScreen({
   const [fullArc, setFullArc] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [showScan, setShowScan] = useState(false);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState<Partial<BodyScan> | null>(null);
+  const [prefillVersion, setPrefillVersion] = useState(0);
+  const inBodyInputRef = useRef<HTMLInputElement>(null);
   const strengthRows = strengthProgress(state.days);
   const latest = state.weeklyCheckIns.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const latestScan = state.bodyScans.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -177,6 +218,50 @@ export function BodyScreen({
       bodyScans: [...state.bodyScans.filter((item) => item.date !== date), scan],
     });
     setShowScan(false);
+    setPrefill(null);
+  }
+
+  async function scanInBodyPhoto(file: File) {
+    setScanBusy(true);
+    setScanError(null);
+    try {
+      const image = await fileToDataUrl(file);
+      const response = await fetch("/api/scan-inbody", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      });
+      const result = (await response.json()) as InBodyScanResponse;
+      if (!response.ok) throw new Error(result.error ?? "Scan failed — try again.");
+      if (!result.isBodyScan) {
+        throw new Error(
+          "That photo doesn't look like a body composition result. Try a clearer shot of the InBody printout or screen."
+        );
+      }
+
+      const noteParts = [
+        result.inBodyScore != null ? `InBody score ${result.inBodyScore}` : "",
+        "Read from photo",
+      ].filter(Boolean);
+
+      setPrefill({
+        date: result.date ?? new Date().toISOString().slice(0, 10),
+        weight: result.weightLb ?? undefined,
+        bodyFat: result.bodyFatPercent ?? undefined,
+        leanMass: result.leanMassLb ?? undefined,
+        muscleMass: result.muscleMassLb ?? undefined,
+        skeletalMuscle: result.skeletalMuscleLb ?? undefined,
+        visceralFat: result.visceralFatLevel ?? undefined,
+        bmr: result.bmr ?? undefined,
+        notes: noteParts.join(" · "),
+      });
+      setPrefillVersion((version) => version + 1);
+      setShowScan(true);
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Scan failed — try again.");
+    } finally {
+      setScanBusy(false);
+    }
   }
 
   return (
@@ -296,18 +381,50 @@ export function BodyScreen({
           title="InBody scans"
           action={<button className="hc-button hc-button-secondary" onClick={() => setShowScan(!showScan)}>Add scan</button>}
         />
+        <div className="hc-scan-block">
+          <input
+            ref={inBodyInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void scanInBodyPhoto(file);
+            }}
+          />
+          <button
+            className="hc-scan-button"
+            onClick={() => inBodyInputRef.current?.click()}
+            disabled={scanBusy}
+          >
+            <CameraIcon />
+            {scanBusy ? "Reading your results…" : "Scan InBody results"}
+          </button>
+          <small>
+            Snap the printout or app screen — date, body fat %, muscle mass, skeletal muscle,
+            visceral fat, and BMR fill in automatically for you to review.
+          </small>
+          {scanError && <p className="hc-scan-error">{scanError}</p>}
+        </div>
         {showScan && (
-          <form className="hc-form-grid" onSubmit={submitScan}>
-            <Field label="Date"><input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
-            <Field label="Weight (lb)"><input name="weight" type="number" step="0.1" /></Field>
-            <Field label="Body fat %"><input name="bodyFat" type="number" step="0.1" /></Field>
-            <Field label="Lean mass (lb)"><input name="leanMass" type="number" step="0.1" /></Field>
-            <Field label="Muscle mass (lb)"><input name="muscleMass" type="number" step="0.1" /></Field>
-            <Field label="Skeletal muscle"><input name="skeletalMuscle" type="number" step="0.1" /></Field>
-            <Field label="Visceral fat"><input name="visceralFat" type="number" step="0.1" /></Field>
-            <Field label="BMR"><input name="bmr" type="number" /></Field>
+          <form key={prefillVersion} className="hc-form-grid" onSubmit={submitScan}>
+            {prefill && (
+              <p className="hc-muted hc-compact-copy" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                Read from your photo — double-check the values, then save.
+              </p>
+            )}
+            <Field label="Date"><input name="date" type="date" required defaultValue={prefill?.date ?? new Date().toISOString().slice(0, 10)} /></Field>
+            <Field label="Weight (lb)"><input name="weight" type="number" step="0.1" defaultValue={prefill?.weight} /></Field>
+            <Field label="Body fat %"><input name="bodyFat" type="number" step="0.1" defaultValue={prefill?.bodyFat} /></Field>
+            <Field label="Lean mass (lb)"><input name="leanMass" type="number" step="0.1" defaultValue={prefill?.leanMass} /></Field>
+            <Field label="Muscle mass (lb)"><input name="muscleMass" type="number" step="0.1" defaultValue={prefill?.muscleMass} /></Field>
+            <Field label="Skeletal muscle"><input name="skeletalMuscle" type="number" step="0.1" defaultValue={prefill?.skeletalMuscle} /></Field>
+            <Field label="Visceral fat"><input name="visceralFat" type="number" step="0.1" defaultValue={prefill?.visceralFat} /></Field>
+            <Field label="BMR"><input name="bmr" type="number" defaultValue={prefill?.bmr} /></Field>
             <Field label="Waist (in)"><input name="waist" type="number" step="0.1" /></Field>
-            <Field label="Notes"><input name="notes" /></Field>
+            <Field label="Notes"><input name="notes" defaultValue={prefill?.notes} /></Field>
             <button className="hc-button" type="submit">Save measured scan</button>
           </form>
         )}

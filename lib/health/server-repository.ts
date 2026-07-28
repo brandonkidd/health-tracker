@@ -270,35 +270,26 @@ export async function writeCloudState(state: HealthState): Promise<void> {
     }))
   );
 
-  const tables = [
-    "lab_results",
-    "lab_panels",
-    "meal_logs",
-    "supplement_logs",
-    "workout_scans",
-    "body_composition",
-    "weekly_check_ins",
-    "daily_logs",
-  ];
-  for (const table of tables) {
-    const { error } = await supabase.from(table).delete().not("id", "is", null);
-    if (error) throw error;
-  }
-  {
-    // daily_insights is keyed by date, not id.
-    const { error } = await supabase
-      .from("daily_insights")
-      .delete()
-      .not("date", "is", null);
-    if (error) throw error;
+  // Never wipe the whole store. Day rows are upserted in place and child rows
+  // (meals, supplements, workouts) are only rewritten for dates this payload
+  // actually contains, so a client with a stale or partial copy of the data
+  // can never destroy days it doesn't know about.
+  const payloadDates = Object.keys(state.days);
+  if (payloadDates.length) {
+    for (const table of ["meal_logs", "supplement_logs", "workout_scans"]) {
+      const { error } = await supabase.from(table).delete().in("date", payloadDates);
+      if (error) throw error;
+    }
   }
 
   const writes = [
-    dailyRows.length ? supabase.from("daily_logs").insert(dailyRows) : null,
+    dailyRows.length
+      ? supabase.from("daily_logs").upsert(dailyRows, { onConflict: "date" })
+      : null,
     supplementRows.length ? supabase.from("supplement_logs").insert(supplementRows) : null,
     mealRows.length ? supabase.from("meal_logs").insert(mealRows) : null,
     state.weeklyCheckIns.length
-      ? supabase.from("weekly_check_ins").insert(
+      ? supabase.from("weekly_check_ins").upsert(
           state.weeklyCheckIns.map((entry) => ({
             id: entry.id,
             date: entry.date,
@@ -306,11 +297,12 @@ export async function writeCloudState(state: HealthState): Promise<void> {
             waist: entry.waist ?? null,
             body_fat: entry.bodyFat ?? null,
             note: entry.note,
-          }))
+          })),
+          { onConflict: "date" }
         )
       : null,
     state.bodyScans.length
-      ? supabase.from("body_composition").insert(
+      ? supabase.from("body_composition").upsert(
           state.bodyScans.map((scan) => ({
             id: scan.id,
             date: scan.date,
@@ -323,12 +315,15 @@ export async function writeCloudState(state: HealthState): Promise<void> {
             bmr: scan.bmr ?? null,
             waist: scan.waist ?? null,
             notes: scan.notes,
-          }))
+          })),
+          { onConflict: "date" }
         )
       : null,
-    panelRows.length ? supabase.from("lab_panels").insert(panelRows) : null,
+    panelRows.length ? supabase.from("lab_panels").upsert(panelRows) : null,
     workoutRows.length ? supabase.from("workout_scans").insert(workoutRows) : null,
-    insightRows.length ? supabase.from("daily_insights").insert(insightRows) : null,
+    insightRows.length
+      ? supabase.from("daily_insights").upsert(insightRows, { onConflict: "date" })
+      : null,
   ].filter(Boolean);
 
   for (const write of writes) {
@@ -336,7 +331,7 @@ export async function writeCloudState(state: HealthState): Promise<void> {
     if (error) throw error;
   }
   if (resultRows.length) {
-    const { error } = await supabase.from("lab_results").insert(resultRows);
+    const { error } = await supabase.from("lab_results").upsert(resultRows);
     if (error) throw error;
   }
 }

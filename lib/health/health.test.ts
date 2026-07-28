@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { emptyDailyLog, migrateLegacy, parseHealthBackup } from "./storage";
+import {
+  emptyDailyLog,
+  emptyHealthState,
+  mergeHealthStates,
+  migrateLegacy,
+  parseHealthBackup,
+} from "./storage";
 import {
   estimatedDeficit,
   planWeek,
@@ -35,6 +41,41 @@ describe("BFIT projections", () => {
       estimatedActivityCalories: 400,
     };
     expect(estimatedDeficit(day, 2600)).toBe(900);
+  });
+});
+
+describe("state merging", () => {
+  it("keeps the richer copy of a day and unions days from both sides", () => {
+    const local = emptyHealthState();
+    local.days["2026-07-27"] = {
+      ...emptyDailyLog("2026-07-27"),
+      calories: 1850,
+      protein: 160,
+      waterOz: 64,
+      estimatedActivityCalories: 744,
+      meals: [
+        {
+          id: "m1",
+          label: "Chicken bowl",
+          calories: 620,
+          protein: 55,
+          carbs: 60,
+          fat: 18,
+          at: "2026-07-27T12:30:00",
+        },
+      ],
+    };
+
+    const cloud = emptyHealthState();
+    // Stale copy: today nearly empty, plus a day local doesn't have.
+    cloud.days["2026-07-27"] = { ...emptyDailyLog("2026-07-27"), sleepHours: 6.5 };
+    cloud.days["2026-07-26"] = { ...emptyDailyLog("2026-07-26"), calories: 626 };
+
+    const merged = mergeHealthStates(local, cloud);
+    expect(merged.days["2026-07-27"].calories).toBe(1850);
+    expect(merged.days["2026-07-27"].meals).toHaveLength(1);
+    expect(merged.days["2026-07-27"].sleepHours).toBe(6.5);
+    expect(merged.days["2026-07-26"].calories).toBe(626);
   });
 });
 

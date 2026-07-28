@@ -78,6 +78,74 @@ export function migrateLegacy(raw: string): HealthState {
   return state;
 }
 
+/** How much logged content a day carries; used to pick the richer copy in merges. */
+export function dayRichness(day: DailyLog): number {
+  const supplementsTaken = Object.values(day.supplements ?? {}).filter(Boolean).length;
+  return (
+    (day.meals?.length ?? 0) * 2 +
+    (day.workouts?.length ?? 0) * 2 +
+    (day.calories > 0 ? 1 : 0) +
+    (day.protein > 0 ? 1 : 0) +
+    (day.waterOz > 0 ? 1 : 0) +
+    (day.steps > 0 ? 1 : 0) +
+    (day.walkingMinutes > 0 ? 1 : 0) +
+    (day.sleepHours != null ? 1 : 0) +
+    (day.weight != null ? 1 : 0) +
+    (day.activityCompleted ? 1 : 0) +
+    (day.estimatedActivityCalories > 0 ? 1 : 0) +
+    (day.notes ? 1 : 0) +
+    supplementsTaken
+  );
+}
+
+/**
+ * Union of two states that never drops logged data: for each day keep the
+ * richer copy, and union all id-keyed collections. Protects against a stale
+ * device overwriting newer data from another device.
+ */
+export function mergeHealthStates(a: HealthState, b: HealthState): HealthState {
+  const byId = <T extends { id: string }>(primary: T[], secondary: T[]): T[] => {
+    const map = new Map<string, T>();
+    for (const item of secondary ?? []) map.set(item.id, item);
+    for (const item of primary ?? []) map.set(item.id, item);
+    return Array.from(map.values());
+  };
+
+  const merged = emptyHealthState();
+  const dates = new Set([...Object.keys(a.days), ...Object.keys(b.days)]);
+  for (const date of Array.from(dates)) {
+    const left = a.days[date];
+    const right = b.days[date];
+    if (!left || !right) {
+      merged.days[date] = (left ?? right)!;
+    } else {
+      const [winner, loser] =
+        dayRichness(left) >= dayRichness(right) ? [left, right] : [right, left];
+      // Backfill scalar fields the winner never set (e.g. sleep logged on the
+      // sparse device) so neither side's entries are lost.
+      merged.days[date] = {
+        ...winner,
+        weight: winner.weight ?? loser.weight,
+        sleepHours: winner.sleepHours ?? loser.sleepHours,
+        energy: winner.energy ?? loser.energy,
+        mood: winner.mood ?? loser.mood,
+        soreness: winner.soreness ?? loser.soreness,
+      };
+    }
+  }
+  merged.weeklyCheckIns = byId(a.weeklyCheckIns, b.weeklyCheckIns).sort((x, y) =>
+    x.date.localeCompare(y.date)
+  );
+  merged.bodyScans = byId(a.bodyScans, b.bodyScans).sort((x, y) => x.date.localeCompare(y.date));
+  merged.labPanels = byId(a.labPanels, b.labPanels);
+  merged.customPresets = byId(a.customPresets ?? [], b.customPresets ?? []);
+  merged.archivedSupplements = Array.from(
+    new Set([...(a.archivedSupplements ?? []), ...(b.archivedSupplements ?? [])])
+  );
+  merged.insights = { ...(b.insights ?? {}), ...(a.insights ?? {}) };
+  return merged;
+}
+
 export function loadHealthState(): HealthState {
   if (typeof window === "undefined") return emptyHealthState();
   const current = window.localStorage.getItem(HEALTH_STORE_KEY);

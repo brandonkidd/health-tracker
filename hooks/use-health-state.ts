@@ -10,6 +10,7 @@ import type { EngineSnapshot } from "@/lib/health/engine";
 import {
   emptyHealthState,
   loadHealthState,
+  mergeHealthStates,
   parseHealthBackup,
   saveHealthState,
 } from "@/lib/health/storage";
@@ -65,8 +66,19 @@ export function useHealthState() {
           payload.state.bodyScans.length > 0 ||
           payload.state.labPanels.length > 0;
         if (cloudHasData) {
-          setState(payload.state);
-          saveHealthState(payload.state);
+          // Merge instead of letting the cloud copy clobber local data: if
+          // this device holds logs the cloud is missing (e.g. sync was down
+          // while logging), keep them and push the richer merge back up.
+          const merged = mergeHealthStates(local, payload.state);
+          setState(merged);
+          saveHealthState(merged);
+          if (JSON.stringify(merged) !== JSON.stringify(payload.state)) {
+            await fetch("/api/health", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(merged),
+            });
+          }
         } else if (
           Object.keys(local.days).length ||
           local.weeklyCheckIns.length ||
