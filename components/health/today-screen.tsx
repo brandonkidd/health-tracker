@@ -866,6 +866,17 @@ export function TodayScreen({
     onUpdatePresets([...customPresets, preset]);
   }
 
+  /** Removes user-added presets matching this meal's label (built-ins and their edits stay). */
+  function unfavoriteMeal(meal: MealEntry) {
+    onUpdatePresets(
+      customPresets.filter(
+        (preset) =>
+          BUILTIN_PRESET_IDS.has(preset.id) ||
+          preset.label.toLowerCase() !== meal.label.toLowerCase()
+      )
+    );
+  }
+
   function removeMeal(id: string) {
     const meal = day.meals.find((entry) => entry.id === id);
     if (!meal) return;
@@ -1677,7 +1688,12 @@ export function TodayScreen({
           <div className="hc-food-log">
             <div className="hc-entry-list">
               {day.meals.slice().reverse().map((meal) => {
-                const saved = presetLabelSet.has(meal.label.toLowerCase());
+                const savedCustom = customPresets.some(
+                  (preset) =>
+                    !BUILTIN_PRESET_IDS.has(preset.id) &&
+                    preset.label.toLowerCase() === meal.label.toLowerCase()
+                );
+                const saved = savedCustom || presetLabelSet.has(meal.label.toLowerCase());
                 return (
                   <div key={meal.id}>
                     <span>
@@ -1687,8 +1703,17 @@ export function TodayScreen({
                       </small>
                     </span>
                     <span className="hc-entry-actions">
-                      {saved ? (
-                        <span className="hc-fav-saved" title="In your presets">★</span>
+                      {savedCustom ? (
+                        <button
+                          className="hc-fav-button hc-fav-saved"
+                          aria-label={`Remove ${meal.label} from your presets`}
+                          title="Tap to remove from presets"
+                          onClick={() => unfavoriteMeal(meal)}
+                        >
+                          ★
+                        </button>
+                      ) : saved ? (
+                        <span className="hc-fav-saved" title="Built-in preset">★</span>
                       ) : (
                         <button
                           className="hc-fav-button"
