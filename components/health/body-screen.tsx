@@ -24,6 +24,26 @@ function CameraIcon() {
   );
 }
 
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M12 15.5V4.5" />
+      <path d="M7.5 8.5 12 4l4.5 4.5" />
+      <path d="M4.5 15.5v2.8A1.7 1.7 0 0 0 6.2 20h11.6a1.7 1.7 0 0 0 1.7-1.7v-2.8" />
+    </svg>
+  );
+}
+
+/** Read a file as-is (used for PDFs, which can't go through the canvas resize). */
+function fileToRawDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Could not read the file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 /** Shrink the photo client-side so uploads stay fast and cheap. */
 async function fileToDataUrl(file: File, maxDim = 1400): Promise<string> {
   const bitmap = await createImageBitmap(file);
@@ -164,6 +184,7 @@ export function BodyScreen({
   const [prefill, setPrefill] = useState<Partial<BodyScan> | null>(null);
   const [prefillVersion, setPrefillVersion] = useState(0);
   const inBodyInputRef = useRef<HTMLInputElement>(null);
+  const inBodyUploadRef = useRef<HTMLInputElement>(null);
   const strengthRows = strengthProgress(state.days);
   const latest = state.weeklyCheckIns.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const latestScan = state.bodyScans.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -226,7 +247,11 @@ export function BodyScreen({
     setScanBusy(true);
     setScanError(null);
     try {
-      const image = await fileToDataUrl(file);
+      const isPdf = file.type === "application/pdf";
+      if (isPdf && file.size > 3 * 1024 * 1024) {
+        throw new Error("That PDF is too large (over 3 MB). Try exporting just the results page.");
+      }
+      const image = isPdf ? await fileToRawDataUrl(file) : await fileToDataUrl(file);
       const response = await fetch("/api/scan-inbody", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,13 +261,13 @@ export function BodyScreen({
       if (!response.ok) throw new Error(result.error ?? "Scan failed — try again.");
       if (!result.isBodyScan) {
         throw new Error(
-          "That photo doesn't look like a body composition result. Try a clearer shot of the InBody printout or screen."
+          "That doesn't look like a body composition result. Try a clearer photo of the printout or the PDF the InBody app exports."
         );
       }
 
       const noteParts = [
         result.inBodyScore != null ? `InBody score ${result.inBodyScore}` : "",
-        "Read from photo",
+        isPdf ? "Read from PDF" : "Read from photo",
       ].filter(Boolean);
 
       setPrefill({
@@ -395,17 +420,39 @@ export function BodyScreen({
               if (file) void scanInBodyPhoto(file);
             }}
           />
-          <button
-            className="hc-scan-button"
-            onClick={() => inBodyInputRef.current?.click()}
-            disabled={scanBusy}
-          >
-            <CameraIcon />
-            {scanBusy ? "Reading your results…" : "Scan InBody results"}
-          </button>
+          <input
+            ref={inBodyUploadRef}
+            type="file"
+            accept="image/*,application/pdf"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void scanInBodyPhoto(file);
+            }}
+          />
+          <div className="hc-scan-actions">
+            <button
+              className="hc-scan-button"
+              onClick={() => inBodyInputRef.current?.click()}
+              disabled={scanBusy}
+            >
+              <CameraIcon />
+              {scanBusy ? "Reading your results…" : "Scan InBody results"}
+            </button>
+            <button
+              className="hc-scan-button"
+              onClick={() => inBodyUploadRef.current?.click()}
+              disabled={scanBusy}
+            >
+              <UploadIcon />
+              Upload photo or PDF
+            </button>
+          </div>
           <small>
-            Snap the printout or app screen — date, body fat %, muscle mass, skeletal muscle,
-            visceral fat, and BMR fill in automatically for you to review.
+            Snap the printout, or upload a saved photo or the PDF the InBody app exports — date,
+            body fat %, muscle mass, skeletal muscle, visceral fat, and BMR fill in automatically
+            for you to review.
           </small>
           {scanError && <p className="hc-scan-error">{scanError}</p>}
         </div>
@@ -413,7 +460,7 @@ export function BodyScreen({
           <form key={prefillVersion} className="hc-form-grid" onSubmit={submitScan}>
             {prefill && (
               <p className="hc-muted hc-compact-copy" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                Read from your photo — double-check the values, then save.
+                Read from your upload — double-check the values, then save.
               </p>
             )}
             <Field label="Date"><input name="date" type="date" required defaultValue={prefill?.date ?? ptDateKey()} /></Field>

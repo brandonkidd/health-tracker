@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
 import type { DailyInsight } from "@/lib/health/types";
-import { Card, SectionHeader, StatusBadge } from "./ui";
+import { StatusBadge } from "./ui";
+
+const COACH_OPEN_KEY = "hc-coach-open";
 
 function confidenceLabel(confidence: number): string {
   if (confidence >= 0.75) return "learned from your data";
@@ -34,6 +37,14 @@ export function CoachCard({
   todayCalories: number;
   onRefresh: () => void;
 }) {
+  const [open, setOpen] = useState(true);
+
+  // Restore the last open/collapsed choice after mount (localStorage isn't
+  // available during server render).
+  useEffect(() => {
+    setOpen(window.localStorage.getItem(COACH_OPEN_KEY) !== "0");
+  }, []);
+
   if (!engine) return null;
 
   const { tdee, targets, forecast } = engine;
@@ -75,21 +86,43 @@ export function CoachCard({
   }
 
   return (
-    <Card className="hc-coach-card">
-      <SectionHeader
-        eyebrow="Adaptive coach"
-        title={insight?.headline ?? "Reading your trajectory"}
-        action={
-          status === "loading" ? (
+    <details
+      className="hc-card hc-collapsible hc-coach-card"
+      open={open}
+      onToggle={(event) => {
+        const next = event.currentTarget.open;
+        setOpen(next);
+        window.localStorage.setItem(COACH_OPEN_KEY, next ? "1" : "0");
+      }}
+    >
+      <summary>
+        <div className="hc-section-header">
+          <div>
+            <div className="hc-eyebrow">Adaptive coach</div>
+            <h2>{insight?.headline ?? "Reading your trajectory"}</h2>
+          </div>
+          {status === "loading" ? (
             <StatusBadge>Analyzing…</StatusBadge>
           ) : (
-            <button className="hc-text-button" onClick={onRefresh}>
-              Refresh
-            </button>
-          )
-        }
-      />
+            <span
+              className="hc-collapsible-action"
+              onClick={(event) => {
+                // Refresh shouldn't toggle the card.
+                event.preventDefault();
+              }}
+            >
+              <button className="hc-text-button" onClick={onRefresh}>
+                Refresh
+              </button>
+            </span>
+          )}
+          <span className="hc-collapse-chevron" aria-hidden="true">
+            ›
+          </span>
+        </div>
+      </summary>
 
+      <div className="hc-coach-inner">
       <div className="hc-coach-chips">
         {chips.map((chip) => (
           <div key={chip.label} className="hc-coach-chip">
@@ -142,6 +175,7 @@ export function CoachCard({
           {insight.outlook && <p className="hc-coach-outlook">{insight.outlook}</p>}
         </div>
       )}
-    </Card>
+      </div>
+    </details>
   );
 }

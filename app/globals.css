@@ -1089,6 +1089,12 @@ h4 {
   background: color-mix(in srgb, var(--accent) 5%, var(--white));
 }
 
+.hc-scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .hc-scan-button {
   display: inline-flex;
   align-items: center;
@@ -2370,10 +2376,19 @@ h4 {
 }
 
 /* ——— Small screens ——— */
-@media (max-width: 400px) {
+/* 480px covers every iPhone width (SE 375 through Pro Max 430). */
+@media (max-width: 480px) {
   .hc-main {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .hc-card {
+    padding: 18px 16px;
+  }
+
+  .hc-section-header h2 {
+    font-size: 17px;
   }
 
   .hc-update-grid {
@@ -2405,7 +2420,45 @@ h4 {
 
 /* ——— Adaptive coach ——— */
 .hc-coach-card {
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--accent-soft);
+}
+
+.hc-coach-card > summary {
+  padding: 15px 22px;
+  background: linear-gradient(135deg, #fb8d68, var(--accent));
+}
+
+.hc-coach-card > summary .hc-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hc-coach-card > summary h2 {
+  color: #fff;
+  font-size: 17px;
+}
+
+.hc-coach-card > summary .hc-text-button {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hc-coach-card > summary .hc-badge {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hc-coach-card > summary .hc-badge::before {
+  background: #fff;
+}
+
+.hc-coach-card > summary .hc-collapse-chevron {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.hc-coach-inner {
+  padding: 4px 22px 20px;
 }
 
 .hc-coach-chips {
@@ -2490,6 +2543,24 @@ h4 {
   line-height: 1.5;
   color: var(--muted);
   font-style: italic;
+}
+
+@media (max-width: 480px) {
+  .hc-coach-card > summary {
+    padding: 13px 16px;
+  }
+
+  .hc-coach-card > summary h2 {
+    font-size: 15.5px;
+  }
+
+  .hc-coach-inner {
+    padding: 2px 16px 16px;
+  }
+
+  .hc-coach-chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ——— Adaptive forecast on the arc chart ——— */

@@ -14,7 +14,7 @@ const scanSchema = z.object({
   isBodyScan: z
     .boolean()
     .describe(
-      "True only if the photo shows a body composition result sheet or screen (InBody, DEXA, Tanita, or similar)."
+      "True only if the file shows a body composition result sheet, screen, or report (InBody, DEXA, Tanita, or similar)."
     ),
   date: z
     .string()
@@ -63,9 +63,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const match = body.image?.match(/^data:(image\/[a-z+.-]+);base64,([\s\S]+)$/);
+  const match = body.image?.match(/^data:(image\/[a-z+.-]+|application\/pdf);base64,([\s\S]+)$/);
   if (!match) {
-    return NextResponse.json({ error: "Send an image as a base64 data URL." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Send an image or PDF as a base64 data URL." },
+      { status: 400 }
+    );
   }
   const [, mediaType, base64] = match;
 
@@ -74,7 +77,7 @@ export async function POST(request: Request) {
       model,
       output: Output.object({ schema: scanSchema }),
       instructions:
-        "You read photos of body composition result sheets and screens — InBody printouts, InBody app screenshots, DEXA reports, and similar. " +
+        "You read body composition results from photos and PDF exports — InBody printouts, InBody app screenshots and PDF reports, DEXA reports, and similar. " +
         "Extract only values that are actually printed — never invent or estimate numbers; leave anything not visible null. " +
         "All masses must be reported in pounds: if the sheet shows kilograms, convert with 1 kg = 2.20462 lb and round to one decimal. " +
         "Body fat is the percentage (PBF), not the fat mass. Visceral fat is the unitless level, not an area or mass. " +
