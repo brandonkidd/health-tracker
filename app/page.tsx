@@ -225,7 +225,10 @@ export default function HealthCommandCenter() {
           <button
             key={item.id}
             className={view === item.id ? "active" : ""}
-            onClick={() => setView(item.id)}
+            onClick={() => {
+              if (item.id === "today") setDate(ptDateKey());
+              setView(item.id);
+            }}
             aria-label={item.label}
             title={item.label}
           >
