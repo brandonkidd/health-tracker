@@ -2494,6 +2494,9 @@ h4 {
 
 .hc-coach-body {
   display: grid;
+  /* minmax(0, 1fr) keeps a long badge from blowing out the column and
+     clipping every sibling at the card edge. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin-top: 14px;
 }
@@ -2511,7 +2514,14 @@ h4 {
 }
 
 .hc-coach-tags .hc-badge {
+  /* Override the global width: max-content so long AI-written wins/risks
+     shrink and wrap instead of forcing the row wider than the card. */
+  width: auto;
   max-width: 100%;
+}
+
+.hc-coach-tags .hc-badge::before {
+  flex-shrink: 0;
 }
 
 .hc-coach-recs {
