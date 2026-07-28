@@ -181,6 +181,72 @@ export async function readCloudState(): Promise<HealthState> {
   return state;
 }
 
+/**
+ * Snapshot retention: every daily snapshot for the last 60 days, then only
+ * first-of-month snapshots forever. Keeps recovery windows generous while
+ * bounding growth to ~12 rows per year long-term.
+ */
+export function snapshotDatesToPrune(dates: string[], today: string): string[] {
+  const cutoff = new Date(`${today}T00:00:00Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 60);
+  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  return dates.filter((date) => date < cutoffKey && !date.endsWith("-01"));
+}
+
+/**
+ * Archive the full state as today's point-in-time snapshot. Re-saving during
+ * the day updates the same row, so each past day holds its final state.
+ */
+export async function writeCloudSnapshot(state: HealthState): Promise<void> {
+  const supabase = client();
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { error } = await supabase
+    .from("health_state_snapshots")
+    .upsert(
+      { date: today, taken_at: new Date().toISOString(), payload: state },
+      { onConflict: "date" }
+    );
+  if (error) throw error;
+
+  const { data, error: listError } = await supabase
+    .from("health_state_snapshots")
+    .select("date");
+  if (listError) throw listError;
+  const prune = snapshotDatesToPrune((data ?? []).map((row) => String(row.date)), today);
+  if (prune.length) {
+    const { error: pruneError } = await supabase
+      .from("health_state_snapshots")
+      .delete()
+      .in("date", prune);
+    if (pruneError) throw pruneError;
+  }
+}
+
+export async function listCloudSnapshots(): Promise<{ date: string; takenAt: string }[]> {
+  const supabase = client();
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("health_state_snapshots")
+    .select("date, taken_at")
+    .order("date", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ date: String(row.date), takenAt: String(row.taken_at) }));
+}
+
+export async function readCloudSnapshot(date: string): Promise<HealthState | null> {
+  const supabase = client();
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("health_state_snapshots")
+    .select("payload")
+    .eq("date", date)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.payload as HealthState | undefined) ?? null;
+}
+
 export async function writeCloudState(state: HealthState): Promise<void> {
   const supabase = client();
   if (!supabase) throw new Error("Supabase is not configured.");

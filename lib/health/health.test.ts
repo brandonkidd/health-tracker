@@ -148,6 +148,21 @@ describe("automatic safety snapshots", () => {
   });
 });
 
+describe("cloud snapshot retention", () => {
+  it("keeps 60 days of dailies and first-of-month snapshots forever", async () => {
+    const { snapshotDatesToPrune } = await import("./server-repository");
+    const dates = [
+      "2026-07-27", // today: keep
+      "2026-06-15", // within 60 days: keep
+      "2026-04-20", // older than 60 days, mid-month: prune
+      "2026-04-01", // older than 60 days, first of month: keep forever
+      "2025-11-09", // last year, mid-month: prune
+      "2025-11-01", // last year, first of month: keep forever
+    ];
+    expect(snapshotDatesToPrune(dates, "2026-07-27")).toEqual(["2026-04-20", "2025-11-09"]);
+  });
+});
+
 describe("health data migration", () => {
   it("converts legacy 8-ounce water taps and daily values", () => {
     const migrated = migrateLegacy(

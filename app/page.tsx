@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BodyScreen } from "@/components/health/body-screen";
 import { LabsScreen } from "@/components/health/labs-screen";
 import { PlanScreen } from "@/components/health/plan-screen";
 import { TodayScreen } from "@/components/health/today-screen";
 import { TrendsScreen } from "@/components/health/trends-screen";
 import { useHealthState } from "@/hooks/use-health-state";
+import { ptDateKey } from "@/lib/health/date";
 import { emptyDailyLog } from "@/lib/health/storage";
 import type { DailyLog, HealthState } from "@/lib/health/types";
 import type { FoodPreset } from "@/lib/health-data";
@@ -83,11 +84,24 @@ const TITLES: Record<View, string> = {
   plan: "Plan",
 };
 
-function localDate() {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
+/**
+ * Tracks "today" in Pacific Time and updates when the PT day rolls over, so an
+ * app left open (or resumed from a phone's background) flips to the new day.
+ */
+function usePtToday(): string {
+  const [today, setToday] = useState(() => ptDateKey());
+  useEffect(() => {
+    const check = () => setToday((prev) => (prev === ptDateKey() ? prev : ptDateKey()));
+    const timer = setInterval(check, 30_000);
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, []);
+  return today;
 }
 
 export default function HealthCommandCenter() {
@@ -103,8 +117,17 @@ export default function HealthCommandCenter() {
     refreshInsight,
   } = useHealthState();
   const [view, setView] = useState<View>("today");
-  const [date, setDate] = useState(localDate);
+  const today = usePtToday();
+  const [date, setDate] = useState(today);
   const day = useMemo(() => state.days[date] ?? emptyDailyLog(date), [state.days, date]);
+
+  // When the PT day rolls over, follow it — unless the user navigated to a past date.
+  const lastToday = useRef(today);
+  useEffect(() => {
+    if (today === lastToday.current) return;
+    setDate((current) => (current === lastToday.current ? today : current));
+    lastToday.current = today;
+  }, [today]);
 
   function updateDay(next: DailyLog) {
     updateState((current) => ({
@@ -144,7 +167,7 @@ export default function HealthCommandCenter() {
         <button
           className="hc-icon-btn"
           onClick={() => {
-            setDate(localDate());
+            setDate(ptDateKey());
             setView("today");
           }}
           aria-label="Back to today"

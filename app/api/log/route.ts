@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readCloudState, writeCloudState } from '@/lib/health/server-repository';
 import { emptyDailyLog } from '@/lib/health/storage';
+import { ptDateKey } from '@/lib/health/date';
 import { BODYFI_PLAN } from '@/lib/health/config';
 import { AUTH_COOKIE, isValidAuthToken } from '@/lib/auth';
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, value, supplementId, supplementName } = body;
     const state = await readCloudState();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = ptDateKey();
     const log = state.days[today] ?? emptyDailyLog(today);
     state.days[today] = log;
 
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
     const state = await readCloudState();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = ptDateKey();
     const log = state.days[today] ?? emptyDailyLog(today);
     const supplements = Object.values(log.supplements).filter(Boolean).length;
 

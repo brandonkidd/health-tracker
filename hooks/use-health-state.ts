@@ -7,6 +7,7 @@ import {
   hashDigest,
 } from "@/lib/health/engine";
 import type { EngineSnapshot } from "@/lib/health/engine";
+import { ptDateKey } from "@/lib/health/date";
 import {
   emptyHealthState,
   loadHealthState,
@@ -24,9 +25,7 @@ export type InsightStatus =
   | "error";
 
 function todayIso(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return ptDateKey();
 }
 
 /** Days with anything meaningful logged — gate for AI analysis. */

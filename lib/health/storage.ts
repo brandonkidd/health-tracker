@@ -1,4 +1,5 @@
 import { plannedActivity } from "./config";
+import { ptDateKey } from "./date";
 import type { DailyLog, HealthState } from "./types";
 
 export const HEALTH_STORE_KEY = "bodyfi_health_v2";
@@ -173,8 +174,7 @@ export function saveHealthState(state: HealthState): void {
 }
 
 function localDateKey(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+  return ptDateKey();
 }
 
 /**

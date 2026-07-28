@@ -7,6 +7,7 @@ import {
   estimateActivityCalories,
   plannedActivity,
 } from "@/lib/health/config";
+import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import { estimatedDeficit } from "@/lib/health/projections";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
@@ -398,12 +399,10 @@ function seriesEndingAt(
   pick: (day: DailyLog) => number
 ): number[] {
   const values: number[] = [];
-  const cursor = new Date(`${date}T12:00:00`);
   for (let i = 0; i < length; i++) {
-    const key = cursor.toISOString().slice(0, 10);
+    const key = shiftDateKey(date, -i);
     const day = allDays[key];
     values.unshift(day ? pick(day) : 0);
-    cursor.setDate(cursor.getDate() - 1);
   }
   return values;
 }
@@ -597,15 +596,13 @@ export function TodayScreen({
   const deficit = engine ? engine.tdee.tdee - day.calories : estimatedDeficit(day);
   const targets = engine?.targets ?? BODYFI_PLAN.targets;
 
-  const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
+  const today = ptDateKey();
 
   const dayStrip = Array.from({ length: 5 }, (_, index) => {
-    const cursor = new Date(`${date}T12:00:00`);
-    cursor.setDate(cursor.getDate() + index - 2);
+    const key = shiftDateKey(date, index - 2);
+    const cursor = new Date(`${key}T12:00:00`);
     return {
-      key: cursor.toISOString().slice(0, 10),
+      key,
       name: cursor.toLocaleDateString(undefined, { weekday: "short" }),
       num: cursor.getDate(),
     };

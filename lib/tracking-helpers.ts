@@ -1,4 +1,5 @@
 import { DATES, daysUntil, daysSinceStart, BASELINE } from './health-data';
+import { ptDateKey, ptMinutesNow, shiftDateKey } from './health/date';
 
 export type Milestone = {
   label: string;
@@ -74,8 +75,7 @@ export function parseScheduleTime(timeStr: string): number {
 }
 
 export function getUpNext(schedule: ScheduleItem[]): ScheduleItem | null {
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const nowMins = ptMinutesNow();
 
   for (const item of schedule) {
     if (parseScheduleTime(item.t) >= nowMins) {
@@ -152,12 +152,10 @@ export function getStartBodyComp(): BodyCompSnapshot {
 export function calculateStreak(days: Record<string, any> | undefined): number {
   if (!days) return 0;
   let streak = 0;
-  const currentDate = new Date();
+  const today = ptDateKey();
 
   for (let i = 0; i < 365; i++) {
-    const checkDate = new Date(currentDate);
-    checkDate.setDate(checkDate.getDate() - i);
-    const key = checkDate.toISOString().slice(0, 10);
+    const key = shiftDateKey(today, -i);
     const day = days[key];
     if (!day) break;
 

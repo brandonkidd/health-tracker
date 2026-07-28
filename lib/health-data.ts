@@ -1,4 +1,5 @@
 import { MEAL_CATALOG_META, RESTAURANT_PRESETS } from '@/lib/meal-catalog';
+import { daysBetweenKeys, ptDateKey } from '@/lib/health/date';
 
 export { MEAL_CATALOG_META };
 
@@ -870,17 +871,10 @@ export const CHECKPOINTS: Checkpoint[] = [
 ];
 
 export function daysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr + 'T00:00:00');
-  return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  return daysBetweenKeys(ptDateKey(), dateStr);
 }
 
 /** Day 1 on start date, Day 2 the next morning, etc. */
 export function daysSinceStart(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(dateStr + 'T00:00:00');
-  const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
-  return Math.max(1, diff + 1);
+  return Math.max(1, daysBetweenKeys(dateStr, ptDateKey()) + 1);
 }

@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
+import { ptDateKey } from "@/lib/health/date";
 import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
 import type { AdaptiveForecast, EngineSnapshot } from "@/lib/health/engine";
 import type { BodyScan, DailyLog, HealthState, WeeklyCheckIn } from "@/lib/health/types";
@@ -245,7 +246,7 @@ export function BodyScreen({
       ].filter(Boolean);
 
       setPrefill({
-        date: result.date ?? new Date().toISOString().slice(0, 10),
+        date: result.date ?? ptDateKey(),
         weight: result.weightLb ?? undefined,
         bodyFat: result.bodyFatPercent ?? undefined,
         leanMass: result.leanMassLb ?? undefined,
@@ -279,7 +280,7 @@ export function BodyScreen({
         <Card>
           <SectionHeader eyebrow="Once per week" title="Log the steering metrics" />
           <form className="hc-form-grid" onSubmit={submitCheckIn}>
-            <Field label="Date"><input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
+            <Field label="Date"><input name="date" type="date" required defaultValue={ptDateKey()} /></Field>
             <Field label="Weight (lb)"><input name="weight" type="number" step="0.1" /></Field>
             <Field label="Waist at navel (in)"><input name="waist" type="number" step="0.1" /></Field>
             <Field label="Body fat % (scan weeks)"><input name="bodyFat" type="number" step="0.1" /></Field>
@@ -293,7 +294,7 @@ export function BodyScreen({
         <Card><span>Trend weight</span><strong>{engine?.trendWeight ?? latest?.weight ?? "—"}<small> lb</small></strong></Card>
         <Card><span>Latest waist</span><strong>{latest?.waist ?? "—"}<small> in</small></strong></Card>
         <Card><span>Vs plan</span><strong>{forecast ? `${forecast.deltaVsPlan > 0 ? "+" : ""}${forecast.deltaVsPlan}` : delta?.weight == null ? "—" : `${delta.weight > 0 ? "+" : ""}${delta.weight}`}<small> lb</small></strong></Card>
-        <Card><span>{forecast ? `ETA ${forecast.goalWeight} lb` : "Plan week"}</span><strong>{forecast ? etaLabel : planWeek(new Date().toISOString().slice(0, 10))}</strong></Card>
+        <Card><span>{forecast ? `ETA ${forecast.goalWeight} lb` : "Plan week"}</span><strong>{forecast ? etaLabel : planWeek(ptDateKey())}</strong></Card>
       </div>
 
       <BodyModel latestCheckIn={latest} latestScan={latestScan} />
@@ -415,7 +416,7 @@ export function BodyScreen({
                 Read from your photo — double-check the values, then save.
               </p>
             )}
-            <Field label="Date"><input name="date" type="date" required defaultValue={prefill?.date ?? new Date().toISOString().slice(0, 10)} /></Field>
+            <Field label="Date"><input name="date" type="date" required defaultValue={prefill?.date ?? ptDateKey()} /></Field>
             <Field label="Weight (lb)"><input name="weight" type="number" step="0.1" defaultValue={prefill?.weight} /></Field>
             <Field label="Body fat %"><input name="bodyFat" type="number" step="0.1" defaultValue={prefill?.bodyFat} /></Field>
             <Field label="Lean mass (lb)"><input name="leanMass" type="number" step="0.1" defaultValue={prefill?.leanMass} /></Field>

@@ -2,8 +2,10 @@
 
 import { ChangeEvent, useEffect, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
+import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import {
   listHealthSnapshots,
+  mergeHealthStates,
   restoreHealthSnapshot,
   type HealthSnapshot,
 } from "@/lib/health/storage";
@@ -12,16 +14,10 @@ import { SUPPLEMENTS_DAILY } from "@/lib/health-data";
 import { Card, SectionHeader, StatusBadge } from "./ui";
 
 function currentWeekDates(): string[] {
-  const now = new Date();
-  const sunday = new Date(now);
-  sunday.setDate(now.getDate() - now.getDay());
-  return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(sunday);
-    day.setDate(sunday.getDate() + index);
-    return new Date(day.getTime() - day.getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 10);
-  });
+  const today = ptDateKey();
+  const dayOfWeek = new Date(`${today}T12:00:00`).getDay();
+  const sunday = shiftDateKey(today, -dayOfWeek);
+  return Array.from({ length: 7 }, (_, index) => shiftDateKey(sunday, index));
 }
 
 export function PlanScreen({
@@ -34,15 +30,13 @@ export function PlanScreen({
   onImport: (raw: string) => void;
 }) {
   const weekDates = currentWeekDates();
-  const todayKey = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
+  const todayKey = ptDateKey();
   function downloadBackup() {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `bodyfi-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `bodyfi-backup-${ptDateKey()}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -54,9 +48,35 @@ export function PlanScreen({
   }
 
   const [snapshots, setSnapshots] = useState<HealthSnapshot[]>([]);
+  const [cloudSnapshots, setCloudSnapshots] = useState<{ date: string; takenAt: string }[]>([]);
   useEffect(() => {
     setSnapshots(listHealthSnapshots());
+    void fetch("/api/health/snapshots", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as { snapshots?: { date: string; takenAt: string }[] };
+        setCloudSnapshots(payload.snapshots ?? []);
+      })
+      .catch(() => {});
   }, []);
+
+  async function restoreCloudSnapshot(date: string) {
+    if (
+      !window.confirm(
+        `Merge the ${date} cloud snapshot back into your data? Nothing logged since then is lost — missing days and entries are recovered.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/health/snapshots?date=${date}`, { cache: "no-store" });
+      if (!response.ok) throw new Error();
+      const payload = (await response.json()) as { state: HealthState };
+      onChange(mergeHealthStates(state, payload.state));
+    } catch {
+      window.alert("Could not load that cloud snapshot.");
+    }
+  }
 
   function restoreSnapshot(date: string) {
     if (
@@ -181,10 +201,34 @@ export function PlanScreen({
             <input className="hc-hidden-input" type="file" accept="application/json" onChange={importBackup} />
           </label>
         </div>
+        {cloudSnapshots.length > 0 && (
+          <>
+            <p className="hc-muted" style={{ marginTop: 14 }}>
+              Cloud snapshots (archived on every save — daily for 60 days, then monthly forever):
+            </p>
+            <div className="hc-history">
+              {cloudSnapshots.slice(0, 10).map((snapshot) => (
+                <div key={snapshot.date}>
+                  <strong>{snapshot.date}</strong>
+                  <span>
+                    saved{" "}
+                    {new Date(snapshot.takenAt).toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <button className="hc-text-button" onClick={() => void restoreCloudSnapshot(snapshot.date)}>
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         {snapshots.length > 0 && (
           <>
             <p className="hc-muted" style={{ marginTop: 14 }}>
-              Automatic safety snapshots (end-of-day copies kept on this device, last {snapshots.length}):
+              On-device snapshots (end-of-day copies kept in this browser, last {snapshots.length}):
             </p>
             <div className="hc-history">
               {snapshots.map((snapshot) => (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   isCloudConfigured,
   readCloudState,
+  writeCloudSnapshot,
   writeCloudState,
 } from "@/lib/health/server-repository";
 import type { HealthState } from "@/lib/health/types";
@@ -54,6 +55,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid health state." }, { status: 400 });
     }
     await writeCloudState(state);
+    try {
+      await writeCloudSnapshot(state);
+    } catch (snapshotError) {
+      // Snapshots are a safety layer, not the primary store; a failure here
+      // (e.g. migration not yet run) must never fail the actual save.
+      console.error("Cloud snapshot write failed (non-fatal)", snapshotError);
+    }
     return NextResponse.json({ configured: true, saved: true });
   } catch (error) {
     console.error("Health state write failed", error);

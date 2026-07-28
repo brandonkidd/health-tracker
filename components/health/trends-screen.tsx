@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
+import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import { emptyDailyLog } from "@/lib/health/storage";
 import type { DailyLog, HealthState } from "@/lib/health/types";
@@ -30,14 +31,10 @@ function Sparkline({ values }: { values: number[] }) {
 
 function heatmapDays(state: HealthState, range: number): DailyLog[] {
   const result: DailyLog[] = [];
-  const cursor = new Date();
-  cursor.setDate(cursor.getDate() - (range - 1));
-  for (let i = 0; i < range; i++) {
-    const key = new Date(cursor.getTime() - cursor.getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 10);
+  const today = ptDateKey();
+  for (let i = range - 1; i >= 0; i--) {
+    const key = shiftDateKey(today, -i);
     result.push(state.days[key] ?? emptyDailyLog(key));
-    cursor.setDate(cursor.getDate() + 1);
   }
   return result;
 }

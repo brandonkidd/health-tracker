@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ptDateKey } from "@/lib/health/date";
 import { useProgressPhotos } from "@/hooks/use-progress-photos";
 import { Card, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
 
@@ -54,7 +55,7 @@ export function PhotoTimeline() {
             />
           </Field>
           <Field label="Date">
-            <input required name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            <input required name="date" type="date" defaultValue={ptDateKey()} />
           </Field>
           <Field label="Stage">
             <select name="stage" defaultValue="Now">
