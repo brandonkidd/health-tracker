@@ -30,3 +30,6 @@ CREATE INDEX IF NOT EXISTS idx_workout_scans_date ON workout_scans(date DESC);
 
 ALTER TABLE workout_scans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_insights ENABLE ROW LEVEL SECURITY;
+
+-- Browser-facing roles get no access; only the server's secret key is used.
+REVOKE ALL ON workout_scans, daily_insights FROM anon, authenticated;

@@ -3,11 +3,11 @@ import { readCloudState, writeCloudState } from '@/lib/health/server-repository'
 import { emptyDailyLog } from '@/lib/health/storage';
 import { ptDateKey } from '@/lib/health/date';
 import { BODYFI_PLAN } from '@/lib/health/config';
-import { AUTH_COOKIE, isValidAuthToken } from '@/lib/auth';
+import { AUTH_COOKIE, isValidAuthToken, isValidBearerToken } from '@/lib/auth';
 
 async function isAuthorized(request: NextRequest) {
   const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-  if (process.env.LOG_API_TOKEN && bearer === process.env.LOG_API_TOKEN) return true;
+  if (isValidBearerToken(bearer, process.env.LOG_API_TOKEN)) return true;
   return isValidAuthToken(request.cookies.get(AUTH_COOKIE)?.value);
 }
 

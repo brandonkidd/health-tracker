@@ -1,11 +1,9 @@
 -- BFIT Health Command Center schema
 -- Run in the Supabase SQL editor. Browser clients are intentionally denied;
--- the Next.js server uses SUPABASE_SERVICE_ROLE_KEY.
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- the Next.js server uses the secret (service role) key.
 
 CREATE TABLE IF NOT EXISTS daily_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   date DATE NOT NULL UNIQUE,
   water_oz INTEGER NOT NULL DEFAULT 0,
   calories INTEGER NOT NULL DEFAULT 0,
@@ -29,7 +27,7 @@ CREATE TABLE IF NOT EXISTS daily_logs (
 );
 
 CREATE TABLE IF NOT EXISTS supplement_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   date DATE NOT NULL,
   supplement_id VARCHAR(80) NOT NULL,
   supplement_name VARCHAR(120) NOT NULL,
@@ -117,15 +115,33 @@ ALTER TABLE lab_results ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow all operations" ON daily_logs;
 DROP POLICY IF EXISTS "Allow all operations" ON supplement_logs;
 DROP POLICY IF EXISTS "Allow all operations" ON meal_logs;
+DROP POLICY IF EXISTS "Allow all operations" ON weekly_check_ins;
 DROP POLICY IF EXISTS "Allow all operations" ON body_composition;
+DROP POLICY IF EXISTS "Allow all operations" ON lab_panels;
+DROP POLICY IF EXISTS "Allow all operations" ON lab_results;
 
+-- Defense in depth: RLS decides which rows are visible, these revokes make
+-- the tables unreachable for browser-facing roles entirely. Only the secret
+-- (service role) key used by the Next.js server can touch them.
+REVOKE ALL ON daily_logs, supplement_logs, meal_logs, weekly_check_ins,
+  body_composition, lab_panels, lab_results
+FROM anon, authenticated;
+
+-- Pinned search_path so same-database objects can't be shadowed inside the
+-- function (Supabase advisor: "Function Search Path Mutable").
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+REVOKE EXECUTE ON FUNCTION update_updated_at_column() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS update_daily_logs_updated_at ON daily_logs;
 CREATE TRIGGER update_daily_logs_updated_at

@@ -14,7 +14,9 @@ import type {
 
 function client() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Prefer the new secret API key (sb_secret_...); the legacy JWT-based
+  // service role key still works. Both are server-only — never NEXT_PUBLIC_.
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { persistSession: false },

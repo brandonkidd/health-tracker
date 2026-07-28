@@ -12,3 +12,6 @@ CREATE TABLE IF NOT EXISTS health_state_snapshots (
 );
 
 ALTER TABLE health_state_snapshots ENABLE ROW LEVEL SECURITY;
+
+-- Browser-facing roles get no access; only the server's secret key is used.
+REVOKE ALL ON health_state_snapshots FROM anon, authenticated;

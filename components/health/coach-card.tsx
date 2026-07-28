@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
 import type { DailyInsight } from "@/lib/health/types";
 import { StatusBadge } from "./ui";
-
-const COACH_OPEN_KEY = "hc-coach-open";
 
 function confidenceLabel(confidence: number): string {
   if (confidence >= 0.75) return "learned from your data";
@@ -37,13 +35,8 @@ export function CoachCard({
   todayCalories: number;
   onRefresh: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-
-  // Restore the last open/collapsed choice after mount (localStorage isn't
-  // available during server render).
-  useEffect(() => {
-    setOpen(window.localStorage.getItem(COACH_OPEN_KEY) !== "0");
-  }, []);
+  // Always starts collapsed; only expands when the user clicks it.
+  const [open, setOpen] = useState(false);
 
   if (!engine) return null;
 
@@ -90,9 +83,7 @@ export function CoachCard({
       className="hc-card hc-collapsible hc-coach-card"
       open={open}
       onToggle={(event) => {
-        const next = event.currentTarget.open;
-        setOpen(next);
-        window.localStorage.setItem(COACH_OPEN_KEY, next ? "1" : "0");
+        setOpen(event.currentTarget.open);
       }}
     >
       <summary>

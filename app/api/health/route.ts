@@ -11,6 +11,10 @@ import { AUTH_COOKIE, isAuthConfigured, isValidAuthToken } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Years of daily logs serialize to well under 1 MB; anything near this size
+// is not a legitimate save and would only bloat the Supabase JSONB snapshots.
+const MAX_STATE_BYTES = 8 * 1024 * 1024;
+
 async function isAuthorized(request: NextRequest) {
   if (!isAuthConfigured()) return false;
   return isValidAuthToken(request.cookies.get(AUTH_COOKIE)?.value);
@@ -49,9 +53,18 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Cloud sync requires authentication." }, { status: 401 });
   }
 
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_STATE_BYTES) {
+    return NextResponse.json({ error: "Payload too large." }, { status: 413 });
+  }
+
   try {
-    const state = (await request.json()) as HealthState;
-    if (state.version !== 2 || !state.days) {
+    const raw = await request.text();
+    if (raw.length > MAX_STATE_BYTES) {
+      return NextResponse.json({ error: "Payload too large." }, { status: 413 });
+    }
+    const state = JSON.parse(raw) as HealthState;
+    if (state.version !== 2 || !state.days || typeof state.days !== "object") {
       return NextResponse.json({ error: "Invalid health state." }, { status: 400 });
     }
     await writeCloudState(state);
