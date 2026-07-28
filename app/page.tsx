@@ -174,7 +174,16 @@ export default function HealthCommandCenter() {
         >
           <ClockIcon />
         </button>
-        <div className="hc-topbar-title">{TITLES[view]}</div>
+        <button
+          className="hc-topbar-title"
+          onClick={() => {
+            setDate(ptDateKey());
+            setView("today");
+          }}
+          aria-label="Go to today"
+        >
+          {TITLES[view]}
+        </button>
         <button className="hc-icon-btn" onClick={() => setView("plan")} aria-label="Plan and settings">
           <GearIcon />
           <span
