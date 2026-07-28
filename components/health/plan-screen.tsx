@@ -1,7 +1,12 @@
 "use client";
 
-import { ChangeEvent } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
+import {
+  listHealthSnapshots,
+  restoreHealthSnapshot,
+  type HealthSnapshot,
+} from "@/lib/health/storage";
 import type { HealthState } from "@/lib/health/types";
 import { SUPPLEMENTS_DAILY } from "@/lib/health-data";
 import { Card, SectionHeader, StatusBadge } from "./ui";
@@ -46,6 +51,27 @@ export function PlanScreen({
     const file = event.target.files?.[0];
     if (!file) return;
     void file.text().then(onImport);
+  }
+
+  const [snapshots, setSnapshots] = useState<HealthSnapshot[]>([]);
+  useEffect(() => {
+    setSnapshots(listHealthSnapshots());
+  }, []);
+
+  function restoreSnapshot(date: string) {
+    if (
+      !window.confirm(
+        `Merge the ${date} snapshot back into your data? Nothing logged since then is lost — missing days and entries are recovered.`
+      )
+    ) {
+      return;
+    }
+    const restored = restoreHealthSnapshot(date, state);
+    if (!restored) {
+      window.alert("Could not read that snapshot.");
+      return;
+    }
+    onChange(restored);
   }
 
   function toggleArchive(id: string) {
@@ -155,6 +181,25 @@ export function PlanScreen({
             <input className="hc-hidden-input" type="file" accept="application/json" onChange={importBackup} />
           </label>
         </div>
+        {snapshots.length > 0 && (
+          <>
+            <p className="hc-muted" style={{ marginTop: 14 }}>
+              Automatic safety snapshots (end-of-day copies kept on this device, last {snapshots.length}):
+            </p>
+            <div className="hc-history">
+              {snapshots.map((snapshot) => (
+                <div key={snapshot.date}>
+                  <strong>{snapshot.date}</strong>
+                  <span>{Object.keys(snapshot.state.days).length} days logged</span>
+                  <span>{snapshot.state.bodyScans.length} scans</span>
+                  <button className="hc-text-button" onClick={() => restoreSnapshot(snapshot.date)}>
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );

@@ -4,9 +4,11 @@ import { z } from "zod";
 
 export const maxDuration = 60;
 
-// Same vision model as scan-workout: the user is standing at the machine
-// waiting, so Flash-class latency beats flagship reasoning.
-const MODEL = "google/gemini-3.6-flash";
+// Accuracy-first: InBody scans happen every 4-6 weeks and a misread digit
+// pollutes the measured baseline, so use the frontier model and fall back to
+// the fast vision model if Anthropic is unavailable.
+const MODEL = "anthropic/claude-opus-5";
+const FALLBACK_MODEL = "google/gemini-3.6-flash";
 
 const scanSchema = z.object({
   isBodyScan: z
@@ -67,9 +69,9 @@ export async function POST(request: Request) {
   }
   const [, mediaType, base64] = match;
 
-  try {
+  const generateWith = async (model: string) => {
     const { output } = await generateText({
-      model: MODEL,
+      model,
       output: Output.object({ schema: scanSchema }),
       instructions:
         "You read photos of body composition result sheets and screens — InBody printouts, InBody app screenshots, DEXA reports, and similar. " +
@@ -90,7 +92,17 @@ export async function POST(request: Request) {
         gateway: { tags: ["feature:scan-inbody"] },
       },
     });
+    return output;
+  };
 
+  try {
+    let output;
+    try {
+      output = await generateWith(MODEL);
+    } catch (primaryError) {
+      console.error(`scan-inbody: ${MODEL} failed, trying ${FALLBACK_MODEL}`, primaryError);
+      output = await generateWith(FALLBACK_MODEL);
+    }
     return NextResponse.json(output);
   } catch (error) {
     console.error("scan-inbody failed", error);

@@ -3,6 +3,8 @@ import type { DailyLog, HealthState } from "./types";
 
 export const HEALTH_STORE_KEY = "bodyfi_health_v2";
 const LEGACY_STORE_KEY = "brandon_gameplan_v1";
+const SNAPSHOT_PREFIX = "bodyfi_health_v2_snap_";
+const SNAPSHOT_KEEP = 14;
 
 export const emptyHealthState = (): HealthState => ({
   version: 2,
@@ -165,7 +167,78 @@ export function loadHealthState(): HealthState {
 
 export function saveHealthState(state: HealthState): void {
   if (typeof window === "undefined") return;
+  const existing = window.localStorage.getItem(HEALTH_STORE_KEY);
+  if (existing) snapshotBeforeFirstWriteOfDay(existing);
   window.localStorage.setItem(HEALTH_STORE_KEY, JSON.stringify(state));
+}
+
+function localDateKey(): string {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+/**
+ * Before the first save of each day, stash the previous day's final state as
+ * a rolling snapshot. If anything ever corrupts or wipes the live store, the
+ * last 14 end-of-day copies are still on the device to restore from.
+ */
+function snapshotBeforeFirstWriteOfDay(existingRaw: string): void {
+  try {
+    const key = SNAPSHOT_PREFIX + localDateKey();
+    if (window.localStorage.getItem(key) != null) return;
+    window.localStorage.setItem(key, existingRaw);
+    for (const stale of snapshotKeys().sort().reverse().slice(SNAPSHOT_KEEP)) {
+      window.localStorage.removeItem(stale);
+    }
+  } catch {
+    // Snapshots are best-effort (e.g. storage quota); never block the live save.
+  }
+}
+
+function snapshotKeys(): string[] {
+  const keys: string[] = [];
+  for (let index = 0; index < window.localStorage.length; index++) {
+    const key = window.localStorage.key(index);
+    if (key?.startsWith(SNAPSHOT_PREFIX)) keys.push(key);
+  }
+  return keys;
+}
+
+export interface HealthSnapshot {
+  date: string;
+  state: HealthState;
+}
+
+/** Automatic on-device snapshots, newest first. */
+export function listHealthSnapshots(): HealthSnapshot[] {
+  if (typeof window === "undefined") return [];
+  const snapshots: HealthSnapshot[] = [];
+  for (const key of snapshotKeys()) {
+    try {
+      const state = JSON.parse(window.localStorage.getItem(key)!) as HealthState;
+      if (state?.version === 2 && state.days) {
+        snapshots.push({ date: key.slice(SNAPSHOT_PREFIX.length), state });
+      }
+    } catch {
+      // Skip unreadable snapshots rather than failing the whole list.
+    }
+  }
+  return snapshots.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Merge a snapshot back into the current state. Uses the loss-proof merge, so
+ * restoring never discards anything logged since the snapshot was taken.
+ */
+export function restoreHealthSnapshot(date: string, current: HealthState): HealthState | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(SNAPSHOT_PREFIX + date);
+  if (!raw) return null;
+  try {
+    return mergeHealthStates(current, JSON.parse(raw) as HealthState);
+  } catch {
+    return null;
+  }
 }
 
 export function parseHealthBackup(raw: string): HealthState {
