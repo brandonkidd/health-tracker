@@ -6,7 +6,12 @@ import {
 import { buildForecast, type AdaptiveForecast } from "./forecast";
 import { recommendTargets, type TargetRecommendation } from "./targets";
 import { estimateTdee, type TdeeEstimate } from "./tdee";
-import { buildTrendSeries, latestTrendPoint, type TrendPoint } from "./trend";
+import {
+  auxiliaryWeighIns,
+  buildTrendSeries,
+  latestTrendPoint,
+  type TrendPoint,
+} from "./trend";
 
 /**
  * One pass over the full health state producing every adaptive metric the
@@ -29,7 +34,7 @@ export function computeEngineSnapshot(
   state: HealthState,
   today: string
 ): EngineSnapshot {
-  const trendSeries = buildTrendSeries(state.days);
+  const trendSeries = buildTrendSeries(state.days, auxiliaryWeighIns(state));
   const tdee = estimateTdee(state, today, 28, trendSeries);
   const targets = recommendTargets(tdee, today);
   const forecast = buildForecast(trendSeries, tdee, today);
@@ -55,6 +60,7 @@ export function adaptiveDeficit(
   return snapshot.tdee.tdee - calories;
 }
 
+export { latestTrendPoint } from "./trend";
 export type { TrendPoint } from "./trend";
 export type { TdeeEstimate } from "./tdee";
 export type { TargetRecommendation } from "./targets";

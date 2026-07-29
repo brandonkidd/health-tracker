@@ -1,4 +1,4 @@
-import type { DailyLog } from "../types";
+import type { DailyLog, HealthState } from "../types";
 
 /**
  * Trend weight: exponentially smoothed scale weight (Hacker's Diet style).
@@ -33,11 +33,47 @@ export function addDays(date: string, days: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+export interface WeighIn {
+  date: string;
+  weight: number;
+}
+
+/** Weigh-ins recorded outside the daily log — InBody/DEXA scans and weekly
+ *  check-ins. Used to fill dates that have no daily scale entry so those
+ *  measurements aren't invisible to the trend/TDEE/forecast math. */
+export function auxiliaryWeighIns(state: HealthState): WeighIn[] {
+  const points: WeighIn[] = [];
+  for (const scan of state.bodyScans ?? []) {
+    if (typeof scan.weight === "number" && scan.weight > 0) {
+      points.push({ date: scan.date, weight: scan.weight });
+    }
+  }
+  for (const checkIn of state.weeklyCheckIns ?? []) {
+    if (typeof checkIn.weight === "number" && checkIn.weight > 0) {
+      points.push({ date: checkIn.date, weight: checkIn.weight });
+    }
+  }
+  return points;
+}
+
 /** All logged weigh-ins in date order, smoothed. Gap-tolerant: a weigh-in
- *  after `g` missing days gets an effective alpha of 1-(1-ALPHA)^g. */
-export function buildTrendSeries(days: Record<string, DailyLog>): TrendPoint[] {
-  const entries = Object.values(days)
-    .filter((day) => typeof day.weight === "number" && day.weight > 0)
+ *  after `g` missing days gets an effective alpha of 1-(1-ALPHA)^g.
+ *  A daily scale entry wins over an extra weigh-in on the same date. */
+export function buildTrendSeries(
+  days: Record<string, DailyLog>,
+  extraWeighIns: WeighIn[] = []
+): TrendPoint[] {
+  const byDate = new Map<string, number>();
+  for (const point of extraWeighIns) {
+    if (point.weight > 0) byDate.set(point.date, point.weight);
+  }
+  for (const day of Object.values(days)) {
+    if (typeof day.weight === "number" && day.weight > 0) {
+      byDate.set(day.date, day.weight);
+    }
+  }
+  const entries = Array.from(byDate.entries())
+    .map(([date, weight]) => ({ date, weight }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const series: TrendPoint[] = [];
@@ -45,7 +81,7 @@ export function buildTrendSeries(days: Record<string, DailyLog>): TrendPoint[] {
   let previousDate: string | null = null;
 
   for (const day of entries) {
-    const weight = day.weight as number;
+    const weight = day.weight;
     if (trend == null || previousDate == null) {
       trend = weight;
     } else {

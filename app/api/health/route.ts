@@ -5,6 +5,7 @@ import {
   writeCloudSnapshot,
   writeCloudState,
 } from "@/lib/health/server-repository";
+import { scrubSeededArtifacts } from "@/lib/health/storage";
 import type { HealthState } from "@/lib/health/types";
 import { AUTH_COOKIE, isAuthConfigured, isValidAuthToken } from "@/lib/auth";
 
@@ -67,6 +68,9 @@ export async function PUT(request: NextRequest) {
     if (state.version !== 2 || !state.days || typeof state.days !== "object") {
       return NextResponse.json({ error: "Invalid health state." }, { status: 400 });
     }
+    // Server-side backstop: devices running stale JS can still push the fake
+    // seeded values back up; never let them land in the cloud store again.
+    scrubSeededArtifacts(state);
     await writeCloudState(state);
     try {
       await writeCloudSnapshot(state);

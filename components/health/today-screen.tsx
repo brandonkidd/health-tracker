@@ -9,6 +9,7 @@ import {
 } from "@/lib/health/config";
 import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import { estimatedDeficit } from "@/lib/health/projections";
+import { latestTrendPoint } from "@/lib/health/engine";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
 import type { DailyInsight, DailyLog, MealEntry, WorkoutScan } from "@/lib/health/types";
@@ -675,8 +676,12 @@ export function TodayScreen({
   const sleepSeries = history((entry) => entry.sleepHours ?? 0);
   const waterSeries = history((entry) => entry.waterOz);
 
-  // Latest known weight (scan back from the selected date), for calorie estimates.
+  // Latest known weight for calorie estimates: the engine's trend series
+  // (daily weigh-ins + body scans + weekly check-ins), else raw daily logs,
+  // else the plan baseline.
   const latestWeight = (() => {
+    const point = engine ? latestTrendPoint(engine.trendSeries, date) : null;
+    if (point) return point.weight;
     const dates = Object.keys(allDays ?? {})
       .filter((key) => key <= date)
       .sort()

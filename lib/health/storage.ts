@@ -81,6 +81,44 @@ export function migrateLegacy(raw: string): HealthState {
   return state;
 }
 
+/**
+ * A July 2026 debugging session accidentally synced fake seeded logs into
+ * production (a 212→208 lb weight series plus uniform macro rows). The cloud
+ * copy was cleaned, but stale device localStorage and on-device snapshots can
+ * carry the fake values back in through the loss-proof merge — so strip
+ * anything matching the fake signature every time a state is loaded or merged.
+ * Real weights in this window are ~192–194 lb, so >= 205 is unambiguous.
+ */
+const FAKE_SEED_START = "2026-07-08";
+const FAKE_SEED_END = "2026-07-31";
+const FAKE_SEED_MIN_WEIGHT = 205;
+
+function isFakeSeedDay(day: DailyLog): boolean {
+  return (
+    day.waterOz === 64 &&
+    day.protein === 150 &&
+    day.carbs === 160 &&
+    day.fat === 60 &&
+    day.fiber === 28 &&
+    day.steps === 8200 &&
+    day.walkingMinutes === 35
+  );
+}
+
+export function scrubSeededArtifacts(state: HealthState): HealthState {
+  for (const [date, day] of Object.entries(state.days)) {
+    if (date < FAKE_SEED_START || date > FAKE_SEED_END) continue;
+    if (isFakeSeedDay(day)) {
+      delete state.days[date];
+      continue;
+    }
+    if (typeof day.weight === "number" && day.weight >= FAKE_SEED_MIN_WEIGHT) {
+      delete day.weight;
+    }
+  }
+  return state;
+}
+
 /** How much logged content a day carries; used to pick the richer copy in merges. */
 export function dayRichness(day: DailyLog): number {
   const supplementsTaken = Object.values(day.supplements ?? {}).filter(Boolean).length;
@@ -146,7 +184,7 @@ export function mergeHealthStates(a: HealthState, b: HealthState): HealthState {
     new Set([...(a.archivedSupplements ?? []), ...(b.archivedSupplements ?? [])])
   );
   merged.insights = { ...(b.insights ?? {}), ...(a.insights ?? {}) };
-  return merged;
+  return scrubSeededArtifacts(merged);
 }
 
 export function loadHealthState(): HealthState {
@@ -154,14 +192,14 @@ export function loadHealthState(): HealthState {
   const current = window.localStorage.getItem(HEALTH_STORE_KEY);
   if (current) {
     try {
-      return JSON.parse(current) as HealthState;
+      return scrubSeededArtifacts(JSON.parse(current) as HealthState);
     } catch {
       return emptyHealthState();
     }
   }
 
   const legacy = window.localStorage.getItem(LEGACY_STORE_KEY);
-  const migrated = legacy ? migrateLegacy(legacy) : emptyHealthState();
+  const migrated = legacy ? scrubSeededArtifacts(migrateLegacy(legacy)) : emptyHealthState();
   saveHealthState(migrated);
   return migrated;
 }

@@ -106,6 +106,11 @@ export async function POST(request: Request) {
       console.error(`scan-inbody: ${MODEL} failed, trying ${FALLBACK_MODEL}`, primaryError);
       output = await generateWith(FALLBACK_MODEL);
     }
+    // A misread BMR (e.g. picking up a score or level as "27") poisons the
+    // adaptive TDEE fallback — drop anything outside a plausible kcal range.
+    if (output.bmr != null && (output.bmr < 800 || output.bmr > 4000)) {
+      output = { ...output, bmr: null };
+    }
     return NextResponse.json(output);
   } catch (error) {
     console.error("scan-inbody failed", error);

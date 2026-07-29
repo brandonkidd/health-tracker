@@ -1,6 +1,7 @@
 import { BODYFI_PLAN } from "../config";
 import type { HealthState } from "../types";
 import {
+  auxiliaryWeighIns,
   buildTrendSeries,
   dateToTime,
   daysBetween,
@@ -25,6 +26,9 @@ const DAY_MS = 86_400_000;
 const ACTIVITY_FACTOR = 1.4;
 const MIN_PLAUSIBLE_TDEE = 1500;
 const MAX_PLAUSIBLE_TDEE = 4500;
+/** Guards against misread scan values (e.g. an OCR'd "27") poisoning the fallback. */
+const MIN_PLAUSIBLE_BMR = 800;
+const MAX_PLAUSIBLE_BMR = 3500;
 
 export interface TdeeEstimate {
   /** Blended best estimate used everywhere in the app. */
@@ -48,7 +52,18 @@ export interface TdeeEstimate {
 function latestLeanMassLb(state: HealthState): number {
   const scans = [...state.bodyScans].sort((a, b) => a.date.localeCompare(b.date));
   for (let i = scans.length - 1; i >= 0; i--) {
-    if (typeof scans[i].leanMass === "number") return scans[i].leanMass as number;
+    const scan = scans[i];
+    if (typeof scan.leanMass === "number" && scan.leanMass > 0) return scan.leanMass;
+    // Scans often omit lean mass but list weight and body fat % — derive it.
+    if (
+      typeof scan.weight === "number" &&
+      scan.weight > 0 &&
+      typeof scan.bodyFat === "number" &&
+      scan.bodyFat > 0 &&
+      scan.bodyFat < 100
+    ) {
+      return Number((scan.weight * (1 - scan.bodyFat / 100)).toFixed(1));
+    }
   }
   return BODYFI_PLAN.baseline.leanMass;
 }
@@ -56,8 +71,9 @@ function latestLeanMassLb(state: HealthState): number {
 function latestMeasuredBmr(state: HealthState): number | null {
   const scans = [...state.bodyScans].sort((a, b) => a.date.localeCompare(b.date));
   for (let i = scans.length - 1; i >= 0; i--) {
-    if (typeof scans[i].bmr === "number" && (scans[i].bmr as number) > 0) {
-      return scans[i].bmr as number;
+    const bmr = scans[i].bmr;
+    if (typeof bmr === "number" && bmr >= MIN_PLAUSIBLE_BMR && bmr <= MAX_PLAUSIBLE_BMR) {
+      return bmr;
     }
   }
   return null;
@@ -81,7 +97,8 @@ export function estimateTdee(
   precomputedSeries?: TrendPoint[]
 ): TdeeEstimate {
   const fallback = fallbackTdee(state);
-  const series = precomputedSeries ?? buildTrendSeries(state.days);
+  const series =
+    precomputedSeries ?? buildTrendSeries(state.days, auxiliaryWeighIns(state));
 
   const end = dateToTime(endDate);
   const windowStart = end - windowDays * DAY_MS;
