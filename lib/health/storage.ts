@@ -116,6 +116,13 @@ export function scrubSeededArtifacts(state: HealthState): HealthState {
       delete day.weight;
     }
   }
+  // Also drop misread scan BMRs (e.g. an OCR'd "27") so a bad import stored
+  // on a device can't keep syncing back; the TDEE math ignores these anyway.
+  for (const scan of state.bodyScans ?? []) {
+    if (typeof scan.bmr === "number" && (scan.bmr < 800 || scan.bmr > 4000)) {
+      delete scan.bmr;
+    }
+  }
   return state;
 }
 
