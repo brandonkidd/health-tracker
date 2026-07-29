@@ -48,6 +48,12 @@ export function BodyModel({
   }, [latestCheckIn, latestScan]);
   const selected = stages.find((stage) => stage.id === selectedId) ?? stages[0];
   const isMeasured = selected.id === "now";
+  // Lean mass drives the muscle regions of the 3D figure. "Now" uses the
+  // measured InBody value; future stages derive it from weight and body fat.
+  const selectedLean =
+    selected.id === "now"
+      ? latestScan?.leanMass ?? BODYFI_PLAN.baseline.leanMass
+      : Math.round(selected.weight * (1 - selected.bodyFat / 100) * 10) / 10;
 
   return (
     <Card className="hc-model-card">
@@ -58,7 +64,13 @@ export function BodyModel({
       />
       <div className="hc-model-layout">
         <div className="hc-model-stage">
-          <BodyModel3D bodyFat={selected.bodyFat} weight={selected.weight} />
+          <BodyModel3D
+            bodyFat={selected.bodyFat}
+            weight={selected.weight}
+            waist={selected.waist}
+            leanMass={selectedLean}
+            heightInches={BODYFI_PLAN.baseline.heightInches}
+          />
           <div className="hc-model-hint">Drag to rotate · scroll to zoom</div>
         </div>
         <div className="hc-model-controls">
@@ -66,6 +78,7 @@ export function BodyModel({
             <div><span>Weight</span><strong>{selected.weight}<small> lb</small></strong></div>
             <div><span>Waist</span><strong>{selected.waist}<small> in</small></strong></div>
             <div><span>Body fat</span><strong>{selected.bodyFat}<small>%</small></strong></div>
+            <div><span>Lean mass</span><strong>{selectedLean}<small> lb</small></strong></div>
           </div>
           {isMeasured && (
             <div className="hc-inbody-summary">
@@ -78,9 +91,9 @@ export function BodyModel({
             </div>
           )}
           <p>
-            {selected.note}. The figure reshapes with each stage&apos;s weight and body-fat
-            estimate—rotate it freely. Future stages remain estimates, not promises of exact
-            appearance.
+            {selected.note}. The figure&apos;s midsection is anchored to each stage&apos;s waist
+            measurement, and lean mass shapes the shoulders, chest, arms, and legs—rotate it
+            freely. Future stages remain estimates, not promises of exact appearance.
           </p>
           <div className="hc-stage-picker">
             {stages.map((stage) => (

@@ -1920,8 +1920,8 @@ export function TodayScreen({
       </CollapsibleCard>
 
       <CollapsibleCard
-        eyebrow="Recovery"
-        title="Sleep & readiness"
+        eyebrow="Daily check-in"
+        title="Weigh-in & recovery"
         icon={<MoonIcon />}
         action={
           day.sleepHours && day.sleepHours >= targets.sleepHours ? (
@@ -1930,6 +1930,15 @@ export function TodayScreen({
         }
       >
         <div className="hc-inline-fields">
+          <Field label="Weight (lb)">
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              value={day.weight ?? ""}
+              onChange={(event) => patch({ weight: Number(event.target.value) || undefined })}
+            />
+          </Field>
           <Field label="Sleep hours">
             <input
               type="number"
@@ -1957,6 +1966,10 @@ export function TodayScreen({
             />
           </Field>
         </div>
+        <p className="hc-muted" style={{ marginTop: 8 }}>
+          Weigh first thing in the morning, same conditions each time — the trend line smooths
+          the day-to-day noise, and daily weigh-ins are what teach the engine your real burn.
+        </p>
       </CollapsibleCard>
 
       <CollapsibleCard
