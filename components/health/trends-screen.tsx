@@ -29,14 +29,19 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-function heatmapDays(state: HealthState, range: number): DailyLog[] {
-  const result: DailyLog[] = [];
+/** Calendar keys for the selected window: the last 7 days, or the current
+ *  month up to today — so rates are measured against days that have actually
+ *  happened, not a full 30-day block. */
+function windowDateKeys(range: "week" | "month"): string[] {
   const today = ptDateKey();
-  for (let i = range - 1; i >= 0; i--) {
-    const key = shiftDateKey(today, -i);
-    result.push(state.days[key] ?? emptyDailyLog(key));
+  if (range === "week") {
+    return Array.from({ length: 7 }, (_, i) => shiftDateKey(today, i - 6));
   }
-  return result;
+  const dayOfMonth = Number(today.slice(8, 10));
+  return Array.from(
+    { length: dayOfMonth },
+    (_, i) => `${today.slice(0, 7)}-${String(i + 1).padStart(2, "0")}`
+  );
 }
 
 function StepsHeatmap({ days }: { days: DailyLog[] }) {
@@ -119,27 +124,34 @@ export function TrendsScreen({
   state: HealthState;
   engine: EngineSnapshot | null;
 }) {
-  const [range, setRange] = useState<7 | 30>(7);
-  const heatmap = heatmapDays(state, range);
-  const days = Object.values(state.days)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-range);
+  const [range, setRange] = useState<"week" | "month">("week");
+  const windowKeys = windowDateKeys(range);
+  const heatmap = windowKeys.map((key) => state.days[key] ?? emptyDailyLog(key));
+  const days = windowKeys.flatMap((key) => (state.days[key] ? [state.days[key]] : []));
   const average = (values: number[]) =>
     values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-  const weights = days.flatMap((day) => (day.weight ? [day.weight] : []));
+  // Every weigh-in source (daily scale, weekly check-in, InBody scan) via the
+  // engine's trend series; raw daily logs as the fallback.
+  const weights = engine
+    ? engine.trendSeries
+        .filter((point) => point.date >= windowKeys[0] && point.date <= windowKeys[windowKeys.length - 1])
+        .map((point) => point.weight)
+    : days.flatMap((day) => (day.weight ? [day.weight] : []));
   const sleep = days.flatMap((day) => (day.sleepHours ? [day.sleepHours] : []));
   const stepDays = days.filter((day) => day.steps > 0);
   const averageSteps = average(stepDays.map((day) => day.steps));
   const averageProtein = average(days.map((day) => day.protein));
-  const trainingRate = (days.filter((day) => day.activityCompleted).length / (days.length || 1)) * 100;
+  // Rates are out of calendar days elapsed in the window, not logged days.
+  const trainingRate =
+    (days.filter((day) => day.activityCompleted).length / windowKeys.length) * 100;
 
   return (
     <div className="hc-stack">
       <div className="hc-pill-toggle" role="tablist" aria-label="Stats range">
-        <button className={range === 30 ? "active" : ""} onClick={() => setRange(30)}>
+        <button className={range === "month" ? "active" : ""} onClick={() => setRange("month")}>
           Month
         </button>
-        <button className={range === 7 ? "active" : ""} onClick={() => setRange(7)}>
+        <button className={range === "week" ? "active" : ""} onClick={() => setRange("week")}>
           Week
         </button>
       </div>
@@ -172,7 +184,7 @@ export function TrendsScreen({
           <span>Days logged</span>
           <strong>
             {days.length}
-            <small> / {range}</small>
+            <small> / {windowKeys.length}</small>
           </strong>
         </Card>
         <Card>
