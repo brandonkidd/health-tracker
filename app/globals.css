@@ -588,6 +588,68 @@ h4 {
   color: var(--text-2);
 }
 
+/* ——— Net calories tab ——— */
+.hc-net-card {
+  display: grid;
+  gap: 4px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.hc-net-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.hc-net-rows > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.hc-net-rows span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hc-net-rows span small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.hc-net-rows strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hc-net-total {
+  margin-top: 2px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(25, 24, 23, 0.09);
+}
+
+.hc-net-total strong {
+  font-size: 19px;
+  color: var(--accent);
+}
+
+@media (min-width: 900px) {
+  .hc-net-card {
+    width: 100%;
+    max-width: 620px;
+    justify-self: center;
+  }
+}
+
 /* ——— Feature cards (Protein / Water / Steps / Burned) ——— */
 .hc-feature-row {
   display: grid;
@@ -600,8 +662,26 @@ h4 {
   justify-items: center;
   gap: 4px;
   padding: 22px 16px 20px;
+  border: 0;
   border-radius: var(--radius-lg);
   background: var(--surface);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hc-feature-card:hover {
+  box-shadow: 0 6px 16px rgba(40, 36, 32, 0.08);
+}
+
+.hc-feature-card:active {
+  transform: scale(0.97);
+}
+
+/* Jump-link targets: leave breathing room when scrolled into view. */
+.hc-collapsible {
+  scroll-margin-top: 16px;
 }
 
 .hc-feature-icon {
@@ -876,6 +956,31 @@ h4 {
 }
 
 /* ——— Collapsible cards ——— */
+.hc-header-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hc-card-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(40, 36, 32, 0.06);
+}
+
+.hc-card-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
 .hc-collapsible > summary {
   list-style: none;
   cursor: pointer;
@@ -1232,6 +1337,49 @@ h4 {
   background: var(--bg);
   font-size: 12px;
   font-weight: 600;
+}
+
+.hc-scan-edit {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.hc-scan-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.hc-scan-edit-row .hc-field {
+  min-width: 0;
+}
+
+.hc-scan-edit-remove {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 8px 2px;
+  cursor: pointer;
+}
+
+.hc-scan-edit-remove:hover {
+  color: var(--danger, #d3452c);
+}
+
+@media (max-width: 520px) {
+  .hc-scan-edit-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .hc-scan-edit-row .hc-field:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .hc-scan-tips {

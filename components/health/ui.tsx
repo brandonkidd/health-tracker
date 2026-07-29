@@ -32,27 +32,38 @@ export function SectionHeader({
 
 /** A card that collapses to its header row; used for the Log today sections. */
 export function CollapsibleCard({
+  id,
   eyebrow,
   title,
+  icon,
   action,
   className = "",
   defaultOpen = false,
   children,
 }: {
+  id?: string;
   eyebrow?: string;
   title: string;
+  icon?: ReactNode;
   action?: ReactNode;
   className?: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
   return (
-    <details className={`hc-card hc-collapsible ${className}`} open={defaultOpen || undefined}>
+    <details id={id} className={`hc-card hc-collapsible ${className}`} open={defaultOpen || undefined}>
       <summary>
         <div className="hc-section-header">
-          <div>
-            {eyebrow && <div className="hc-eyebrow">{eyebrow}</div>}
-            <h2>{title}</h2>
+          <div className="hc-header-main">
+            {icon && (
+              <span className="hc-card-icon" aria-hidden="true">
+                {icon}
+              </span>
+            )}
+            <div>
+              {eyebrow && <div className="hc-eyebrow">{eyebrow}</div>}
+              <h2>{title}</h2>
+            </div>
           </div>
           {action && (
             <span

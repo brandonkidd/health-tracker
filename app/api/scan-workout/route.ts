@@ -22,8 +22,13 @@ const scanSchema = z.object({
       z.object({
         name: z.string().describe("Exercise name, e.g. 'Goblet squat'."),
         weightLbs: z.number().nullable().describe("Working weight in pounds if visible."),
-        sets: z.number().nullable(),
-        reps: z.number().nullable(),
+        sets: z
+          .number()
+          .nullable()
+          .describe(
+            "Sets shown on screen — or rounds completed for AMRAP/rounds-for-time formats. Null if not visible."
+          ),
+        reps: z.number().nullable().describe("Reps per set (or per round). Null if not visible."),
       })
     )
     .describe("Strength exercises with weights/sets/reps if the screen lists them; otherwise empty."),
@@ -85,6 +90,7 @@ export async function POST(request: Request) {
         "You read photos of fitness class screens (like Life Time Alpha leaderboards), cardio machine displays, and smartwatch workout summaries. " +
         "Extract only what is actually visible — never invent numbers. If calories are not shown, leave calories null; the app will estimate them. " +
         "If the screen lists strength exercises with weights, extract each one. " +
+        "Watch for the class format: if it's an AMRAP or rounds-for-time workout, sets means rounds completed — use the round count if shown, otherwise leave sets null. Never assume a default like 3×10, and mention the format in the summary. " +
         "For recommendations: suggest conservative progressive overload (add 2.5–5 lb or 1–2 reps) only for exercises where the history shows the same weight handled across 2+ sessions. Keep each suggestion under 15 words.",
       messages: [
         {

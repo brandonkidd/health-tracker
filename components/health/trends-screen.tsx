@@ -6,7 +6,7 @@ import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import { emptyDailyLog } from "@/lib/health/storage";
 import type { DailyLog, HealthState } from "@/lib/health/types";
-import { Card, EmptyState, SectionHeader, StatusBadge } from "./ui";
+import { Card, CollapsibleCard, EmptyState, SectionHeader, StatusBadge } from "./ui";
 
 const HEATMAP_ROWS = 13;
 
@@ -208,18 +208,18 @@ export function TrendsScreen({
         </Card>
       </div>
 
-      <Card>
-        <SectionHeader
-          eyebrow="What your data connects"
-          title="Your patterns"
-          action={
-            engine?.correlations.findings.length ? (
-              <StatusBadge tone="good">
-                {engine.correlations.findings.length} found
-              </StatusBadge>
-            ) : undefined
-          }
-        />
+      <CollapsibleCard
+        eyebrow="What your data connects"
+        title="Your patterns"
+        defaultOpen
+        action={
+          engine?.correlations.findings.length ? (
+            <StatusBadge tone="good">
+              {engine.correlations.findings.length} found
+            </StatusBadge>
+          ) : undefined
+        }
+      >
         {engine && engine.correlations.findings.length > 0 ? (
           <div className="hc-pattern-list">
             {engine.correlations.findings.map((finding) => (
@@ -242,7 +242,7 @@ export function TrendsScreen({
             shows up here in plain language.
           </EmptyState>
         )}
-      </Card>
+      </CollapsibleCard>
 
       <Card>
         <SectionHeader eyebrow="Daily history" title="Recent scorecard" />

@@ -31,8 +31,13 @@ const workoutSchema = z.object({
       z.object({
         name: z.string().describe("Exercise name, e.g. 'Goblet squat'."),
         weightLbs: z.number().nullable().describe("Working weight in pounds if stated."),
-        sets: z.number().nullable(),
-        reps: z.number().nullable(),
+        sets: z
+          .number()
+          .nullable()
+          .describe(
+            "Sets performed — or rounds completed for AMRAP/rounds-for-time formats. Null if not stated."
+          ),
+        reps: z.number().nullable().describe("Reps per set (or per round). Null if not stated."),
       })
     )
     .describe("Strength exercises with weights/sets/reps if the description lists them; otherwise empty."),
@@ -95,6 +100,7 @@ export async function POST(request: Request) {
         "Trust numbers the user states (duration, calories, heart rate, weights) over your own estimates. " +
         "When calories are not stated, estimate them conservatively using MET values for the activity, the user's body weight, and the duration. " +
         "If no duration is given, assume a typical one for that activity and say so in the summary. " +
+        "If the workout is an AMRAP or rounds-for-time format, sets means rounds completed — use the round count the user states, otherwise leave sets null. Never invent sets or reps the user didn't state. " +
         "For recommendations: suggest conservative progressive overload (add 2.5–5 lb or 1–2 reps) only for exercises where the history shows the same weight handled across 2+ sessions. Keep each suggestion under 15 words.",
       messages: [
         {

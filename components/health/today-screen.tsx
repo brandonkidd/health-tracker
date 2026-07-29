@@ -54,6 +54,20 @@ interface PresetDraft {
   source?: string;
 }
 
+/** Form draft for editing a logged workout; numbers stay strings while typing. */
+interface ScanDraft {
+  id: string;
+  activity: string;
+  durationMinutes: string;
+  exercises: { name: string; weightLbs: string; sets: string; reps: string }[];
+}
+
+/** Empty input → undefined; otherwise the parsed number (0 counts as empty). */
+function draftNumber(value: string): number | undefined {
+  const parsed = Number(value.trim());
+  return value.trim() === "" || !Number.isFinite(parsed) || parsed <= 0 ? undefined : parsed;
+}
+
 /* ——— icons ——— */
 
 function StepsIcon() {
@@ -88,6 +102,42 @@ function DropIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2.9S5.6 9.8 5.6 14.4a6.4 6.4 0 0 0 12.8 0C18.4 9.8 12 2.9 12 2.9Z" />
+    </svg>
+  );
+}
+
+function FoodIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 2.9v6.3a2 2 0 0 0 2 2h3.4a2 2 0 0 0 2-2V2.9" />
+      <path d="M7.7 2.9V21" />
+      <path d="M20.3 15.2V2.9a4.6 4.6 0 0 0-4.6 4.6v5.7a2 2 0 0 0 2 2h2.6Zm0 0V21" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3a6.3 6.3 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
+
+function PillIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
+      <path d="m8.5 8.5 7 7" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3.3a2.6 2.6 0 1 1 3.7 3.7L7.6 20.1 2.5 21.5l1.4-5.1Z" />
+      <path d="m14.9 5.4 3.7 3.7" />
     </svg>
   );
 }
@@ -574,11 +624,12 @@ export function TodayScreen({
   onClear: () => void;
   onDateChange: (next: string) => void;
 }) {
-  const [tab, setTab] = useState<"daily" | "month">("daily");
+  const [tab, setTab] = useState<"daily" | "net" | "month">("daily");
   const [editingPresets, setEditingPresets] = useState(false);
   const [presetDraft, setPresetDraft] = useState<PresetDraft | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [scanDraft, setScanDraft] = useState<ScanDraft | null>(null);
   const [describeOpen, setDescribeOpen] = useState(false);
   const [describeText, setDescribeText] = useState("");
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -595,6 +646,14 @@ export function TodayScreen({
   // Adaptive: deficit against the learned TDEE; static estimate as fallback.
   const deficit = engine ? engine.tdee.tdee - day.calories : estimatedDeficit(day);
   const targets = engine?.targets ?? BODYFI_PLAN.targets;
+
+  // Net tab: body burn (learned TDEE already includes average daily movement)
+  // plus logged exercise, minus everything eaten.
+  const baseBurn = engine ? engine.tdee.tdee : 2600;
+  const netBurned = baseBurn + day.estimatedActivityCalories - day.calories;
+  const plannedDeficit = Math.max(0, baseBurn - targets.calories);
+  // Exercise earns back budget: eating this much more still lands the deficit.
+  const remainingToEat = targets.calories + day.estimatedActivityCalories - day.calories;
 
   const today = ptDateKey();
 
@@ -639,6 +698,14 @@ export function TodayScreen({
 
   function patch(updates: Partial<DailyLog>) {
     onChange({ ...day, ...updates });
+  }
+
+  /** Opens the collapsed log card (if needed) and scrolls it into view. */
+  function jumpToSection(id: string) {
+    const section = document.getElementById(id);
+    if (!section) return;
+    if (section instanceof HTMLDetailsElement) section.open = true;
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function scanWorkoutPhoto(file: File) {
@@ -702,7 +769,56 @@ export function TodayScreen({
   }
 
   function removeScan(id: string) {
+    if (scanDraft?.id === id) setScanDraft(null);
     patch({ workouts: (day.workouts ?? []).filter((scan) => scan.id !== id) });
+  }
+
+  function startEditScan(scan: WorkoutScan) {
+    setScanDraft({
+      id: scan.id,
+      activity: scan.activity,
+      durationMinutes: scan.durationMinutes != null ? String(scan.durationMinutes) : "",
+      exercises: scan.exercises.map((exercise) => ({
+        name: exercise.name,
+        weightLbs: exercise.weightLbs != null ? String(exercise.weightLbs) : "",
+        sets: exercise.sets != null ? String(exercise.sets) : "",
+        reps: exercise.reps != null ? String(exercise.reps) : "",
+      })),
+    });
+  }
+
+  function patchScanDraftExercise(index: number, updates: Partial<ScanDraft["exercises"][number]>) {
+    if (!scanDraft) return;
+    setScanDraft({
+      ...scanDraft,
+      exercises: scanDraft.exercises.map((exercise, i) =>
+        i === index ? { ...exercise, ...updates } : exercise
+      ),
+    });
+  }
+
+  function saveScanDraft() {
+    if (!scanDraft) return;
+    patch({
+      workouts: (day.workouts ?? []).map((scan) =>
+        scan.id !== scanDraft.id
+          ? scan
+          : {
+              ...scan,
+              activity: scanDraft.activity.trim() || scan.activity,
+              durationMinutes: draftNumber(scanDraft.durationMinutes),
+              exercises: scanDraft.exercises
+                .filter((exercise) => exercise.name.trim())
+                .map((exercise) => ({
+                  name: exercise.name.trim(),
+                  weightLbs: draftNumber(exercise.weightLbs),
+                  sets: draftNumber(exercise.sets),
+                  reps: draftNumber(exercise.reps),
+                })),
+            }
+      ),
+    });
+    setScanDraft(null);
   }
 
   async function logDescribedWorkout() {
@@ -1028,9 +1144,12 @@ export function TodayScreen({
         />
       )}
 
-      <div className="hc-pill-toggle" role="tablist" aria-label="Daily or month">
+      <div className="hc-pill-toggle" role="tablist" aria-label="Daily, net calories, or month">
         <button className={tab === "daily" ? "active" : ""} onClick={() => setTab("daily")}>
           Daily
+        </button>
+        <button className={tab === "net" ? "active" : ""} onClick={() => setTab("net")}>
+          Net
         </button>
         <button className={tab === "month" ? "active" : ""} onClick={() => setTab("month")}>
           Month
@@ -1046,6 +1165,71 @@ export function TodayScreen({
           today={today}
           onSelectDate={onDateChange}
         />
+      ) : tab === "net" ? (
+        <>
+          <div className="hc-bigstat">
+            <strong>
+              {netBurned < 0 ? "−" : ""}
+              {Math.abs(netBurned).toLocaleString()}
+            </strong>
+            <span>{netBurned < 0 ? "Net calories over burn" : "Net calories burned"}</span>
+          </div>
+
+          <div className="hc-net-card">
+            <div className="hc-net-rows">
+              <div>
+                <span>
+                  Your daily burn
+                  <small>
+                    {engine && engine.tdee.confidence >= 0.4
+                      ? "body + everyday movement, learned from your data"
+                      : "body + everyday movement, estimate"}
+                  </small>
+                </span>
+                <strong>+{baseBurn.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>
+                  Exercise logged
+                  <small>classes, workouts, and walks you tracked today</small>
+                </span>
+                <strong>+{day.estimatedActivityCalories.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>
+                  Food eaten
+                  <small>{day.meals.length} {day.meals.length === 1 ? "entry" : "entries"} logged</small>
+                </span>
+                <strong>−{day.calories.toLocaleString()}</strong>
+              </div>
+              <div className="hc-net-total">
+                <span>Net so far today</span>
+                <strong>
+                  {netBurned < 0 ? "−" : ""}
+                  {Math.abs(netBurned).toLocaleString()} cal
+                </strong>
+              </div>
+            </div>
+
+            <div className="hc-callout">
+              {remainingToEat >= 0 ? (
+                <span>
+                  You can eat <strong>{remainingToEat.toLocaleString()} more cal</strong> today
+                  and still hit your {plannedDeficit.toLocaleString()} cal daily deficit.
+                </span>
+              ) : (
+                <span>
+                  You&apos;re <strong>{Math.abs(remainingToEat).toLocaleString()} cal over</strong>{" "}
+                  today&apos;s budget. A walk or a lighter dinner protects the deficit.
+                </span>
+              )}
+              <small>
+                Target: {targets.calories.toLocaleString()} cal eaten, plus anything you burn
+                with exercise.
+              </small>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           <div className="hc-bigstat">
@@ -1054,26 +1238,42 @@ export function TodayScreen({
           </div>
 
           <div className="hc-feature-row">
-            <div className="hc-feature-card">
-              <span className="hc-feature-icon"><DumbbellIcon /></span>
+            <button
+              type="button"
+              className="hc-feature-card"
+              onClick={() => jumpToSection("log-meals")}
+            >
+              <span className="hc-feature-icon"><FoodIcon /></span>
               <span>Protein</span>
               <strong>{day.protein} g</strong>
-            </div>
-            <div className="hc-feature-card">
+            </button>
+            <button
+              type="button"
+              className="hc-feature-card"
+              onClick={() => jumpToSection("log-hydration")}
+            >
               <span className="hc-feature-icon"><DropIcon /></span>
               <span>Water</span>
               <strong>{day.waterOz} oz</strong>
-            </div>
-            <div className="hc-feature-card">
+            </button>
+            <button
+              type="button"
+              className="hc-feature-card"
+              onClick={() => jumpToSection("log-activity")}
+            >
               <span className="hc-feature-icon"><StepsIcon /></span>
               <span>Steps</span>
               <strong>{day.steps.toLocaleString()}</strong>
-            </div>
-            <div className="hc-feature-card">
+            </button>
+            <button
+              type="button"
+              className="hc-feature-card"
+              onClick={() => jumpToSection("log-activity")}
+            >
               <span className="hc-feature-icon"><FlameIcon /></span>
               <span>Burned</span>
               <strong>{day.estimatedActivityCalories.toLocaleString()} cal</strong>
-            </div>
+            </button>
           </div>
         </>
       )}
@@ -1159,8 +1359,10 @@ export function TodayScreen({
 
       <div className="hc-log-grid">
       <CollapsibleCard
+        id="log-activity"
         eyebrow="Next best action"
         title={activity.label}
+        icon={<DumbbellIcon />}
         action={
           <StatusBadge tone={day.activityCompleted ? "good" : "neutral"}>
             {day.activityCompleted ? "Done" : "Open"}
@@ -1350,7 +1552,12 @@ export function TodayScreen({
         </div>
       </CollapsibleCard>
 
-      <CollapsibleCard eyebrow="Hydration" title={`${day.waterOz} of ${targets.waterOz} oz`}>
+      <CollapsibleCard
+        id="log-hydration"
+        eyebrow="Hydration"
+        title={`${day.waterOz} of ${targets.waterOz} oz`}
+        icon={<DropIcon />}
+      >
         <p className="hc-muted hc-compact-copy">
           Each drop is 8 oz. Tap ahead to add water or tap a filled drop to roll back.
         </p>
@@ -1381,8 +1588,10 @@ export function TodayScreen({
       </CollapsibleCard>
 
       <CollapsibleCard
+        id="log-meals"
         eyebrow="Fuel"
         title="Your go-to meals"
+        icon={<FoodIcon />}
         action={
           <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
             {day.meals.length > 0 && (
@@ -1592,6 +1801,7 @@ export function TodayScreen({
       <CollapsibleCard
         eyebrow="Recovery"
         title="Sleep & readiness"
+        icon={<MoonIcon />}
         action={
           day.sleepHours && day.sleepHours >= targets.sleepHours ? (
             <StatusBadge tone="good">On target</StatusBadge>
@@ -1631,6 +1841,7 @@ export function TodayScreen({
       <CollapsibleCard
         eyebrow="Daily stack"
         title="Supplements"
+        icon={<PillIcon />}
         action={
           <StatusBadge tone={supplementsTaken === supplementList.length ? "good" : "neutral"}>
             {supplementsTaken}/{supplementList.length}
@@ -1661,7 +1872,7 @@ export function TodayScreen({
         </div>
       </CollapsibleCard>
 
-      <CollapsibleCard eyebrow="Journal" title="Daily note">
+      <CollapsibleCard eyebrow="Journal" title="Daily note" icon={<PencilIcon />}>
         <Field label="Note">
           <textarea
             value={day.notes}
@@ -1679,6 +1890,7 @@ export function TodayScreen({
           className="hc-food-log-card"
           eyebrow="Fuel"
           title={`Today's log (${day.meals.length})`}
+          icon={<FoodIcon />}
           action={
             <button className="hc-danger-link" onClick={clearMeals}>
               Clear meals

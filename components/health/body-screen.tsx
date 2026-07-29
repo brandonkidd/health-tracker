@@ -6,7 +6,7 @@ import { ptDateKey } from "@/lib/health/date";
 import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
 import type { AdaptiveForecast, EngineSnapshot } from "@/lib/health/engine";
 import type { BodyScan, DailyLog, HealthState, WeeklyCheckIn } from "@/lib/health/types";
-import { Card, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
+import { Card, CollapsibleCard, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
 import { BodyModel } from "./body-model";
 import { PhotoTimeline } from "./photo-timeline";
 
@@ -325,17 +325,17 @@ export function BodyScreen({
       <BodyModel latestCheckIn={latest} latestScan={latestScan} />
       <PhotoTimeline />
 
-      <Card>
-        <SectionHeader
-          eyebrow="The curve, live"
-          title="Actual vs projected weight"
-          action={
-            <div className="hc-segmented">
-              <button className={!fullArc ? "active" : ""} onClick={() => setFullArc(false)}>Cut</button>
-              <button className={fullArc ? "active" : ""} onClick={() => setFullArc(true)}>Full arc</button>
-            </div>
-          }
-        />
+      <CollapsibleCard
+        eyebrow="The curve, live"
+        title="Actual vs projected weight"
+        defaultOpen
+        action={
+          <div className="hc-segmented">
+            <button className={!fullArc ? "active" : ""} onClick={() => setFullArc(false)}>Cut</button>
+            <button className={fullArc ? "active" : ""} onClick={() => setFullArc(true)}>Full arc</button>
+          </div>
+        }
+      >
         <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} forecast={forecast} />
         <div className="hc-chart-legend">
           <span className="projected">Plan</span>
@@ -355,7 +355,7 @@ export function BodyScreen({
             The shaded band shows the uncertainty from day-to-day scale noise.
           </p>
         )}
-      </Card>
+      </CollapsibleCard>
 
       <Card>
         <SectionHeader eyebrow="From scanned workouts" title="Strength progression" />
