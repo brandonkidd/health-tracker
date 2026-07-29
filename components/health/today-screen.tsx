@@ -1489,46 +1489,162 @@ export function TodayScreen({
         </div>
         {(day.workouts ?? []).length > 0 && (
           <div className="hc-scan-results">
-            {(day.workouts ?? []).map((scan) => (
-              <div key={scan.id} className="hc-scan-result">
-                <div className="hc-scan-result-head">
-                  <strong>{scan.activity}</strong>
-                  <button className="hc-danger-link" onClick={() => removeScan(scan.id)}>
-                    Remove
-                  </button>
-                </div>
-                <span className="hc-scan-metrics">
-                  {[
-                    scan.durationMinutes ? `${scan.durationMinutes} min` : null,
-                    scan.calories ? `${scan.calories} cal` : null,
-                    scan.avgHeartRate ? `${scan.avgHeartRate} bpm avg` : null,
-                    scan.maxHeartRate ? `${scan.maxHeartRate} bpm max` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-                {scan.exercises.length > 0 && (
-                  <div className="hc-scan-chips">
-                    {scan.exercises.map((exercise, index) => (
-                      <span key={index}>
-                        {exercise.name}
-                        {exercise.weightLbs ? ` ${exercise.weightLbs} lb` : ""}
-                        {exercise.sets && exercise.reps
-                          ? ` ${exercise.sets}×${exercise.reps}`
-                          : ""}
-                      </span>
+            {(day.workouts ?? []).map((scan) =>
+              scanDraft?.id === scan.id ? (
+                <div key={scan.id} className="hc-scan-result">
+                  <div className="hc-scan-edit">
+                    <div className="hc-inline-fields">
+                      <Field label="Activity">
+                        <input
+                          value={scanDraft.activity}
+                          onChange={(event) =>
+                            setScanDraft({ ...scanDraft, activity: event.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Minutes">
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          value={scanDraft.durationMinutes}
+                          onChange={(event) =>
+                            setScanDraft({ ...scanDraft, durationMinutes: event.target.value })
+                          }
+                        />
+                      </Field>
+                    </div>
+                    {scanDraft.exercises.map((exercise, index) => (
+                      <div key={index} className="hc-scan-edit-row">
+                        <Field label="Exercise">
+                          <input
+                            value={exercise.name}
+                            placeholder="e.g. KB Goblet Squat"
+                            onChange={(event) =>
+                              patchScanDraftExercise(index, { name: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Weight (lb)">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            value={exercise.weightLbs}
+                            onChange={(event) =>
+                              patchScanDraftExercise(index, { weightLbs: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Sets">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            value={exercise.sets}
+                            onChange={(event) =>
+                              patchScanDraftExercise(index, { sets: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field label="Reps">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            value={exercise.reps}
+                            onChange={(event) =>
+                              patchScanDraftExercise(index, { reps: event.target.value })
+                            }
+                          />
+                        </Field>
+                        <button
+                          type="button"
+                          className="hc-scan-edit-remove"
+                          aria-label={`Remove ${exercise.name || "exercise"}`}
+                          onClick={() =>
+                            setScanDraft({
+                              ...scanDraft,
+                              exercises: scanDraft.exercises.filter((_, i) => i !== index),
+                            })
+                          }
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
+                    <div className="hc-button-row">
+                      <button
+                        className="hc-text-button"
+                        onClick={() =>
+                          setScanDraft({
+                            ...scanDraft,
+                            exercises: [
+                              ...scanDraft.exercises,
+                              { name: "", weightLbs: "", sets: "", reps: "" },
+                            ],
+                          })
+                        }
+                      >
+                        + Add exercise
+                      </button>
+                    </div>
+                    <div className="hc-button-row">
+                      <button className="hc-button" onClick={saveScanDraft}>
+                        Save changes
+                      </button>
+                      <button className="hc-text-button" onClick={() => setScanDraft(null)}>
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                )}
-                {scan.recommendations && (
-                  <ul className="hc-scan-tips">
-                    {scan.recommendations.map((tip, index) => (
-                      <li key={index}>{tip}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+                </div>
+              ) : (
+                <div key={scan.id} className="hc-scan-result">
+                  <div className="hc-scan-result-head">
+                    <strong>{scan.activity}</strong>
+                    <span className="hc-entry-actions">
+                      <button className="hc-text-button" onClick={() => startEditScan(scan)}>
+                        Edit
+                      </button>
+                      <button className="hc-danger-link" onClick={() => removeScan(scan.id)}>
+                        Remove
+                      </button>
+                    </span>
+                  </div>
+                  <span className="hc-scan-metrics">
+                    {[
+                      scan.durationMinutes ? `${scan.durationMinutes} min` : null,
+                      scan.calories ? `${scan.calories} cal` : null,
+                      scan.avgHeartRate ? `${scan.avgHeartRate} bpm avg` : null,
+                      scan.maxHeartRate ? `${scan.maxHeartRate} bpm max` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                  {scan.exercises.length > 0 && (
+                    <div className="hc-scan-chips">
+                      {scan.exercises.map((exercise, index) => (
+                        <span key={index}>
+                          {exercise.name}
+                          {exercise.weightLbs ? ` ${exercise.weightLbs} lb` : ""}
+                          {exercise.sets && exercise.reps
+                            ? ` ${exercise.sets}×${exercise.reps}`
+                            : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {scan.recommendations && (
+                    <ul className="hc-scan-tips">
+                      {scan.recommendations.map((tip, index) => (
+                        <li key={index}>{tip}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )
+            )}
           </div>
         )}
         <div className="hc-inline-fields" style={{ marginTop: 12 }}>
