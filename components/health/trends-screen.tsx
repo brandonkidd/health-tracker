@@ -44,15 +44,15 @@ function windowDateKeys(range: "week" | "month"): string[] {
   );
 }
 
-function StepsHeatmap({ days }: { days: DailyLog[] }) {
-  const values = days.map((day) => day.steps ?? 0);
+function BurnHeatmap({ days }: { days: DailyLog[] }) {
+  const values = days.map((day) => day.estimatedActivityCalories ?? 0);
   const max = Math.max(...values, 1);
   const hasData = values.some((value) => value > 0);
 
   if (!hasData) {
     return (
       <div className="hc-heatmap-empty">
-        Log steps on the Today screen and your chart builds itself here.
+        Log workouts or walking on the Today screen and your burn chart builds itself here.
       </div>
     );
   }
@@ -95,7 +95,7 @@ function StepsHeatmap({ days }: { days: DailyLog[] }) {
           </div>
         );
       })}
-      <div className="hc-heatmap" aria-label="Daily steps chart">
+      <div className="hc-heatmap" aria-label="Daily calories burned chart">
         {cells.map((count, column) => (
           <div className="hc-heatmap-col" key={column}>
             {Array.from({ length: Math.max(count, 1) }, (_, row) => (
@@ -138,8 +138,8 @@ export function TrendsScreen({
         .map((point) => point.weight)
     : days.flatMap((day) => (day.weight ? [day.weight] : []));
   const sleep = days.flatMap((day) => (day.sleepHours ? [day.sleepHours] : []));
-  const stepDays = days.filter((day) => day.steps > 0);
-  const averageSteps = average(stepDays.map((day) => day.steps));
+  const burnDays = days.filter((day) => day.estimatedActivityCalories > 0);
+  const averageBurn = average(burnDays.map((day) => day.estimatedActivityCalories));
   const averageProtein = average(days.map((day) => day.protein));
   // Rates are out of calendar days elapsed in the window, not logged days.
   const trainingRate =
@@ -157,11 +157,11 @@ export function TrendsScreen({
       </div>
 
       <div className="hc-bigstat">
-        <strong>{Math.round(averageSteps).toLocaleString()}</strong>
-        <span>Steps</span>
+        <strong>{Math.round(averageBurn).toLocaleString()}</strong>
+        <span>Calories burned</span>
       </div>
 
-      <StepsHeatmap days={heatmap} />
+      <BurnHeatmap days={heatmap} />
 
       <h2 className="hc-section-title">Averages</h2>
 
