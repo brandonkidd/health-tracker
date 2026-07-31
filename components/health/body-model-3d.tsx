@@ -225,7 +225,7 @@ function applyMorph(
   const d = THREE.MathUtils.clamp(girth, -0.4, 0.6);
   // Split the girth change: sides, back, and (mostly) a forward belly bulge,
   // sized so the resulting circumference still lands on the target.
-  const bellyAmp = 2 * d * (0.45 * stats.waistA + 0.65 * stats.waistB);
+  const bellyAmp = 2 * d * (0.6 * stats.waistA + 0.8 * stats.waistB);
 
   const waistY = 0.575 * H;
   const waistSigma = 0.1 * H;
@@ -238,6 +238,7 @@ function applyMorph(
     const z = base[i * 3 + 2];
 
     const gWaist = gauss(y, waistY, waistSigma);
+    const gBelly = gauss(y, 0.55 * H, 0.07 * H);
     const gHip = gauss(y, 0.48 * H, 0.05 * H);
     const gLats = gauss(y, 0.66 * H, 0.055 * H);
     const gChest = gauss(y, 0.715 * H, 0.05 * H);
@@ -249,20 +250,20 @@ function applyMorph(
     let offsetFront = 0;
     let offsetBack = 0;
 
-    // Midsection: waist-anchored.
-    scaleX += 0.55 * d * gWaist;
-    scaleZBack += 0.35 * d * gWaist;
+    // Midsection: waist-anchored, biased toward a forward belly bulge.
+    scaleX += 0.4 * d * gWaist;
+    scaleZBack += 0.28 * d * gWaist;
     offsetFront += bellyAmp * gWaist;
 
-    // Fat regions.
+    // Fat regions: soft tissue rounds the stomach far more than the chest.
     scaleX += 0.05 * fat * gHip + 0.05 * fat * gNeck;
     scaleZBack += 0.04 * fat * gNeck;
-    offsetFront += 0.05 * fat * gChest + 0.02 * fat * gNeck;
+    offsetFront += 0.035 * fat * gBelly + 0.02 * fat * gChest + 0.02 * fat * gNeck;
     offsetBack += (0.05 * fat + 0.02 * muscle + 0.06 * Math.max(d, 0)) * gHip;
 
     // Muscle regions: lats, chest, shoulder frame.
     scaleX += 0.07 * muscle * gLats + 0.07 * muscle * gChest + 0.1 * muscle * gShoulder;
-    offsetFront += 0.06 * muscle * gChest;
+    offsetFront += 0.025 * muscle * gChest;
 
     // Fade torso-band effects out on the arms.
     const torso = THREE.MathUtils.clamp(1 - (Math.abs(x) - 0.16) / 0.06, 0, 1);
