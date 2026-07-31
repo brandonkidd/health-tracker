@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   ACTIVITY_DEFAULT_MINUTES,
   BODYFI_PLAN,
+  WALK_STEPS_PER_MINUTE,
   estimateActivityCalories,
   plannedActivity,
 } from "@/lib/health/config";
@@ -168,6 +169,24 @@ interface ScanResponse {
 }
 
 type DescribeResponse = Omit<ScanResponse, "isWorkoutScreen"> & { isWorkout: boolean };
+
+/** Compact text form of an edited scan so the AI can re-estimate its burn. */
+function describeScanForEstimate(scan: WorkoutScan): string {
+  const parts: string[] = [scan.activity];
+  if (scan.durationMinutes) parts.push(`${scan.durationMinutes} minutes`);
+  if (scan.avgHeartRate) parts.push(`average heart rate ${scan.avgHeartRate} bpm`);
+  if (scan.maxHeartRate) parts.push(`max heart rate ${scan.maxHeartRate} bpm`);
+  const exercises = scan.exercises.map((exercise) => {
+    let text = exercise.name;
+    if (exercise.weightLbs) text += ` at ${exercise.weightLbs} lb`;
+    if (exercise.sets && exercise.reps) text += ` for ${exercise.sets} sets of ${exercise.reps} reps`;
+    else if (exercise.sets) text += ` for ${exercise.sets} sets`;
+    return text;
+  });
+  return exercises.length
+    ? `${parts.join(", ")}. Strength work: ${exercises.join("; ")}.`
+    : `${parts.join(", ")}.`;
+}
 
 /** Shrink the photo client-side so uploads stay fast and cheap. */
 async function fileToDataUrl(file: File, maxDim = 1400): Promise<string> {
@@ -631,6 +650,7 @@ export function TodayScreen({
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanDraft, setScanDraft] = useState<ScanDraft | null>(null);
+  const [scanDraftBusy, setScanDraftBusy] = useState(false);
   const [describeOpen, setDescribeOpen] = useState(false);
   const [describeText, setDescribeText] = useState("");
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -703,6 +723,24 @@ export function TodayScreen({
 
   function patch(updates: Partial<DailyLog>) {
     onChange({ ...day, ...updates });
+  }
+
+  /**
+   * Walking minutes flow into the day's totals: each minute adds steps at an
+   * average cadence and its MET-based calorie burn. Applied as a delta from
+   * the previous value, so edits and clears adjust totals instead of
+   * clobbering steps or workout calories logged separately.
+   */
+  function setWalkingMinutes(minutes: number) {
+    const stepsDelta = (minutes - day.walkingMinutes) * WALK_STEPS_PER_MINUTE;
+    const caloriesDelta =
+      estimateActivityCalories("walk", latestWeight, minutes) -
+      estimateActivityCalories("walk", latestWeight, day.walkingMinutes);
+    patch({
+      walkingMinutes: minutes,
+      steps: Math.max(0, day.steps + stepsDelta),
+      estimatedActivityCalories: Math.max(0, day.estimatedActivityCalories + caloriesDelta),
+    });
   }
 
   /** Opens the collapsed log card (if needed) and scrolls it into view. */
@@ -802,28 +840,99 @@ export function TodayScreen({
     });
   }
 
-  function saveScanDraft() {
+  async function saveScanDraft() {
     if (!scanDraft) return;
-    patch({
-      workouts: (day.workouts ?? []).map((scan) =>
-        scan.id !== scanDraft.id
-          ? scan
-          : {
-              ...scan,
-              activity: scanDraft.activity.trim() || scan.activity,
-              durationMinutes: draftNumber(scanDraft.durationMinutes),
-              exercises: scanDraft.exercises
-                .filter((exercise) => exercise.name.trim())
-                .map((exercise) => ({
-                  name: exercise.name.trim(),
-                  weightLbs: draftNumber(exercise.weightLbs),
-                  sets: draftNumber(exercise.sets),
-                  reps: draftNumber(exercise.reps),
-                })),
-            }
-      ),
-    });
-    setScanDraft(null);
+    const original = (day.workouts ?? []).find((scan) => scan.id === scanDraft.id);
+    if (!original) {
+      setScanDraft(null);
+      return;
+    }
+
+    const updated: WorkoutScan = {
+      ...original,
+      activity: scanDraft.activity.trim() || original.activity,
+      durationMinutes: draftNumber(scanDraft.durationMinutes),
+      exercises: scanDraft.exercises
+        .filter((exercise) => exercise.name.trim())
+        .map((exercise) => ({
+          name: exercise.name.trim(),
+          weightLbs: draftNumber(exercise.weightLbs),
+          sets: draftNumber(exercise.sets),
+          reps: draftNumber(exercise.reps),
+        })),
+    };
+
+    const applyScan = (scanToStore: WorkoutScan, dayPatch: Partial<DailyLog> = {}) => {
+      patch({
+        workouts: (day.workouts ?? []).map((scan) =>
+          scan.id === scanToStore.id ? scanToStore : scan
+        ),
+        ...dayPatch,
+      });
+      setScanDraft(null);
+    };
+
+    const inputsChanged =
+      updated.activity !== original.activity ||
+      updated.durationMinutes !== original.durationMinutes ||
+      JSON.stringify(updated.exercises) !== JSON.stringify(original.exercises);
+    if (!inputsChanged) {
+      applyScan(updated);
+      return;
+    }
+
+    // Re-estimate this workout's burn from the edited inputs, then shift the
+    // day total by the difference so stacked workouts and manual overrides of
+    // the day estimate survive. The old contribution mirrors what the scan
+    // flow applied: screen calories, else a MET estimate for the duration.
+    const oldContribution =
+      original.calories ??
+      (original.durationMinutes
+        ? estimateActivityCalories(activity.type, latestWeight, original.durationMinutes)
+        : classEstimate);
+    const applyReestimate = (newCalories: number, extra: Partial<DailyLog> = {}) =>
+      applyScan(
+        { ...updated, calories: Math.round(newCalories) },
+        {
+          estimatedActivityCalories: Math.max(
+            0,
+            Math.round(day.estimatedActivityCalories + newCalories - oldContribution)
+          ),
+          ...extra,
+        }
+      );
+
+    setScanDraftBusy(true);
+    setScanError(null);
+    try {
+      const response = await fetch("/api/log-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: describeScanForEstimate(updated),
+          weightLb: latestWeight,
+          plannedActivity: activity.label,
+        }),
+      });
+      const result = (await response.json()) as DescribeResponse;
+      if (!response.ok || !result.isWorkout || result.calories == null) {
+        throw new Error(result.error ?? "Re-estimate failed");
+      }
+      applyReestimate(result.calories);
+    } catch {
+      // AI unavailable: still save the edits, using the MET estimate for the
+      // edited duration so at least time changes are reflected.
+      applyReestimate(
+        updated.durationMinutes
+          ? estimateActivityCalories(activity.type, latestWeight, updated.durationMinutes)
+          : oldContribution
+      );
+      setScanError(
+        "Saved your edits, but the AI re-estimate was unavailable — used a duration-based estimate instead."
+      );
+    } finally {
+      setScanDraftBusy(false);
+    }
   }
 
   async function logDescribedWorkout() {
@@ -1590,13 +1699,25 @@ export function TodayScreen({
                       </button>
                     </div>
                     <div className="hc-button-row">
-                      <button className="hc-button" onClick={saveScanDraft}>
-                        Save changes
+                      <button
+                        className="hc-button"
+                        onClick={() => void saveScanDraft()}
+                        disabled={scanDraftBusy}
+                      >
+                        {scanDraftBusy ? "Re-estimating calories…" : "Save changes"}
                       </button>
-                      <button className="hc-text-button" onClick={() => setScanDraft(null)}>
+                      <button
+                        className="hc-text-button"
+                        onClick={() => setScanDraft(null)}
+                        disabled={scanDraftBusy}
+                      >
                         Cancel
                       </button>
                     </div>
+                    <small className="hc-muted">
+                      Saving re-estimates the calorie burn from these exact weights, sets, and
+                      minutes.
+                    </small>
                   </div>
                 </div>
               ) : (
@@ -1651,18 +1772,24 @@ export function TodayScreen({
           <Field label="Walking minutes">
             <input
               type="number"
+              min="0"
               value={day.walkingMinutes || ""}
-              onChange={(event) => patch({ walkingMinutes: Number(event.target.value) || 0 })}
+              onChange={(event) => setWalkingMinutes(Number(event.target.value) || 0)}
             />
           </Field>
           <Field label="Steps">
             <input
               type="number"
+              min="0"
               value={day.steps || ""}
               onChange={(event) => patch({ steps: Number(event.target.value) || 0 })}
             />
           </Field>
         </div>
+        <p className="hc-muted" style={{ marginTop: 8 }}>
+          Walking minutes count automatically — each minute adds ~{WALK_STEPS_PER_MINUTE} steps
+          and its walking burn to your calories burned for the day.
+        </p>
         <div className="hc-callout">
           Estimated daily deficit: <strong>{deficit > 0 ? deficit : 0} cal</strong>
           <small>

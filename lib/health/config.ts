@@ -70,6 +70,9 @@ export const ACTIVITY_METS: Record<ActivityType, number> = {
   rest: 0,
 };
 
+/** Average walking cadence used to convert walking minutes into steps. */
+export const WALK_STEPS_PER_MINUTE = 100;
+
 export const ACTIVITY_DEFAULT_MINUTES: Record<ActivityType, number> = {
   alpha: 60,
   yoga: 60,
