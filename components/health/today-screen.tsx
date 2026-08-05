@@ -6,6 +6,7 @@ import {
   BODYFI_PLAN,
   WALK_STEPS_PER_MINUTE,
   estimateActivityCalories,
+  estimateStepsCalories,
   plannedActivity,
 } from "@/lib/health/config";
 import { ptDateKey, shiftDateKey } from "@/lib/health/date";
@@ -740,6 +741,39 @@ export function TodayScreen({
       walkingMinutes: minutes,
       steps: Math.max(0, day.steps + stepsDelta),
       estimatedActivityCalories: Math.max(0, day.estimatedActivityCalories + caloriesDelta),
+    });
+  }
+
+  // Calories the current step count is worth, and how much of that has already
+  // been folded into the day's burned total via the steps "Complete" action.
+  const stepsCalories = Math.round(estimateStepsCalories(day.steps, latestWeight));
+  const stepsCaloriesLogged = day.stepsCaloriesLogged ?? 0;
+  const stepsLogged = stepsCaloriesLogged > 0;
+  const stepsInSync = stepsLogged && stepsCaloriesLogged === stepsCalories;
+
+  /**
+   * Folds the step-count's calorie burn into the day's burned total. Applied as
+   * a delta from whatever steps previously contributed, so completing again after
+   * changing the step count updates the total instead of double-counting.
+   */
+  function completeStepsCalories() {
+    patch({
+      estimatedActivityCalories: Math.max(
+        0,
+        day.estimatedActivityCalories - stepsCaloriesLogged + stepsCalories
+      ),
+      stepsCaloriesLogged: stepsCalories,
+    });
+  }
+
+  /** Removes the step contribution from the burned total. */
+  function undoStepsCalories() {
+    patch({
+      estimatedActivityCalories: Math.max(
+        0,
+        day.estimatedActivityCalories - stepsCaloriesLogged
+      ),
+      stepsCaloriesLogged: 0,
     });
   }
 
@@ -1786,9 +1820,41 @@ export function TodayScreen({
             />
           </Field>
         </div>
+        {day.steps > 0 && (
+          <div className="hc-steps-burn">
+            <div className="hc-steps-burn-info">
+              <span>Calories burned from steps</span>
+              <strong>{stepsCalories.toLocaleString()} cal</strong>
+              <small>
+                {day.steps.toLocaleString()} steps at {Math.round(latestWeight)} lb
+                {stepsLogged
+                  ? stepsInSync
+                    ? " · added to today's burned total"
+                    : ` · ${stepsCaloriesLogged.toLocaleString()} cal currently counted — update to sync`
+                  : " · not counted yet"}
+              </small>
+            </div>
+            <div className="hc-button-row">
+              <button
+                className={stepsInSync ? "hc-button hc-button-done" : "hc-button"}
+                onClick={completeStepsCalories}
+                disabled={stepsInSync}
+              >
+                {stepsInSync ? "Steps counted" : stepsLogged ? "Update burned total" : "Complete"}
+              </button>
+              {stepsLogged && (
+                <button className="hc-text-button" onClick={undoStepsCalories}>
+                  Undo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <p className="hc-muted" style={{ marginTop: 8 }}>
           Walking minutes count automatically — each minute adds ~{WALK_STEPS_PER_MINUTE} steps
-          and its walking burn to your calories burned for the day.
+          and its walking burn to your calories burned for the day. Logged your steps another way?
+          Enter the total above and tap <strong>Complete</strong> to add their burn to the Burned
+          tally at the top.
         </p>
         <div className="hc-callout">
           Estimated daily deficit: <strong>{deficit > 0 ? deficit : 0} cal</strong>
