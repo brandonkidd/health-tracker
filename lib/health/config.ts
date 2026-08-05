@@ -90,6 +90,16 @@ export function estimateActivityCalories(
   return Math.round(ACTIVITY_METS[type] * kg * (minutes / 60));
 }
 
+/**
+ * Calories burned from a step count. Steps convert to walking minutes at the
+ * average cadence, then use the walking MET model — so it stays consistent with
+ * how logged walking minutes are scored.
+ */
+export function estimateStepsCalories(steps: number, weightLb: number): number {
+  if (steps <= 0) return 0;
+  return estimateActivityCalories("walk", weightLb, steps / WALK_STEPS_PER_MINUTE);
+}
+
 export function plannedActivity(date: string): {
   label: string;
   type: ActivityType;
