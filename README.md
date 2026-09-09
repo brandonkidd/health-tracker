@@ -114,69 +114,42 @@ git push -u origin main
 - Click "Deploy"
 - Done! Live in ~60 seconds
 
-### Add Database (Supabase - 5 minutes)
+### Add Database (Supabase — for storage + multi-device sync)
 
-1. Create account: [supabase.com](https://supabase.com)
-2. Create new project
-3. Create tables:
+Cloud sync is already fully wired in the code. The Next.js server talks to
+Supabase using the **secret (service role) key only** — browser clients get no
+database access. Because `/api/health` is auth-gated, sync turns on only when
+**both** Supabase **and** the site login are configured.
 
-```sql
--- Daily tracking
-CREATE TABLE daily_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  date DATE NOT NULL UNIQUE,
-  water DECIMAL(3,2) DEFAULT 0,
-  protein INTEGER DEFAULT 0,
-  weight DECIMAL(5,1),
-  sleep DECIMAL(3,1),
-  energy INTEGER,
-  mood INTEGER,
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard)
+   (free tier, pick a region close to you).
+2. **Create the tables:** Dashboard → SQL Editor → New query → paste the entire
+   contents of [`supabase-setup.sql`](supabase-setup.sql) → Run. It is
+   idempotent and safe to re-run.
+3. **Get your keys:** Project Settings → **Data API** → copy the *Project URL*.
+   Then Project Settings → **API Keys** → create a **secret key** (`sb_secret_…`).
+   (The legacy `service_role` JWT also works.) Never use the `anon`/publishable
+   key here, and never prefix these with `NEXT_PUBLIC_`.
+4. **Set the four required env vars** — locally in `.env.local`, and in your host
+   (Vercel → Settings → Environment Variables):
 
--- Supplement tracking
-CREATE TABLE supplement_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  date DATE NOT NULL,
-  supplement_id VARCHAR(50) NOT NULL,
-  taken BOOLEAN DEFAULT FALSE,
-  time TIMESTAMP,
-  UNIQUE(date, supplement_id)
-);
-
--- Workout tracking
-CREATE TABLE workout_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  date DATE NOT NULL,
-  workout_type VARCHAR(20), -- 'A', 'B', 'C', 'peloton'
-  exercise VARCHAR(100),
-  sets INTEGER,
-  reps INTEGER,
-  weight DECIMAL(5,1),
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Enable Row Level Security (optional - for multi-user future)
-ALTER TABLE daily_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE supplement_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workout_logs ENABLE ROW LEVEL SECURITY;
-```
-
-4. Get your API keys from Supabase dashboard
-5. Add to `.env.local`:
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_URL=your_project_url
+SUPABASE_SECRET_KEY=sb_secret_your_key
+SITE_PASSWORD=choose-a-login-password   # required — you'll type it at /login
+AUTH_SECRET=long-random-string          # openssl rand -base64 32
 ```
 
-6. Install Supabase client:
+5. **Verify the connection:**
 ```bash
-npm install @supabase/supabase-js
+npm run verify:supabase
 ```
+It confirms every table is reachable using your secret key.
 
-7. I'll update the code to use Supabase (takes ~30 minutes)
+6. Restart the app, open it, and **log in** with `SITE_PASSWORD`. From then on
+   every change auto-syncs to Supabase, and any device that logs in pulls the
+   merged history down. To bring existing single-device data up, log in once on
+   the device that has it (or Plan → *Import backup*).
 
 ## 📱 Mobile Experience
 

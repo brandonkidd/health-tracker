@@ -43,41 +43,42 @@ If you get authentication error:
 - Add: `health.brandonkidd.com` or `fit.brandonkidd.com`
 - Follow DNS instructions (add CNAME record)
 
-## 🗄️ Add Database (Optional - for multi-device sync)
+## 🗄️ Add Database (Supabase — storage + multi-device sync)
 
-**Only do this if localStorage limitations bother you.**
+Cloud sync is **already built into the code**. The server uses the Supabase
+**secret (service role) key only**; browser clients never touch the database.
+Sync activates only when **both** Supabase **and** the site login are set,
+because `/api/health` is auth-gated.
 
-### Setup Supabase (5 minutes)
+### Setup Supabase
 
-1. **Create account:** [supabase.com/dashboard](https://supabase.com/dashboard)
+1. **Create a project:** [supabase.com/dashboard](https://supabase.com/dashboard)
+   - Name: brandon-health-tracker · Region: closest to you · Free tier
+   - Save the database password somewhere safe.
 
-2. **Create project:**
-   - Organization: Personal
-   - Name: brandon-health-tracker
-   - Database Password: (generate strong password, save it)
-   - Region: West US (closest to you)
-   - Pricing: Free tier
+2. **Create the tables:**
+   - SQL Editor → New query
+   - Paste the entire contents of [`supabase-setup.sql`](supabase-setup.sql) → Run
+   - (Idempotent — safe to re-run any time.)
 
-3. **Create tables:**
-   - Click "SQL Editor" in sidebar
-   - Click "New query"
-   - Paste SQL from README (daily_logs, supplement_logs, workout_logs)
-   - Click "Run"
+3. **Get your keys:**
+   - Project Settings → **Data API** → copy the **Project URL**
+   - Project Settings → **API Keys** → create a **secret key** (`sb_secret_…`)
+   - Do **not** use the `anon`/publishable key, and never prefix with `NEXT_PUBLIC_`.
 
-4. **Get API keys:**
-   - Click "Settings" → "API"
-   - Copy `Project URL`
-   - Copy `anon public` key
+4. **Set the four required env vars** (both locally in `.env.local` and in Vercel
+   → Settings → Environment Variables):
+   - `SUPABASE_URL` = your Project URL
+   - `SUPABASE_SECRET_KEY` = your `sb_secret_…` key
+   - `SITE_PASSWORD` = a login password you choose (required for sync)
+   - `AUTH_SECRET` = a long random string (`openssl rand -base64 32`)
 
-5. **Add to Vercel:**
-   - Vercel dashboard → Your project → Settings → Environment Variables
-   - Add:
-     - `NEXT_PUBLIC_SUPABASE_URL` = your project URL
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your anon key
-   - Click "Save"
-   - Redeploy (Vercel will prompt)
+5. **Verify:** run `npm run verify:supabase` — it connects with your secret key
+   and confirms every table is reachable.
 
-6. **Tell me you're ready** and I'll update the code to use Supabase (30 min work on my end)
+6. **Redeploy** (Vercel prompts after env changes), open the app, and **log in**
+   with your `SITE_PASSWORD`. Every change now auto-syncs; logging in on another
+   device pulls the merged history down.
 
 ## 📱 Add to iPhone Home Screen
 
