@@ -51,14 +51,14 @@ async function main() {
 
   let failures = 0;
   for (const table of TABLES) {
-    const { count, error } = await supabase
-      .from(table)
-      .select("*", { count: "exact", head: true });
+    // A real SELECT (not a head/count request): head requests can return no
+    // error even when the table isn't exposed, so they give false positives.
+    const { data, error } = await supabase.from(table).select("*").limit(1);
     if (error) {
-      console.error(`✗ ${table.padEnd(24)} ${error.message}`);
+      console.error(`✗ ${table.padEnd(24)} ${error.code ?? ""} ${error.message}`.trimEnd());
       failures++;
     } else {
-      console.log(`✓ ${table.padEnd(24)} reachable (${count ?? 0} rows)`);
+      console.log(`✓ ${table.padEnd(24)} reachable (${data.length ? "has rows" : "empty"})`);
     }
   }
 
