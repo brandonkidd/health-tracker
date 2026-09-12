@@ -4,8 +4,10 @@ import type { TdeeEstimate } from "./tdee";
 
 /**
  * Dynamic daily targets: instead of the static plan numbers, calories are
- * re-derived every day from the adaptive TDEE and the loss/gain rate the
- * plan phase calls for. Protein stays anchored; carbs and fat rebalance.
+ * re-derived every day from the adaptive BASE burn (no exercise) and the
+ * loss/gain rate the plan phase calls for. This makes the calorie target a
+ * rest-day budget — tracked classes/workouts earn extra calories on top via
+ * the "remaining to eat" math. Protein stays anchored; carbs/fat rebalance.
  */
 
 const KCAL_PER_LB = 3500;

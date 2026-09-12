@@ -64,10 +64,11 @@ export function buildForecast(
   if (!latest) return null;
 
   const observed = trendSlopePerWeek(series, today, 21);
+  // Total burn = base burn + average tracked exercise over the window.
   const implied =
     tdee.avgIntake == null
       ? null
-      : ((tdee.avgIntake - tdee.tdee) * 7) / KCAL_PER_LB;
+      : ((tdee.avgIntake - (tdee.tdee + tdee.avgActivity)) * 7) / KCAL_PER_LB;
 
   const { rate: planRate } = planRateForDate(today);
   let rate: number;

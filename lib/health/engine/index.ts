@@ -52,12 +52,14 @@ export function computeEngineSnapshot(
   };
 }
 
-/** The engine's estimate of today's true energy balance (kcal deficit). */
+/** The engine's estimate of today's true energy balance (kcal deficit):
+ *  base burn + tracked exercise − intake. */
 export function adaptiveDeficit(
   snapshot: EngineSnapshot,
-  calories: number
+  calories: number,
+  activityCalories = 0
 ): number {
-  return snapshot.tdee.tdee - calories;
+  return snapshot.tdee.tdee + activityCalories - calories;
 }
 
 export { latestTrendPoint } from "./trend";

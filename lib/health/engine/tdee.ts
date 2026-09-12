@@ -9,36 +9,40 @@ import {
 } from "./trend";
 
 /**
- * Adaptive TDEE: learns actual total daily energy expenditure from the
- * relationship between logged intake and trend-weight change, instead of
- * relying on a hard-coded maintenance number.
+ * Adaptive base burn: the `tdee` field here is the BASE daily burn — the body
+ * at rest plus everyday non-exercise living, with NO exercise allowance baked
+ * in. Tracked workouts/classes (day.estimatedActivityCalories) are added on
+ * top of this base wherever a day's total burn or deficit is computed.
  *
- *   measured TDEE = avg intake − (Δ trend weight × 3500 / days)
+ * The measured value learns from energy balance, with tracked exercise
+ * removed so it stays a true base:
  *
- * While data is thin it falls back to Katch-McArdle (lean-mass based, which
- * reproduces the plan's InBody BMR of ~1856) times a lightly-active factor,
+ *   measured base = avg intake − (Δ trend weight × 3500 / days) − avg tracked exercise
+ *
+ * While data is thin it falls back to the latest InBody BMR (~1856 for the
+ * plan baseline) or Katch-McArdle from lean mass — i.e. the "1850/day" base —
  * blending toward the measured value as logging completeness grows.
  */
 
 const KCAL_PER_LB = 3500;
 const DAY_MS = 86_400_000;
-/** Desk job + daily walking + 3 classes/week baseline. */
-const ACTIVITY_FACTOR = 1.4;
-const MIN_PLAUSIBLE_TDEE = 1500;
-const MAX_PLAUSIBLE_TDEE = 4500;
+const MIN_PLAUSIBLE_TDEE = 1200;
+const MAX_PLAUSIBLE_TDEE = 4000;
 /** Guards against misread scan values (e.g. an OCR'd "27") poisoning the fallback. */
 const MIN_PLAUSIBLE_BMR = 800;
 const MAX_PLAUSIBLE_BMR = 3500;
 
 export interface TdeeEstimate {
-  /** Blended best estimate used everywhere in the app. */
+  /** Blended best estimate of the BASE daily burn (no exercise included). */
   tdee: number;
-  /** Pure energy-balance measurement (null when data is insufficient). */
+  /** Energy-balance measurement minus tracked exercise (null when data is thin). */
   measuredTdee: number | null;
-  /** Formula-based fallback (Katch-McArdle × activity factor). */
+  /** Formula-based fallback: latest scan BMR or Katch-McArdle (~1850). */
   fallbackTdee: number;
   /** Basal metabolic rate used by the fallback. */
   bmr: number;
+  /** Average tracked exercise cal/day inside the measurement window. */
+  avgActivity: number;
   /** 0..1 — how much the estimate leans on measured data. */
   confidence: number;
   /** Days spanned by the measurement window actually used. */
@@ -86,8 +90,10 @@ export function katchMcArdleBmr(leanMassLb: number): number {
 }
 
 export function fallbackTdee(state: HealthState): { tdee: number; bmr: number } {
+  // The base burn IS the BMR: tracked classes/workouts are added on top per
+  // day, so no activity multiplier here (that would double-count exercise).
   const bmr = latestMeasuredBmr(state) ?? katchMcArdleBmr(latestLeanMassLb(state));
-  return { tdee: Math.round(bmr * ACTIVITY_FACTOR), bmr };
+  return { tdee: bmr, bmr };
 }
 
 export function estimateTdee(
@@ -112,6 +118,7 @@ export function estimateTdee(
     measuredTdee: null,
     fallbackTdee: fallback.tdee,
     bmr: fallback.bmr,
+    avgActivity: 0,
     confidence: 0,
     windowDays: 0,
     intakeDays: 0,
@@ -126,18 +133,24 @@ export function estimateTdee(
   const span = daysBetween(first.date, last.date);
   if (span < 7) return { ...base, windowDays: span };
 
-  // Intake days between the first and last weigh-in (aligned energy window).
+  // Intake days between the first and last weigh-in (aligned energy window),
+  // plus tracked exercise across the whole window so the measured burn can be
+  // reduced to a base (exercise is re-added per day by the UI).
   const intakeCalories: number[] = [];
+  let activityTotal = 0;
   for (const day of Object.values(state.days)) {
     const time = dateToTime(day.date);
     if (time < dateToTime(first.date) || time > dateToTime(last.date)) continue;
+    activityTotal += day.estimatedActivityCalories || 0;
     if (day.calories > 0 || day.meals.length > 0) intakeCalories.push(day.calories);
   }
+  const avgActivity = Math.round(activityTotal / (span + 1));
   if (intakeCalories.length < 7) {
     return {
       ...base,
       windowDays: span,
       intakeDays: intakeCalories.length,
+      avgActivity,
       trendChangeLbs: Number((last.trend - first.trend).toFixed(2)),
     };
   }
@@ -145,7 +158,7 @@ export function estimateTdee(
   const avgIntake =
     intakeCalories.reduce((sum, c) => sum + c, 0) / intakeCalories.length;
   const trendChange = last.trend - first.trend;
-  const rawMeasured = avgIntake - (trendChange * KCAL_PER_LB) / span;
+  const rawMeasured = avgIntake - (trendChange * KCAL_PER_LB) / span - avgActivity;
   const measuredTdee = Math.round(
     Math.min(MAX_PLAUSIBLE_TDEE, Math.max(MIN_PLAUSIBLE_TDEE, rawMeasured))
   );
@@ -166,6 +179,7 @@ export function estimateTdee(
     measuredTdee,
     fallbackTdee: fallback.tdee,
     bmr: fallback.bmr,
+    avgActivity,
     confidence,
     windowDays: span,
     intakeDays: intakeCalories.length,

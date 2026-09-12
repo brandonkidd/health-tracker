@@ -66,6 +66,9 @@ export function checkInDelta(checkIn: WeeklyCheckIn) {
   };
 }
 
-export function estimatedDeficit(log: DailyLog, estimatedMaintenance = 2600): number {
-  return estimatedMaintenance + log.estimatedActivityCalories - log.calories;
+/** Base daily burn (BMR-level, no exercise) used before the engine has data. */
+export const BASE_DAILY_BURN = 1850;
+
+export function estimatedDeficit(log: DailyLog, baseBurn = BASE_DAILY_BURN): number {
+  return baseBurn + log.estimatedActivityCalories - log.calories;
 }

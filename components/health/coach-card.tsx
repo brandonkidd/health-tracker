@@ -27,12 +27,14 @@ export function CoachCard({
   insight,
   status,
   todayCalories,
+  todayActivityCalories = 0,
   onRefresh,
 }: {
   engine: EngineSnapshot | null;
   insight: DailyInsight | null;
   status: InsightStatus;
   todayCalories: number;
+  todayActivityCalories?: number;
   onRefresh: () => void;
 }) {
   // Always starts collapsed; only expands when the user clicks it.
@@ -41,14 +43,18 @@ export function CoachCard({
   if (!engine) return null;
 
   const { tdee, targets, forecast } = engine;
-  const deficit = tdee.tdee - todayCalories;
+  // Base burn + tracked exercise − food; the base has no exercise baked in.
+  const deficit = tdee.tdee + todayActivityCalories - todayCalories;
   const eta = forecast ? formatEta(forecast) : null;
 
   const chips: { label: string; value: string; hint?: string }[] = [
     {
-      label: "Your burn (TDEE)",
+      label: "Base burn",
       value: `${tdee.tdee.toLocaleString()} cal`,
-      hint: confidenceLabel(tdee.confidence),
+      hint:
+        todayActivityCalories > 0
+          ? `+${todayActivityCalories.toLocaleString()} exercise today`
+          : confidenceLabel(tdee.confidence),
     },
     {
       label: "Today's target",

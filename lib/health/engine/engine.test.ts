@@ -72,8 +72,9 @@ describe("adaptive TDEE", () => {
     expect(estimate.tdee).toBe(estimate.fallbackTdee);
   });
 
-  it("measures TDEE from intake vs trend-weight change", () => {
-    // Eat 2000/day while losing 1 lb/week → true TDEE = 2500.
+  it("measures the base burn from intake vs trend-weight change", () => {
+    // Eat 2000/day while losing 1 lb/week with no tracked exercise
+    // → true base burn = 2500.
     const state = stateWithDays(28, (i) => ({
       weight: 200 - i / 7,
       calories: 2000,
@@ -86,6 +87,28 @@ describe("adaptive TDEE", () => {
     expect(estimate.confidence).toBeGreaterThan(0.9);
     expect(estimate.tdee).toBe(estimate.measuredTdee);
     expect(estimate.avgIntake).toBe(2000);
+  });
+
+  it("subtracts tracked exercise so the measured burn stays a base", () => {
+    // Same energy balance, but 500 cal/day of logged classes: the total burn
+    // is still 2500, so the base must come out ~2000.
+    const state = stateWithDays(28, (i) => ({
+      weight: 200 - i / 7,
+      calories: 2000,
+      estimatedActivityCalories: 500,
+    }));
+    const estimate = estimateTdee(state, addDays(START, 27));
+    expect(estimate.avgActivity).toBe(500);
+    expect(estimate.measuredTdee as number).toBeGreaterThan(1880);
+    expect(estimate.measuredTdee as number).toBeLessThan(2060);
+  });
+
+  it("uses the BMR itself as the fallback base (no activity multiplier)", () => {
+    const estimate = estimateTdee(emptyHealthState(), START);
+    expect(estimate.fallbackTdee).toBe(estimate.bmr);
+    // Plan baseline lean mass → base ≈ 1850, matching the InBody BMR.
+    expect(estimate.fallbackTdee).toBeGreaterThan(1840);
+    expect(estimate.fallbackTdee).toBeLessThan(1870);
   });
 
   it("keeps confidence low with sparse logging", () => {
@@ -114,6 +137,7 @@ describe("dynamic targets", () => {
         measuredTdee: 2600,
         fallbackTdee: 2600,
         bmr: 1856,
+        avgActivity: 0,
         confidence: 1,
         windowDays: 27,
         intakeDays: 28,
@@ -140,6 +164,7 @@ describe("dynamic targets", () => {
         measuredTdee: 1700,
         fallbackTdee: 1700,
         bmr: 1500,
+        avgActivity: 0,
         confidence: 1,
         windowDays: 27,
         intakeDays: 28,

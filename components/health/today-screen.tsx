@@ -9,7 +9,7 @@ import {
   plannedActivity,
 } from "@/lib/health/config";
 import { ptDateKey, shiftDateKey } from "@/lib/health/date";
-import { estimatedDeficit } from "@/lib/health/projections";
+import { BASE_DAILY_BURN, estimatedDeficit } from "@/lib/health/projections";
 import { latestTrendPoint } from "@/lib/health/engine";
 import type { EngineSnapshot } from "@/lib/health/engine";
 import type { InsightStatus } from "@/hooks/use-health-state";
@@ -664,13 +664,15 @@ export function TodayScreen({
     (item) => item.tier === 1 && !archivedSupplements.includes(item.id)
   );
   const supplementsTaken = supplementList.filter((item) => day.supplements[item.id]).length;
-  // Adaptive: deficit against the learned TDEE; static estimate as fallback.
-  const deficit = engine ? engine.tdee.tdee - day.calories : estimatedDeficit(day);
+  // Deficit = base burn + tracked exercise − intake (never double-counted:
+  // the engine's burn is a true base with no exercise allowance baked in).
+  const deficit = engine
+    ? engine.tdee.tdee + day.estimatedActivityCalories - day.calories
+    : estimatedDeficit(day);
   const targets = engine?.targets ?? BODYFI_PLAN.targets;
 
-  // Net tab: body burn (learned TDEE already includes average daily movement)
-  // plus logged exercise, minus everything eaten.
-  const baseBurn = engine ? engine.tdee.tdee : 2600;
+  // Net tab: base body burn plus logged exercise, minus everything eaten.
+  const baseBurn = engine ? engine.tdee.tdee : BASE_DAILY_BURN;
   const netBurned = baseBurn + day.estimatedActivityCalories - day.calories;
   const plannedDeficit = Math.max(0, baseBurn - targets.calories);
   // Exercise earns back budget: eating this much more still lands the deficit.
@@ -1254,6 +1256,7 @@ export function TodayScreen({
           insight={insight}
           status={insightStatus}
           todayCalories={day.calories}
+          todayActivityCalories={day.estimatedActivityCalories}
           onRefresh={onRefreshInsight}
         />
       )}
@@ -1293,11 +1296,11 @@ export function TodayScreen({
             <div className="hc-net-rows">
               <div>
                 <span>
-                  Your daily burn
+                  Your base burn
                   <small>
                     {engine && engine.tdee.confidence >= 0.4
-                      ? "body + everyday movement, learned from your data"
-                      : "body + everyday movement, estimate"}
+                      ? "your body's baseline, learned from your data"
+                      : "your body's baseline — workouts add on top"}
                   </small>
                 </span>
                 <strong>+{baseBurn.toLocaleString()}</strong>
@@ -1794,8 +1797,8 @@ export function TodayScreen({
           Estimated daily deficit: <strong>{deficit > 0 ? deficit : 0} cal</strong>
           <small>
             {engine && engine.tdee.confidence >= 0.4
-              ? `Measured against your learned burn of ${engine.tdee.tdee.toLocaleString()} cal/day (from ${engine.tdee.windowDays} days of weight + intake data).`
-              : "Burn estimate is still calibrating — keep logging weight and food and it learns your real metabolism."}
+              ? `Base burn of ${engine.tdee.tdee.toLocaleString()} cal/day (learned from ${engine.tdee.windowDays} days of weight + intake data) plus today's tracked exercise, minus food.`
+              : `Base burn of ${baseBurn.toLocaleString()} cal/day plus today's tracked exercise, minus food. Keep logging weight and meals to sharpen it.`}
           </small>
         </div>
       </CollapsibleCard>
