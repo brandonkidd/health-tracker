@@ -1558,20 +1558,24 @@ export function TodayScreen({
             Snap the class display or your watch summary — calories, time, heart rate, and weights
             get logged automatically.
           </small>
-          {!describeOpen ? (
-            <button
-              className="hc-text-button hc-describe-toggle"
-              onClick={() => setDescribeOpen(true)}
-              disabled={scanBusy || describeBusy}
-            >
-              No screen to scan? Describe the workout instead
-            </button>
-          ) : (
+          <button
+            className={
+              describeOpen ? "hc-text-button hc-describe-toggle active" : "hc-text-button hc-describe-toggle"
+            }
+            onClick={() => {
+              setDescribeOpen(!describeOpen);
+              setScanError(null);
+            }}
+            disabled={scanBusy || describeBusy}
+          >
+            Ask AI — pickleball, golf, bike rides, or any workout
+          </button>
+          {describeOpen && (
             <div className="hc-describe-form">
               <textarea
                 className="hc-describe-input"
                 rows={2}
-                placeholder="e.g. 45 min spin class, pushed hard — or leg day: goblet squats 3×10 at 50 lb"
+                placeholder="e.g. 90 min of pickleball, walked 18 holes, 45 min bike ride — or leg day: goblet squats 3×10 at 50 lb"
                 value={describeText}
                 autoFocus
                 onChange={(event) => setDescribeText(event.target.value)}
@@ -1595,6 +1599,10 @@ export function TodayScreen({
                   Cancel
                 </button>
               </div>
+              <small className="hc-muted">
+                Estimates the burn from what you describe and adds it to today&apos;s exercise —
+                it stacks with scanned classes, so log outside activities any time.
+              </small>
             </div>
           )}
           {scanError && <p className="hc-scan-error">{scanError}</p>}
