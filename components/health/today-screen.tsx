@@ -12,7 +12,7 @@ import { ptDateKey, shiftDateKey } from "@/lib/health/date";
 import { BASE_DAILY_BURN, estimatedDeficit } from "@/lib/health/projections";
 import { latestTrendPoint } from "@/lib/health/engine";
 import type { EngineSnapshot } from "@/lib/health/engine";
-import type { InsightStatus } from "@/hooks/use-health-state";
+import type { CoachChatStatus, InsightStatus } from "@/hooks/use-health-state";
 import type { DailyInsight, DailyLog, MealEntry, WorkoutScan } from "@/lib/health/types";
 import {
   ALCOHOL_PRESETS,
@@ -626,6 +626,9 @@ export function TodayScreen({
   insight,
   insightStatus,
   onRefreshInsight,
+  onSendCoachMessage,
+  coachChatStatus,
+  coachChatError,
   onChange,
   onClear,
   onDateChange,
@@ -640,6 +643,9 @@ export function TodayScreen({
   insight: DailyInsight | null;
   insightStatus: InsightStatus;
   onRefreshInsight: () => void;
+  onSendCoachMessage: (message: string) => Promise<void> | void;
+  coachChatStatus: CoachChatStatus;
+  coachChatError: string | null;
   onChange: (next: DailyLog) => void;
   onClear: () => void;
   onDateChange: (next: string) => void;
@@ -1258,6 +1264,9 @@ export function TodayScreen({
           todayCalories={day.calories}
           todayActivityCalories={day.estimatedActivityCalories}
           onRefresh={onRefreshInsight}
+          onSendMessage={onSendCoachMessage}
+          chatStatus={coachChatStatus}
+          chatError={coachChatError}
         />
       )}
 

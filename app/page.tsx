@@ -115,6 +115,9 @@ export default function HealthCommandCenter() {
     insight,
     insightStatus,
     refreshInsight,
+    sendCoachMessage,
+    coachChatStatus,
+    coachChatError,
   } = useHealthState();
   const [view, setView] = useState<View>("today");
   const today = usePtToday();
@@ -206,6 +209,9 @@ export default function HealthCommandCenter() {
             insight={insight}
             insightStatus={insightStatus}
             onRefreshInsight={refreshInsight}
+            onSendCoachMessage={sendCoachMessage}
+            coachChatStatus={coachChatStatus}
+            coachChatError={coachChatError}
             onChange={updateDay}
             onClear={clearDay}
             onDateChange={setDate}

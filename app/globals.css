@@ -1153,6 +1153,12 @@ h4 {
   transform: translateY(-1px);
 }
 
+.hc-button:disabled {
+  opacity: 0.55;
+  transform: none;
+  cursor: not-allowed;
+}
+
 .hc-button-secondary {
   color: var(--text);
   background: var(--white);
@@ -2707,6 +2713,115 @@ h4 {
   font-style: italic;
 }
 
+.hc-coach-talk {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(25, 24, 23, 0.08);
+}
+
+.hc-coach-talk-header {
+  display: grid;
+  gap: 2px;
+}
+
+.hc-coach-talk-header strong {
+  font-size: 14px;
+}
+
+.hc-coach-talk-header span {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.hc-coach-thread {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 2px 2px 4px;
+}
+
+.hc-coach-bubble {
+  display: grid;
+  gap: 4px;
+  max-width: 92%;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.hc-coach-bubble p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.hc-coach-bubble-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hc-coach-bubble-user {
+  justify-self: end;
+  background: var(--accent-soft);
+  border-bottom-right-radius: 6px;
+}
+
+.hc-coach-bubble-ai {
+  justify-self: start;
+  background: var(--white);
+  border: 1px solid rgba(25, 24, 23, 0.06);
+  border-bottom-left-radius: 6px;
+}
+
+.hc-coach-bubble-pending {
+  opacity: 0.72;
+}
+
+.hc-coach-composer {
+  display: grid;
+  gap: 8px;
+}
+
+.hc-coach-composer textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 11px 13px;
+  resize: vertical;
+  color: var(--text);
+  border: 1px solid rgba(25, 24, 23, 0.08);
+  border-radius: 14px;
+  outline: none;
+  background: var(--white);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hc-coach-composer textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.hc-coach-composer textarea:disabled {
+  opacity: 0.7;
+}
+
+.hc-coach-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hc-coach-composer-actions .hc-button {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
 @media (max-width: 480px) {
   .hc-coach-card > summary {
     padding: 13px 16px;
@@ -2722,6 +2837,10 @@ h4 {
 
   .hc-coach-chips {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hc-coach-bubble {
+    max-width: 100%;
   }
 }
 
