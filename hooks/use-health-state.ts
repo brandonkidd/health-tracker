@@ -15,7 +15,12 @@ import {
   parseHealthBackup,
   saveHealthState,
 } from "@/lib/health/storage";
-import type { DailyInsight, HealthState, SyncState } from "@/lib/health/types";
+import type {
+  CoachMessage,
+  DailyInsight,
+  HealthState,
+  SyncState,
+} from "@/lib/health/types";
 
 export type InsightStatus =
   | "idle"
@@ -23,6 +28,8 @@ export type InsightStatus =
   | "loading"
   | "ready"
   | "error";
+
+export type CoachChatStatus = "idle" | "sending" | "error";
 
 function todayIso(): string {
   return ptDateKey();
@@ -45,6 +52,8 @@ export function useHealthState() {
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [cloudChecked, setCloudChecked] = useState(false);
   const [insightStatus, setInsightStatus] = useState<InsightStatus>("idle");
+  const [coachChatStatus, setCoachChatStatus] = useState<CoachChatStatus>("idle");
+  const [coachChatError, setCoachChatError] = useState<string | null>(null);
   const cloudEnabled = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insightAttempted = useRef<string | null>(null);
@@ -159,19 +168,24 @@ export function useHealthState() {
           if (!response.ok) throw new Error("Insight generation failed");
           const payload = (await response.json()) as Omit<
             DailyInsight,
-            "date" | "digestHash" | "generatedAt"
+            "date" | "digestHash" | "generatedAt" | "conversation"
           >;
+          // Fresh analysis replaces the day's insight; drop the old talk-back
+          // thread so it isn't arguing with a superseded read.
           const insight: DailyInsight = {
             ...payload,
             date: today,
             digestHash: hash,
             generatedAt: new Date().toISOString(),
+            conversation: [],
           };
           updateState((prev) => ({
             ...prev,
             insights: { ...(prev.insights ?? {}), [today]: insight },
           }));
           setInsightStatus("ready");
+          setCoachChatStatus("idle");
+          setCoachChatError(null);
         })
         .catch(() => setInsightStatus("error"));
     },
@@ -194,6 +208,95 @@ export function useHealthState() {
     generateInsight(state, true);
   }, [generateInsight, state]);
 
+  const sendCoachMessage = useCallback(
+    async (text: string) => {
+      const today = todayIso();
+      const message = text.trim();
+      const currentInsight = state.insights?.[today];
+      if (!message || !currentInsight || !engine) return;
+
+      const userTurn: CoachMessage = {
+        id: `coach-user-${crypto.randomUUID()}`,
+        role: "user",
+        content: message,
+        at: new Date().toISOString(),
+      };
+      const prior = currentInsight.conversation ?? [];
+      updateState((prev) => {
+        const existing = prev.insights?.[today];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          insights: {
+            ...(prev.insights ?? {}),
+            [today]: {
+              ...existing,
+              conversation: [...(existing.conversation ?? []), userTurn],
+            },
+          },
+        };
+      });
+
+      setCoachChatStatus("sending");
+      setCoachChatError(null);
+      const digest = buildInsightDigest(state, engine, today);
+
+      try {
+        const response = await fetch("/api/coach-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            digest,
+            insight: {
+              headline: currentInsight.headline,
+              summary: currentInsight.summary,
+              wins: currentInsight.wins,
+              risks: currentInsight.risks,
+              recommendations: currentInsight.recommendations,
+              outlook: currentInsight.outlook,
+            },
+            messages: prior.map((turn) => ({
+              role: turn.role,
+              content: turn.content,
+            })),
+            message,
+          }),
+        });
+        const payload = (await response.json()) as { reply?: string; error?: string };
+        if (!response.ok || !payload.reply) {
+          throw new Error(payload.error || "The coach could not reply.");
+        }
+        const assistantTurn: CoachMessage = {
+          id: `coach-ai-${crypto.randomUUID()}`,
+          role: "assistant",
+          content: payload.reply,
+          at: new Date().toISOString(),
+        };
+        updateState((prev) => {
+          const existing = prev.insights?.[today];
+          if (!existing) return prev;
+          return {
+            ...prev,
+            insights: {
+              ...(prev.insights ?? {}),
+              [today]: {
+                ...existing,
+                conversation: [...(existing.conversation ?? []), assistantTurn],
+              },
+            },
+          };
+        });
+        setCoachChatStatus("idle");
+      } catch (error) {
+        setCoachChatStatus("error");
+        setCoachChatError(
+          error instanceof Error ? error.message : "Couldn't reach the coach."
+        );
+      }
+    },
+    [engine, state, updateState]
+  );
+
   const insight: DailyInsight | null = state.insights?.[todayIso()] ?? null;
 
   return {
@@ -206,5 +309,8 @@ export function useHealthState() {
     insight,
     insightStatus,
     refreshInsight,
+    sendCoachMessage,
+    coachChatStatus,
+    coachChatError,
   };
 }

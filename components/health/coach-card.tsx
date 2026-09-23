@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EngineSnapshot } from "@/lib/health/engine";
-import type { InsightStatus } from "@/hooks/use-health-state";
+import type { CoachChatStatus, InsightStatus } from "@/hooks/use-health-state";
 import type { DailyInsight } from "@/lib/health/types";
 import { StatusBadge } from "./ui";
 
@@ -29,6 +29,9 @@ export function CoachCard({
   todayCalories,
   todayActivityCalories = 0,
   onRefresh,
+  onSendMessage,
+  chatStatus = "idle",
+  chatError = null,
 }: {
   engine: EngineSnapshot | null;
   insight: DailyInsight | null;
@@ -36,9 +39,23 @@ export function CoachCard({
   todayCalories: number;
   todayActivityCalories?: number;
   onRefresh: () => void;
+  onSendMessage?: (message: string) => Promise<void> | void;
+  chatStatus?: CoachChatStatus;
+  chatError?: string | null;
 }) {
   // Always starts collapsed; only expands when the user clicks it.
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  const conversation = insight?.conversation ?? [];
+  const sending = chatStatus === "sending";
+
+  useEffect(() => {
+    const node = threadRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [conversation.length, sending]);
 
   if (!engine) return null;
 
@@ -84,6 +101,13 @@ export function CoachCard({
     chips.push({ label: "On pace for", value: eta });
   }
 
+  async function handleSend() {
+    const message = draft.trim();
+    if (!message || !onSendMessage || sending) return;
+    setDraft("");
+    await onSendMessage(message);
+  }
+
   return (
     <details
       className="hc-card hc-collapsible hc-coach-card"
@@ -120,58 +144,122 @@ export function CoachCard({
       </summary>
 
       <div className="hc-coach-inner">
-      <div className="hc-coach-chips">
-        {chips.map((chip) => (
-          <div key={chip.label} className="hc-coach-chip">
-            <span>{chip.label}</span>
-            <strong>{chip.value}</strong>
-            {chip.hint && <small>{chip.hint}</small>}
-          </div>
-        ))}
-      </div>
-
-      {status === "error" && (
-        <p className="hc-scan-error">
-          Couldn&apos;t generate today&apos;s analysis.{" "}
-          <button className="hc-text-button" style={{ padding: 0 }} onClick={onRefresh}>
-            Try again
-          </button>
-        </p>
-      )}
-
-      {insight && (
-        <div className="hc-coach-body">
-          <p className="hc-coach-summary">{insight.summary}</p>
-
-          {(insight.wins.length > 0 || insight.risks.length > 0) && (
-            <div className="hc-coach-tags">
-              {insight.wins.map((win, index) => (
-                <span key={`win-${index}`} className="hc-badge hc-badge-good">
-                  {win}
-                </span>
-              ))}
-              {insight.risks.map((risk, index) => (
-                <span key={`risk-${index}`} className="hc-badge hc-badge-watch">
-                  {risk}
-                </span>
-              ))}
+        <div className="hc-coach-chips">
+          {chips.map((chip) => (
+            <div key={chip.label} className="hc-coach-chip">
+              <span>{chip.label}</span>
+              <strong>{chip.value}</strong>
+              {chip.hint && <small>{chip.hint}</small>}
             </div>
-          )}
-
-          {insight.recommendations.length > 0 && (
-            <div className="hc-coach-recs">
-              {insight.recommendations.map((rec, index) => (
-                <div key={index} className="hc-coach-rec">
-                  <strong>{rec.title}</strong>
-                  <span>{rec.detail}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {insight.outlook && <p className="hc-coach-outlook">{insight.outlook}</p>}
+          ))}
         </div>
-      )}
+
+        {status === "error" && (
+          <p className="hc-scan-error">
+            Couldn&apos;t generate today&apos;s analysis.{" "}
+            <button className="hc-text-button" style={{ padding: 0 }} onClick={onRefresh}>
+              Try again
+            </button>
+          </p>
+        )}
+
+        {insight && (
+          <div className="hc-coach-body">
+            <p className="hc-coach-summary">{insight.summary}</p>
+
+            {(insight.wins.length > 0 || insight.risks.length > 0) && (
+              <div className="hc-coach-tags">
+                {insight.wins.map((win, index) => (
+                  <span key={`win-${index}`} className="hc-badge hc-badge-good">
+                    {win}
+                  </span>
+                ))}
+                {insight.risks.map((risk, index) => (
+                  <span key={`risk-${index}`} className="hc-badge hc-badge-watch">
+                    {risk}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {insight.recommendations.length > 0 && (
+              <div className="hc-coach-recs">
+                {insight.recommendations.map((rec, index) => (
+                  <div key={index} className="hc-coach-rec">
+                    <strong>{rec.title}</strong>
+                    <span>{rec.detail}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {insight.outlook && <p className="hc-coach-outlook">{insight.outlook}</p>}
+
+            {onSendMessage && (
+              <div className="hc-coach-talk">
+                <div className="hc-coach-talk-header">
+                  <strong>Talk it through</strong>
+                  <span>Push back, clarify, or add context the coach missed.</span>
+                </div>
+
+                {(conversation.length > 0 || sending) && (
+                  <div className="hc-coach-thread" ref={threadRef} aria-live="polite">
+                    {conversation.map((turn) => (
+                      <div
+                        key={turn.id}
+                        className={
+                          turn.role === "user"
+                            ? "hc-coach-bubble hc-coach-bubble-user"
+                            : "hc-coach-bubble hc-coach-bubble-ai"
+                        }
+                      >
+                        <span className="hc-coach-bubble-label">
+                          {turn.role === "user" ? "You" : "Coach"}
+                        </span>
+                        <p>{turn.content}</p>
+                      </div>
+                    ))}
+                    {sending && (
+                      <div className="hc-coach-bubble hc-coach-bubble-ai hc-coach-bubble-pending">
+                        <span className="hc-coach-bubble-label">Coach</span>
+                        <p>Thinking…</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="hc-coach-composer">
+                  <textarea
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleSend();
+                      }
+                    }}
+                    placeholder="e.g. I slept 5 hours and had two drinks — does that change today?"
+                    rows={3}
+                    disabled={sending}
+                    aria-label="Message the adaptive coach"
+                  />
+                  <div className="hc-coach-composer-actions">
+                    <button
+                      type="button"
+                      className="hc-button"
+                      onClick={() => void handleSend()}
+                      disabled={sending || !draft.trim()}
+                    >
+                      {sending ? "Sending…" : "Send"}
+                    </button>
+                  </div>
+                </div>
+
+                {chatError && <p className="hc-scan-error">{chatError}</p>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </details>
   );

@@ -111,6 +111,14 @@ export interface InsightRecommendation {
   detail: string;
 }
 
+/** One turn in the talk-back thread under today's adaptive coach insight. */
+export interface CoachMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  at: string;
+}
+
 /** AI-generated daily analysis, cached per date and keyed to the data digest. */
 export interface DailyInsight {
   date: string;
@@ -122,6 +130,8 @@ export interface DailyInsight {
   risks: string[];
   recommendations: InsightRecommendation[];
   outlook: string;
+  /** Optional pushback / clarification thread for this day's insight. */
+  conversation?: CoachMessage[];
 }
 
 export interface HealthState {
