@@ -1,4 +1,5 @@
 import type { DailyLog, HealthState } from "../types";
+import { hasIntake } from "./intake-quality";
 import { addDays } from "./trend";
 
 /**
@@ -57,10 +58,6 @@ const ALCOHOL_PATTERN =
 
 export function isAlcoholDay(day: DailyLog): boolean {
   return day.meals.some((meal) => ALCOHOL_PATTERN.test(meal.label));
-}
-
-function hasIntake(day: DailyLog): boolean {
-  return day.calories > 0 || day.meals.length > 0;
 }
 
 function trainedOn(day: DailyLog): boolean {
