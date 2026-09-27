@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         "`logging` summarizes how many such days were excluded from the robust average. Do NOT treat likelyIncomplete / inProgress low totals as intentional deficits — ask for fuller logging or ignore them in the trend read. " +
         "`engine.composition` is the PRIMARY goal — shirt fit: bigger chest/back/arms, smaller stomach (`lookGoal`). " +
         "Steer by waist, body fat %, lean/skeletal muscle, and shirtFitImproving / upperBodyUp / midsectionDown. ETA is to ~15% BF and/or ~35.5\" waist, not a scale weight. " +
+        "`composition.bodyFatMilestones` lists estimated dates for each whole-% BF drop to the goal — cite those dates in the outlook when present. " +
         "The user does NOT care what they weigh. Never congratulate or scold based on scale weight alone. " +
         "If composition.isRecompPattern or shirtFitImproving is true, celebrate shape change even when weight is flat. " +
         "`engine.forecast` weight path is secondary noise; prefer composition.etaDate / lookGoal in outlook when available. " +

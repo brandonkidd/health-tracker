@@ -446,6 +446,59 @@ export function BodyScreen({
           <p className="hc-muted hc-compact-copy" style={{ marginTop: 12 }}>
             {composition.summary}
           </p>
+
+          {composition.bodyFatMilestones.length > 0 && (
+            <div className="hc-bf-milestones">
+              <SectionHeader
+                eyebrow="Projected dates"
+                title={`Each % down to ${composition.goalBodyFat}%`}
+              />
+              <p className="hc-muted hc-compact-copy" style={{ marginTop: 0 }}>
+                Now {composition.latest.bodyFat}%
+                {composition.bodyFatPacePerWeek != null
+                  ? ` · ${Math.abs(composition.bodyFatPacePerWeek).toFixed(2)} pp/week ${
+                      composition.bodyFatPaceSource === "observed"
+                        ? "from your scans"
+                        : "plan estimate (update with the next InBody)"
+                    }`
+                  : " · need another InBody a few weeks apart to lock pace"}
+              </p>
+              <div className="hc-bf-milestone-list">
+                <div className="hc-bf-milestone current">
+                  <strong>Now</strong>
+                  <span>{composition.latest.bodyFat}%</span>
+                  <em>today</em>
+                </div>
+                {composition.bodyFatMilestones.map((milestone) => {
+                  const label = milestone.date
+                    ? new Date(`${milestone.date}T12:00:00`).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "—";
+                  const weeksLabel =
+                    milestone.weeksFromNow == null
+                      ? "pace TBD"
+                      : milestone.weeksFromNow === 0
+                        ? "now"
+                        : `~${Math.round(milestone.weeksFromNow)} wk`;
+                  return (
+                    <div
+                      key={milestone.bodyFat}
+                      className={
+                        milestone.isGoal ? "hc-bf-milestone goal" : "hc-bf-milestone"
+                      }
+                    >
+                      <strong>{milestone.bodyFat}%</strong>
+                      <span>{label}</span>
+                      <em>{milestone.isGoal ? `goal · ${weeksLabel}` : weeksLabel}</em>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Card>
       )}
 

@@ -88,6 +88,14 @@ export interface InsightDigest {
       deltaWeightLb: number | null;
       observedBodyFatRatePerWeek: number | null;
       observedWaistRatePerWeek: number | null;
+      bodyFatPacePerWeek: number | null;
+      bodyFatPaceSource: "observed" | "plan" | null;
+      bodyFatMilestones: {
+        bodyFat: number;
+        weeksFromNow: number | null;
+        date: string | null;
+        isGoal: boolean;
+      }[];
       etaWeeks: number | null;
       etaDate: string | null;
       etaBasis: "bodyFat" | "waist" | "both" | null;
@@ -213,6 +221,9 @@ export function buildInsightDigest(
         deltaWeightLb: snapshot.composition.delta.weightLb,
         observedBodyFatRatePerWeek: snapshot.composition.observedBodyFatRatePerWeek,
         observedWaistRatePerWeek: snapshot.composition.observedWaistRatePerWeek,
+        bodyFatPacePerWeek: snapshot.composition.bodyFatPacePerWeek,
+        bodyFatPaceSource: snapshot.composition.bodyFatPaceSource,
+        bodyFatMilestones: snapshot.composition.bodyFatMilestones,
         etaWeeks: snapshot.composition.etaWeeks,
         etaDate: snapshot.composition.etaDate,
         etaBasis: snapshot.composition.etaBasis,
