@@ -70,6 +70,22 @@ export interface InsightDigest {
       deltaVsPlan: number;
       planWeightToday: number;
     } | null;
+    /** Primary cut goal: body-fat % progress from InBody scans. */
+    composition: {
+      goalBodyFat: number;
+      guideWeight: number;
+      latestBodyFat: number;
+      firstBodyFat: number;
+      deltaBodyFatPp: number | null;
+      deltaLeanMassLb: number | null;
+      deltaFatMassLb: number | null;
+      deltaWeightLb: number | null;
+      observedBodyFatRatePerWeek: number | null;
+      etaWeeks: number | null;
+      etaDate: string | null;
+      isRecompPattern: boolean;
+      summary: string;
+    } | null;
     correlations: EngineSnapshot["correlations"]["findings"];
   };
 }
@@ -168,6 +184,24 @@ export function buildInsightDigest(
       }
     : null;
 
+  const composition = snapshot.composition
+    ? {
+        goalBodyFat: snapshot.composition.goalBodyFat,
+        guideWeight: snapshot.composition.guideWeight,
+        latestBodyFat: snapshot.composition.latest.bodyFat,
+        firstBodyFat: snapshot.composition.first.bodyFat,
+        deltaBodyFatPp: snapshot.composition.delta.bodyFatPp,
+        deltaLeanMassLb: snapshot.composition.delta.leanMassLb,
+        deltaFatMassLb: snapshot.composition.delta.fatMassLb,
+        deltaWeightLb: snapshot.composition.delta.weightLb,
+        observedBodyFatRatePerWeek: snapshot.composition.observedBodyFatRatePerWeek,
+        etaWeeks: snapshot.composition.etaWeeks,
+        etaDate: snapshot.composition.etaDate,
+        isRecompPattern: snapshot.composition.isRecompPattern,
+        summary: snapshot.composition.summary,
+      }
+    : null;
+
   return {
     date: today,
     days,
@@ -181,6 +215,7 @@ export function buildInsightDigest(
       tdee: snapshot.tdee,
       targets: snapshot.targets,
       forecast,
+      composition,
       correlations: snapshot.correlations.findings,
     },
   };

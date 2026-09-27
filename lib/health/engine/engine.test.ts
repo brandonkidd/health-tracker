@@ -19,6 +19,7 @@ import {
   robustAverageIntake,
   vsCalorieBudget,
 } from "./intake-quality";
+import { buildCompositionProgress } from "./composition";
 
 const START = "2026-07-24";
 
@@ -355,6 +356,42 @@ describe("intake quality + net budget", () => {
     expect(dayCalorieBudget(2025, 500)).toBe(2525);
     // Ate 2400 on a 2025 rest target with 500 burned → still under net budget.
     expect(vsCalorieBudget(2400, 2025, 500)).toBeLessThanOrEqual(0);
+  });
+});
+
+describe("composition progress", () => {
+  it("flags recomp when fat drops and lean rises with flat weight", () => {
+    const state = emptyHealthState();
+    state.bodyScans = [
+      {
+        id: "old",
+        date: START,
+        weight: 192.9,
+        bodyFat: 21.5,
+        leanMass: 151.5,
+        notes: "",
+      },
+      {
+        id: "new",
+        date: addDays(START, 56),
+        weight: 191.8,
+        bodyFat: 20.5,
+        leanMass: 152.8,
+        notes: "",
+      },
+    ];
+    const progress = buildCompositionProgress(state, addDays(START, 56));
+    expect(progress).not.toBeNull();
+    expect(progress!.goalBodyFat).toBe(15);
+    expect(progress!.delta.bodyFatPp).toBeCloseTo(-1, 5);
+    expect(progress!.delta.leanMassLb).toBeCloseTo(1.3, 5);
+    expect(progress!.isRecompPattern).toBe(true);
+    expect(progress!.etaWeeks).not.toBeNull();
+    expect(progress!.etaWeeks as number).toBeGreaterThan(20);
+  });
+
+  it("returns null with no body-fat scans", () => {
+    expect(buildCompositionProgress(emptyHealthState(), START)).toBeNull();
   });
 });
 

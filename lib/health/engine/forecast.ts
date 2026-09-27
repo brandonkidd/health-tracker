@@ -39,7 +39,12 @@ export interface AdaptiveForecast {
   /** Blended rate the forecast uses. */
   projectedRatePerWeek: number;
   points: ForecastPoint[];
+  /**
+   * Scale-weight guide from the plan (secondary). The primary cut finish
+   * line is body-fat % — see CompositionProgress.goalBodyFat.
+   */
   goalWeight: number;
+  /** Weight-based ETA if still chasing the guide weight (secondary signal). */
   etaWeeks: number | null;
   etaDate: string | null;
   /** What the original static plan says you should weigh today. */
@@ -48,7 +53,7 @@ export interface AdaptiveForecast {
   deltaVsPlan: number;
 }
 
-function goalWeightFromPlan(): number {
+function guideWeightFromPlan(): number {
   const cutEnd = BODYFI_PLAN.anchors.find(
     (anchor) => anchor.week > 0 && anchor.phase === "Cut"
   );
@@ -92,9 +97,11 @@ export function buildForecast(
     });
   }
 
-  const goalWeight = goalWeightFromPlan();
+  const goalWeight = guideWeightFromPlan();
   let etaWeeks: number | null = null;
   let etaDate: string | null = null;
+  // Weight ETA is a guide only — composition ETA (15% BF) is the primary
+  // finish line when scan history exists.
   const remaining = latest.trend - goalWeight;
   if (remaining > 0 && rate < -0.05) {
     etaWeeks = Number((remaining / -rate).toFixed(1));
