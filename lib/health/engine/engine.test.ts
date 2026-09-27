@@ -19,7 +19,7 @@ import {
   robustAverageIntake,
   vsCalorieBudget,
 } from "./intake-quality";
-import { buildCompositionProgress } from "./composition";
+import { buildBodyFatMilestones, buildCompositionProgress } from "./composition";
 
 const START = "2026-07-24";
 
@@ -398,6 +398,22 @@ describe("composition progress", () => {
     expect(progress!.isRecompPattern).toBe(true);
     expect(progress!.etaWeeks).not.toBeNull();
     expect(progress!.etaWeeks as number).toBeGreaterThan(10);
+    expect(progress!.bodyFatMilestones.map((m) => m.bodyFat)).toEqual([
+      20, 19, 18, 17, 16, 15,
+    ]);
+    expect(progress!.bodyFatMilestones.at(-1)?.isGoal).toBe(true);
+    expect(progress!.bodyFatMilestones[0].date).toBeTruthy();
+    expect(progress!.bodyFatMilestones.at(-1)?.date).toBeTruthy();
+  });
+
+  it("builds a per-percent body-fat date ladder", () => {
+    const milestones = buildBodyFatMilestones(20.5, 15, -0.25, START);
+    expect(milestones.map((m) => m.bodyFat)).toEqual([20, 19, 18, 17, 16, 15]);
+    // 0.5 pp at 0.25 pp/week = 2 weeks to 20%
+    expect(milestones[0].weeksFromNow).toBe(2);
+    // 5.5 pp to 15% = 22 weeks
+    expect(milestones.at(-1)?.weeksFromNow).toBe(22);
+    expect(milestones.at(-1)?.date).toBe(addDays(START, 22 * 7));
   });
 
   it("returns null with no body-fat scans", () => {

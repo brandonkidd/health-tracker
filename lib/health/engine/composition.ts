@@ -46,6 +46,16 @@ export interface CompositionDelta {
   waistIn: number | null;
 }
 
+export interface BodyFatMilestone {
+  /** Whole-number body-fat % target (e.g. 20, 19, …, 15). */
+  bodyFat: number;
+  /** Weeks from today at the active pace; null if pace unknown. */
+  weeksFromNow: number | null;
+  /** Calendar ETA (YYYY-MM-DD); null if pace unknown. */
+  date: string | null;
+  isGoal: boolean;
+}
+
 export interface CompositionProgress {
   /** Plain-language physique goal — not a scale number. */
   lookGoal: string;
@@ -63,6 +73,14 @@ export interface CompositionProgress {
   observedBodyFatRatePerWeek: number | null;
   /** Observed waist change rate from first→latest waist mark, in/week. */
   observedWaistRatePerWeek: number | null;
+  /**
+   * Pace used for per-% milestone dates: scan-observed when available,
+   * otherwise the plan's cut-phase average as a provisional estimate.
+   */
+  bodyFatPacePerWeek: number | null;
+  bodyFatPaceSource: "observed" | "plan" | null;
+  /** Estimated date for each whole-% body-fat drop down to the goal. */
+  bodyFatMilestones: BodyFatMilestone[];
   etaWeeks: number | null;
   etaDate: string | null;
   /** Which signal drove the ETA. */
@@ -159,6 +177,58 @@ export function goalWaistFromPlan(): number {
   return GOAL_WAIST;
 }
 
+/** Plan cut-phase average BF change (pp/week) — provisional when scans are thin. */
+function planBodyFatRatePerWeek(): number {
+  const startBf = BODYFI_PLAN.baseline.bodyFat;
+  const cutWeeks = CUT_ANCHOR?.week || 20;
+  return Number(((GOAL_BODY_FAT - startBf) / cutWeeks).toFixed(3));
+}
+
+/**
+ * Whole-percent body-fat checkpoints from just below current down to the goal,
+ * each with an ETA at the given negative pp/week pace.
+ */
+export function buildBodyFatMilestones(
+  currentBodyFat: number,
+  goalBodyFat: number,
+  pacePerWeek: number | null,
+  today: string
+): BodyFatMilestone[] {
+  if (currentBodyFat <= goalBodyFat) {
+    return [
+      {
+        bodyFat: goalBodyFat,
+        weeksFromNow: 0,
+        date: today,
+        isGoal: true,
+      },
+    ];
+  }
+
+  // Next whole percent strictly below current (20.5 → 20; 20.0 → 19).
+  let next = Math.floor(currentBodyFat + 1e-9);
+  if (next >= currentBodyFat - 1e-9) next -= 1;
+  if (next < goalBodyFat) next = goalBodyFat;
+
+  const milestones: BodyFatMilestone[] = [];
+  for (let bodyFat = next; bodyFat >= goalBodyFat; bodyFat -= 1) {
+    const remaining = currentBodyFat - bodyFat;
+    let weeksFromNow: number | null = null;
+    let date: string | null = null;
+    if (pacePerWeek != null && pacePerWeek < -0.02) {
+      weeksFromNow = Number((remaining / -pacePerWeek).toFixed(1));
+      date = addDays(today, Math.round(weeksFromNow * 7));
+    }
+    milestones.push({
+      bodyFat,
+      weeksFromNow,
+      date,
+      isGoal: bodyFat === goalBodyFat,
+    });
+  }
+  return milestones;
+}
+
 export function buildCompositionProgress(
   state: HealthState,
   today: string
@@ -207,6 +277,26 @@ export function buildCompositionProgress(
     );
   }
 
+  let bodyFatPacePerWeek: number | null = null;
+  let bodyFatPaceSource: CompositionProgress["bodyFatPaceSource"] = null;
+  if (observedBodyFatRatePerWeek != null && observedBodyFatRatePerWeek < -0.02) {
+    bodyFatPacePerWeek = observedBodyFatRatePerWeek;
+    bodyFatPaceSource = "observed";
+  } else {
+    const planPace = planBodyFatRatePerWeek();
+    if (planPace < -0.02) {
+      bodyFatPacePerWeek = planPace;
+      bodyFatPaceSource = "plan";
+    }
+  }
+
+  const bodyFatMilestones = buildBodyFatMilestones(
+    latest.bodyFat,
+    GOAL_BODY_FAT,
+    bodyFatPacePerWeek,
+    today
+  );
+
   let observedWaistRatePerWeek: number | null = null;
   if (waistWeeks >= 2 && delta.waistIn != null) {
     observedWaistRatePerWeek = Number(
@@ -225,12 +315,16 @@ export function buildCompositionProgress(
   const waistRemaining =
     latestWaist != null ? latestWaist - GOAL_WAIST : null;
 
+  // Prefer the final milestone date for BF ETA so the headline matches the ladder.
+  const goalMilestone = bodyFatMilestones.find((item) => item.isGoal) ?? null;
   const bfEta =
     bfRemaining <= 0
       ? 0
-      : observedBodyFatRatePerWeek != null && observedBodyFatRatePerWeek < -0.02
-        ? bfRemaining / -observedBodyFatRatePerWeek
-        : null;
+      : goalMilestone?.weeksFromNow != null
+        ? goalMilestone.weeksFromNow
+        : bodyFatPacePerWeek != null && bodyFatPacePerWeek < -0.02
+          ? bfRemaining / -bodyFatPacePerWeek
+          : null;
   const waistEta =
     waistRemaining == null
       ? null
@@ -308,6 +402,13 @@ export function buildCompositionProgress(
       summary += ` / ${GOAL_WAIST}" waist`;
     }
     summary += `) lands around ${etaDate} (~${Math.round(etaWeeks)} weeks).`;
+    if (bodyFatMilestones.length > 1 && bodyFatPaceSource) {
+      const paceLabel =
+        bodyFatPaceSource === "observed"
+          ? `${Math.abs(bodyFatPacePerWeek!).toFixed(2)} pp/week from your scans`
+          : "plan pace (scans still calibrating)";
+      summary += ` Per-% ladder uses ${paceLabel}.`;
+    }
   } else if (etaWeeks === 0) {
     summary += ` You're at the shirt-fit targets (${GOAL_BODY_FAT}% BF / ${GOAL_WAIST}" waist).`;
   } else {
@@ -326,6 +427,9 @@ export function buildCompositionProgress(
     firstWaist,
     observedBodyFatRatePerWeek,
     observedWaistRatePerWeek,
+    bodyFatPacePerWeek,
+    bodyFatPaceSource,
+    bodyFatMilestones,
     etaWeeks,
     etaDate,
     etaBasis,

@@ -1172,6 +1172,57 @@ h4 {
   font-weight: 500;
 }
 
+.hc-bf-milestones {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(25, 24, 23, 0.08);
+}
+
+.hc-bf-milestone-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.hc-bf-milestone {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(25, 24, 23, 0.04);
+}
+
+.hc-bf-milestone.current {
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.hc-bf-milestone.goal {
+  background: rgba(46, 125, 90, 0.1);
+}
+
+.hc-bf-milestone strong {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.hc-bf-milestone span {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 550;
+}
+
+.hc-bf-milestone em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .hc-recomp-compare {
     grid-template-columns: 1fr;
@@ -1179,6 +1230,14 @@ h4 {
 
   .hc-recomp-deltas {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-bf-milestone {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .hc-bf-milestone em {
+    grid-column: 2;
   }
 }
 

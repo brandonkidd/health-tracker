@@ -79,6 +79,7 @@ export type {
   CompositionProgress,
   CompositionDelta,
   CompositionScanPoint,
+  BodyFatMilestone,
 } from "./composition";
 export type { CorrelationFinding, CorrelationReport } from "./correlations";
 export { buildInsightDigest, hashDigest, type InsightDigest } from "./digest";
