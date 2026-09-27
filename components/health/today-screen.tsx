@@ -1823,9 +1823,15 @@ export function TodayScreen({
         <div className="hc-callout">
           Estimated daily deficit: <strong>{deficit > 0 ? deficit : 0} cal</strong>
           <small>
-            {engine && engine.tdee.confidence >= 0.4
-              ? `Base burn of ${engine.tdee.tdee.toLocaleString()} cal/day (learned from ${engine.tdee.windowDays} days of weight + intake data) plus today's tracked exercise, minus food.`
-              : `Base burn of ${baseBurn.toLocaleString()} cal/day plus today's tracked exercise, minus food. Keep logging weight and meals to sharpen it.`}
+            {engine && engine.tdee.scanBmr != null
+              ? `Base burn of ${engine.tdee.tdee.toLocaleString()} cal/day anchored to your InBody BMR (${engine.tdee.scanBmr.toLocaleString()})${
+                  engine.tdee.confidence >= 0.4
+                    ? `, nudged by ${engine.tdee.windowDays} days of weight + intake`
+                    : ""
+                }, plus today's tracked exercise, minus food.`
+              : engine && engine.tdee.confidence >= 0.4
+                ? `Base burn of ${engine.tdee.tdee.toLocaleString()} cal/day (learned from ${engine.tdee.windowDays} days of weight + intake data) plus today's tracked exercise, minus food.`
+                : `Base burn of ${baseBurn.toLocaleString()} cal/day plus today's tracked exercise, minus food. Keep logging weight and meals to sharpen it.`}
           </small>
         </div>
       </CollapsibleCard>

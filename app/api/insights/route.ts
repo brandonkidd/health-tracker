@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         "Digest fields: `days` is the last 28 days of logs. Each day already includes `activityCalories` (tracked workouts/classes/walks), " +
         "`calorieBudget` (= engine.targets.calories rest-day budget + that day's activityCalories), `vsBudget` (calories − calorieBudget; negative means under the NET budget), " +
         "and `netBalance` (base burn + activity − food; positive means deficit). " +
-        "`engine.tdee` is the adaptive BASE daily burn (body only, no exercise) with confidence 0-1; total burn for a day = tdee + that day's activityCalories. " +
+        "`engine.tdee` is the adaptive BASE daily burn (body only, no exercise) with confidence 0-1; it is anchored to `engine.tdee.scanBmr` (latest InBody BMR) when present so incomplete food logs cannot invent a different metabolism. Total burn for a day = tdee + that day's activityCalories. " +
         "`engine.targets.calories` is a REST-DAY intake budget — exercise earns calories back. Never call a day 'over calories' when vsBudget <= 0, " +
         "and never compare intake only to targets.calories on a trained day; use calorieBudget / vsBudget / netBalance. " +
         "`intakeQuality` flags incomplete or outlier food days (`likelyIncomplete`, `inProgress`, `outlierHigh`, `outlierLow`); " +

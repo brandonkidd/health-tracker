@@ -15,14 +15,13 @@ import {
  * in. Tracked workouts/classes (day.estimatedActivityCalories) are added on
  * top of this base wherever a day's total burn or deficit is computed.
  *
- * The measured value learns from energy balance, with tracked exercise
- * removed so it stays a true base:
+ * Priority:
+ *  1. Latest InBody / DEXA BMR (authoritative anchor when present)
+ *  2. Katch-McArdle from latest lean mass
+ *  3. Small energy-balance adjustment from weight + intake, clamped so partial
+ *     meal logging cannot drag base burn far from the scan
  *
  *   measured base = avg intake − (Δ trend weight × 3500 / days) − avg tracked exercise
- *
- * While data is thin it falls back to the latest InBody BMR (~1856 for the
- * plan baseline) or Katch-McArdle from lean mass — i.e. the "1850/day" base —
- * blending toward the measured value as logging completeness grows.
  */
 
 const KCAL_PER_LB = 3500;
@@ -32,16 +31,25 @@ const MAX_PLAUSIBLE_TDEE = 4000;
 /** Guards against misread scan values (e.g. an OCR'd "27") poisoning the fallback. */
 const MIN_PLAUSIBLE_BMR = 800;
 const MAX_PLAUSIBLE_BMR = 3500;
+/**
+ * Measured energy-balance base must stay within this fraction of the InBody /
+ * formula BMR. Stops underlogged meal days from inventing a 2300+ "base burn".
+ */
+const SCAN_ANCHOR_BAND = 0.12;
+/** Even at full confidence, never move more than this many kcal from the scan. */
+const MAX_SCAN_ADJUSTMENT = 200;
 
 export interface TdeeEstimate {
   /** Blended best estimate of the BASE daily burn (no exercise included). */
   tdee: number;
   /** Energy-balance measurement minus tracked exercise (null when data is thin). */
   measuredTdee: number | null;
-  /** Formula-based fallback: latest scan BMR or Katch-McArdle (~1850). */
+  /** Formula/scan fallback used as the anchor (latest scan BMR or Katch-McArdle). */
   fallbackTdee: number;
-  /** Basal metabolic rate used by the fallback. */
+  /** Basal metabolic rate used by the fallback (same as fallbackTdee). */
   bmr: number;
+  /** Latest InBody/DEXA BMR when one exists; null if only the formula is available. */
+  scanBmr: number | null;
   /** Average tracked exercise cal/day inside the measurement window. */
   avgActivity: number;
   /** 0..1 — how much the estimate leans on measured data. */
@@ -98,11 +106,38 @@ export function katchMcArdleBmr(leanMassLb: number): number {
   return Math.round(370 + 21.6 * leanMassKg);
 }
 
-export function fallbackTdee(state: HealthState): { tdee: number; bmr: number } {
+export function fallbackTdee(state: HealthState): {
+  tdee: number;
+  bmr: number;
+  scanBmr: number | null;
+} {
   // The base burn IS the BMR: tracked classes/workouts are added on top per
   // day, so no activity multiplier here (that would double-count exercise).
-  const bmr = latestMeasuredBmr(state) ?? katchMcArdleBmr(latestLeanMassLb(state));
-  return { tdee: bmr, bmr };
+  const scanBmr = latestMeasuredBmr(state);
+  const bmr = scanBmr ?? katchMcArdleBmr(latestLeanMassLb(state));
+  return { tdee: bmr, bmr, scanBmr };
+}
+
+function clampToScanAnchor(raw: number, anchor: number): number {
+  const lo = Math.round(anchor * (1 - SCAN_ANCHOR_BAND));
+  const hi = Math.round(anchor * (1 + SCAN_ANCHOR_BAND));
+  return Math.round(
+    Math.min(
+      MAX_PLAUSIBLE_TDEE,
+      Math.max(MIN_PLAUSIBLE_TDEE, Math.min(hi, Math.max(lo, raw)))
+    )
+  );
+}
+
+function blendWithScanAnchor(
+  measured: number,
+  anchor: number,
+  confidence: number
+): number {
+  const blended = confidence * measured + (1 - confidence) * anchor;
+  return Math.round(
+    Math.min(anchor + MAX_SCAN_ADJUSTMENT, Math.max(anchor - MAX_SCAN_ADJUSTMENT, blended))
+  );
 }
 
 export function estimateTdee(
@@ -127,6 +162,7 @@ export function estimateTdee(
     measuredTdee: null,
     fallbackTdee: fallback.tdee,
     bmr: fallback.bmr,
+    scanBmr: fallback.scanBmr,
     avgActivity: 0,
     confidence: 0,
     windowDays: 0,
@@ -179,9 +215,9 @@ export function estimateTdee(
   const avgIntake = intake.avgIntake;
   const trendChange = last.trend - first.trend;
   const rawMeasured = avgIntake - (trendChange * KCAL_PER_LB) / span - avgActivity;
-  const measuredTdee = Math.round(
-    Math.min(MAX_PLAUSIBLE_TDEE, Math.max(MIN_PLAUSIBLE_TDEE, rawMeasured))
-  );
+  // Keep the energy-balance read tethered to the InBody / formula BMR so
+  // incomplete food logs cannot invent a wildly different base burn.
+  const measuredTdee = clampToScanAnchor(rawMeasured, fallback.tdee);
 
   // Confidence prefers usable coverage; incomplete/outlier days still count
   // toward "something was logged" but don't inflate the measured burn.
@@ -190,19 +226,22 @@ export function estimateTdee(
   const intakeCoverage = 0.7 * usableCoverage + 0.3 * rawCoverage;
   const weighCoverage = Math.min(1, windowPoints.length / (span + 1));
   const spanFactor = Math.min(1, span / 21);
-  const confidence = Number(
+  let confidence = Number(
     (spanFactor * (0.35 + 0.45 * intakeCoverage + 0.2 * weighCoverage)).toFixed(2)
   );
+  // If we had to clamp hard, trust the measurement less.
+  if (Math.abs(rawMeasured - measuredTdee) > 150) {
+    confidence = Number((confidence * 0.65).toFixed(2));
+  }
 
-  const tdee = Math.round(
-    confidence * measuredTdee + (1 - confidence) * fallback.tdee
-  );
+  const tdee = blendWithScanAnchor(measuredTdee, fallback.tdee, confidence);
 
   return {
     tdee,
     measuredTdee,
     fallbackTdee: fallback.tdee,
     bmr: fallback.bmr,
+    scanBmr: fallback.scanBmr,
     avgActivity,
     confidence,
     windowDays: span,

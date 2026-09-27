@@ -80,13 +80,21 @@ describe("adaptive TDEE", () => {
 
   it("measures the base burn from intake vs trend-weight change", () => {
     // Eat 2000/day while losing 1 lb/week with no tracked exercise
-    // → true base burn = 2500.
+    // → true base burn = 2500. Seed a matching scan BMR so the InBody
+    // anchor does not clamp the energy-balance read away from truth.
     const state = stateWithDays(28, (i) => ({
       weight: 200 - i / 7,
       calories: 2000,
     }));
+    state.bodyScans.push({
+      id: "scan-2500",
+      date: START,
+      bmr: 2500,
+      notes: "",
+    });
     const estimate = estimateTdee(state, addDays(START, 27));
     expect(estimate.measuredTdee).not.toBeNull();
+    expect(estimate.scanBmr).toBe(2500);
     // Smoothing transient allows modest deviation from the ideal 2500.
     expect(estimate.measuredTdee as number).toBeGreaterThan(2380);
     expect(estimate.measuredTdee as number).toBeLessThan(2560);
@@ -103,10 +111,39 @@ describe("adaptive TDEE", () => {
       calories: 2000,
       estimatedActivityCalories: 500,
     }));
+    state.bodyScans.push({
+      id: "scan-2000",
+      date: START,
+      bmr: 2000,
+      notes: "",
+    });
     const estimate = estimateTdee(state, addDays(START, 27));
     expect(estimate.avgActivity).toBe(500);
     expect(estimate.measuredTdee as number).toBeGreaterThan(1880);
     expect(estimate.measuredTdee as number).toBeLessThan(2060);
+  });
+
+  it("keeps base burn near the InBody BMR when energy balance drifts high", () => {
+    // Incomplete-looking math (eat 2000, lose 1 lb/wk, no exercise) would
+    // imply ~2500 base — but the scan says 1856, so stay within ±200 of it.
+    const state = stateWithDays(28, (i) => ({
+      weight: 200 - i / 7,
+      calories: 2000,
+    }));
+    state.bodyScans.push({
+      id: "scan-inbody",
+      date: START,
+      bmr: 1856,
+      leanMass: 151.5,
+      notes: "",
+    });
+    const estimate = estimateTdee(state, addDays(START, 27));
+    expect(estimate.scanBmr).toBe(1856);
+    expect(estimate.tdee).toBeGreaterThanOrEqual(1856 - 200);
+    expect(estimate.tdee).toBeLessThanOrEqual(1856 + 200);
+    expect(estimate.measuredTdee as number).toBeLessThanOrEqual(
+      Math.round(1856 * 1.12)
+    );
   });
 
   it("uses the BMR itself as the fallback base (no activity multiplier)", () => {
@@ -143,6 +180,7 @@ describe("dynamic targets", () => {
         measuredTdee: 2600,
         fallbackTdee: 2600,
         bmr: 1856,
+        scanBmr: 1856,
         avgActivity: 0,
         confidence: 1,
         windowDays: 27,
@@ -173,6 +211,7 @@ describe("dynamic targets", () => {
         measuredTdee: 1700,
         fallbackTdee: 1700,
         bmr: 1500,
+        scanBmr: null,
         avgActivity: 0,
         confidence: 1,
         windowDays: 27,
@@ -435,7 +474,9 @@ describe("engine snapshot + digest", () => {
     const today = addDays(START, 27);
     const snapshot = computeEngineSnapshot(state, today);
     expect(snapshot.trendWeight).not.toBeNull();
-    expect(snapshot.tdee.tdee).toBeGreaterThan(2000);
+    // Without a scan, base stays near Katch-McArdle (~1850) with a capped nudge.
+    expect(snapshot.tdee.tdee).toBeGreaterThan(1800);
+    expect(snapshot.tdee.tdee).toBeLessThan(2100);
     expect(snapshot.forecast).not.toBeNull();
 
     const digest = buildInsightDigest(state, snapshot, today);
@@ -598,7 +639,12 @@ describe("engine snapshot + digest", () => {
     const estimate = estimateTdee(state, addDays(START, 27));
     expect(estimate.incompleteIntakeDays).toBeGreaterThanOrEqual(4);
     expect(estimate.avgIntake).toBeGreaterThan(1800);
-    expect(estimate.measuredTdee as number).toBeGreaterThan(2300);
+    // Incomplete days no longer drag avgIntake down; the InBody/formula
+    // anchor still caps measured base near ~1850 (±12%).
+    expect(estimate.measuredTdee as number).toBeGreaterThan(1800);
+    expect(estimate.measuredTdee as number).toBeLessThanOrEqual(
+      Math.round(estimate.fallbackTdee * 1.12)
+    );
   });
 
   it("returns latest trend on or before a date", () => {

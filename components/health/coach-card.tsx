@@ -12,6 +12,22 @@ function confidenceLabel(confidence: number): string {
   return "estimate — keep logging";
 }
 
+function baseBurnHint(
+  tdee: EngineSnapshot["tdee"],
+  todayActivityCalories: number
+): string {
+  if (todayActivityCalories > 0) {
+    return `+${todayActivityCalories.toLocaleString()} exercise today`;
+  }
+  if (tdee.scanBmr != null) {
+    if (Math.abs(tdee.tdee - tdee.scanBmr) <= 25) {
+      return `InBody BMR ${tdee.scanBmr.toLocaleString()}`;
+    }
+    return `InBody ${tdee.scanBmr.toLocaleString()} · adjusted`;
+  }
+  return confidenceLabel(tdee.confidence);
+}
+
 function formatEta(forecast: NonNullable<EngineSnapshot["forecast"]>): string | null {
   if (forecast.etaWeeks == null || forecast.etaDate == null) return null;
   if (forecast.etaWeeks === 0) return "Goal reached";
@@ -68,10 +84,7 @@ export function CoachCard({
     {
       label: "Base burn",
       value: `${tdee.tdee.toLocaleString()} cal`,
-      hint:
-        todayActivityCalories > 0
-          ? `+${todayActivityCalories.toLocaleString()} exercise today`
-          : confidenceLabel(tdee.confidence),
+      hint: baseBurnHint(tdee, todayActivityCalories),
     },
     {
       label: "Today's target",
