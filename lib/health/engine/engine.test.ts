@@ -360,7 +360,7 @@ describe("intake quality + net budget", () => {
 });
 
 describe("composition progress", () => {
-  it("flags recomp when fat drops and lean rises with flat weight", () => {
+  it("tracks shirt fit when waist/fat drop and lean rises", () => {
     const state = emptyHealthState();
     state.bodyScans = [
       {
@@ -369,6 +369,8 @@ describe("composition progress", () => {
         weight: 192.9,
         bodyFat: 21.5,
         leanMass: 151.5,
+        skeletalMuscle: 87.1,
+        waist: 42,
         notes: "",
       },
       {
@@ -377,17 +379,25 @@ describe("composition progress", () => {
         weight: 191.8,
         bodyFat: 20.5,
         leanMass: 152.8,
+        skeletalMuscle: 88.0,
+        waist: 40.5,
         notes: "",
       },
     ];
     const progress = buildCompositionProgress(state, addDays(START, 56));
     expect(progress).not.toBeNull();
+    expect(progress!.lookGoal).toMatch(/chest/i);
     expect(progress!.goalBodyFat).toBe(15);
+    expect(progress!.goalWaist).toBe(35.5);
     expect(progress!.delta.bodyFatPp).toBeCloseTo(-1, 5);
     expect(progress!.delta.leanMassLb).toBeCloseTo(1.3, 5);
+    expect(progress!.delta.waistIn).toBeCloseTo(-1.5, 5);
+    expect(progress!.upperBodyUp).toBe(true);
+    expect(progress!.midsectionDown).toBe(true);
+    expect(progress!.shirtFitImproving).toBe(true);
     expect(progress!.isRecompPattern).toBe(true);
     expect(progress!.etaWeeks).not.toBeNull();
-    expect(progress!.etaWeeks as number).toBeGreaterThan(20);
+    expect(progress!.etaWeeks as number).toBeGreaterThan(10);
   });
 
   it("returns null with no body-fat scans", () => {

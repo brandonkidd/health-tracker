@@ -307,11 +307,11 @@ export function BodyScreen({
     <div className="hc-stack">
       <Card className="hc-hero">
         <div>
-          <div className="hc-eyebrow">Cut → 15% body fat → build</div>
-          <h1>Your body, measured honestly.</h1>
+          <div className="hc-eyebrow">Shirt fit → tighter middle → build</div>
+          <h1>Bigger up top. Smaller through the middle.</h1>
           <p>
-            Primary finish line is <strong>15% body fat</strong> and an athletic look — not a fixed
-            170 on the scale. Weight can hold while fat drops and lean rises; that still counts.
+            The goal is how shirts hang — chest, back, and arms filled out; stomach tighter. Scale
+            weight does not matter. Waist, body fat, and lean/muscle do.
           </p>
         </div>
         <button className="hc-button" onClick={() => setShowCheckIn(!showCheckIn)}>Weekly check-in</button>
@@ -333,6 +333,13 @@ export function BodyScreen({
 
       <div className="hc-status-rail">
         <Card>
+          <span>Waist</span>
+          <strong>
+            {composition?.latestWaist ?? latest?.waist ?? latestScan?.waist ?? "—"}
+            <small> in</small>
+          </strong>
+        </Card>
+        <Card>
           <span>Body fat</span>
           <strong>
             {composition?.latest.bodyFat ?? latestScan?.bodyFat ?? "—"}
@@ -340,72 +347,78 @@ export function BodyScreen({
           </strong>
         </Card>
         <Card>
-          <span>Lean mass</span>
+          <span>Lean / muscle</span>
           <strong>
-            {composition?.latest.leanMass ?? latestScan?.leanMass ?? "—"}
+            {composition?.latest.skeletalMuscle ??
+              composition?.latest.leanMass ??
+              latestScan?.skeletalMuscle ??
+              latestScan?.leanMass ??
+              "—"}
             <small> lb</small>
           </strong>
         </Card>
         <Card>
-          <span>Trend weight</span>
-          <strong>
-            {engine?.trendWeight ?? latest?.weight ?? "—"}
-            <small> lb</small>
-          </strong>
-        </Card>
-        <Card>
-          <span>
-            {composition
-              ? `ETA ${composition.goalBodyFat}% BF`
-              : forecast
-                ? `Guide ${forecast.goalWeight} lb`
-                : "Plan week"}
-          </span>
-          <strong>{composition || forecast ? etaLabel : planWeek(ptDateKey())}</strong>
+          <span>{composition ? "ETA shirt fit" : "Plan week"}</span>
+          <strong>{composition ? etaLabel : planWeek(ptDateKey())}</strong>
         </Card>
       </div>
 
       {composition && (
         <Card>
           <SectionHeader
-            eyebrow="Scan to scan"
-            title="Recomp progress"
+            eyebrow="How the shirt hangs"
+            title="Shirt fit progress"
             action={
-              composition.isRecompPattern ? (
-                <StatusBadge tone="good">Recomp pattern</StatusBadge>
+              composition.shirtFitImproving ? (
+                <StatusBadge tone="good">
+                  {composition.isRecompPattern ? "Shape over scale" : "Improving"}
+                </StatusBadge>
               ) : undefined
             }
           />
+          <p className="hc-muted hc-compact-copy" style={{ marginTop: 0 }}>
+            {composition.lookGoal}
+          </p>
           <div className="hc-recomp-compare">
             <div>
-              <span>First scan · {composition.first.date}</span>
-              <strong>{composition.first.bodyFat}%</strong>
+              <span>Midsection · first → now</span>
+              <strong>
+                {composition.latestWaist != null
+                  ? `${composition.latestWaist}"`
+                  : `${composition.latest.bodyFat}%`}
+              </strong>
               <small>
                 {[
-                  composition.first.weight != null ? `${composition.first.weight} lb` : null,
-                  composition.first.leanMass != null
-                    ? `${composition.first.leanMass} lb lean`
+                  composition.delta.waistIn != null
+                    ? `${formatSigned(composition.delta.waistIn)}" waist`
                     : null,
-                  composition.first.fatMass != null
-                    ? `${composition.first.fatMass} lb fat`
+                  composition.delta.bodyFatPp != null
+                    ? `${formatSigned(composition.delta.bodyFatPp)} pp BF`
                     : null,
+                  composition.delta.fatMassLb != null
+                    ? `${formatSigned(composition.delta.fatMassLb)} lb fat`
+                    : null,
+                  `goal ${composition.goalWaist}" / ${composition.goalBodyFat}%`,
                 ]
                   .filter(Boolean)
                   .join(" · ")}
               </small>
             </div>
             <div>
-              <span>Latest · {composition.latest.date}</span>
-              <strong>{composition.latest.bodyFat}%</strong>
+              <span>Upper body · lean / muscle</span>
+              <strong>
+                {composition.latest.skeletalMuscle ?? composition.latest.leanMass ?? "—"}
+                <small> lb</small>
+              </strong>
               <small>
                 {[
-                  composition.latest.weight != null ? `${composition.latest.weight} lb` : null,
-                  composition.latest.leanMass != null
-                    ? `${composition.latest.leanMass} lb lean`
+                  composition.delta.skeletalMuscleLb != null
+                    ? `${formatSigned(composition.delta.skeletalMuscleLb)} lb skeletal muscle`
                     : null,
-                  composition.latest.fatMass != null
-                    ? `${composition.latest.fatMass} lb fat`
+                  composition.delta.leanMassLb != null
+                    ? `${formatSigned(composition.delta.leanMassLb)} lb lean`
                     : null,
+                  composition.upperBodyUp ? "filling out" : "keep training hard",
                 ]
                   .filter(Boolean)
                   .join(" · ")}
@@ -414,20 +427,20 @@ export function BodyScreen({
           </div>
           <div className="hc-recomp-deltas">
             <div>
+              <span>Waist</span>
+              <strong>{formatSigned(composition.delta.waistIn)}<small> in</small></strong>
+            </div>
+            <div>
               <span>Body fat</span>
               <strong>{formatSigned(composition.delta.bodyFatPp)}<small> pp</small></strong>
             </div>
             <div>
-              <span>Lean mass</span>
+              <span>Lean</span>
               <strong>{formatSigned(composition.delta.leanMassLb)}<small> lb</small></strong>
             </div>
             <div>
               <span>Fat mass</span>
               <strong>{formatSigned(composition.delta.fatMassLb)}<small> lb</small></strong>
-            </div>
-            <div>
-              <span>Scale weight</span>
-              <strong>{formatSigned(composition.delta.weightLb)}<small> lb</small></strong>
             </div>
           </div>
           <p className="hc-muted hc-compact-copy" style={{ marginTop: 12 }}>
@@ -440,8 +453,8 @@ export function BodyScreen({
       <PhotoTimeline />
 
       <CollapsibleCard
-        eyebrow="Secondary signal"
-        title="Scale weight vs plan guide"
+        eyebrow="Optional detail"
+        title="Scale weight (ignore for success)"
         defaultOpen={false}
         action={
           <div className="hc-segmented">
@@ -452,34 +465,17 @@ export function BodyScreen({
       >
         <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} forecast={forecast} />
         <div className="hc-chart-legend">
-          <span className="projected">Plan guide</span>
+          <span className="projected">Old plan guide</span>
           <span className="actual">Actual</span>
-          {forecast && <span className="forecasted">Your pace</span>}
+          {forecast && <span className="forecasted">Pace</span>}
         </div>
-        {composition && (
-          <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
-            Primary goal is <strong>{composition.goalBodyFat}% body fat</strong>
-            {composition.etaWeeks != null && composition.etaWeeks > 0
-              ? ` — about ${Math.round(composition.etaWeeks)} weeks at your scan pace (${etaLabel}). `
-              : composition.etaWeeks === 0
-                ? " — you're there. "
-                : ` (${(composition.latest.bodyFat - composition.goalBodyFat).toFixed(1)} pp to go). `}
-            The ~{composition.guideWeight} lb number is only a guide if lean mass holds.
-          </p>
-        )}
-        {forecast && !composition && (
-          <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
-            At your current pace ({forecast.projectedRatePerWeek > 0 ? "+" : ""}
-            {forecast.projectedRatePerWeek} lb/week from a {forecast.startTrendWeight} lb trend
-            weight), the scale guide is <strong>{forecast.goalWeight} lb</strong>
-            {forecast.etaWeeks != null && forecast.etaWeeks > 0
-              ? ` in about ${Math.round(forecast.etaWeeks)} weeks (${etaLabel}). `
-              : forecast.etaWeeks === 0
-                ? " — you're there. "
-                : " — pace has stalled; see the coach's recommendations. "}
-            Add InBody scans to steer by body fat % instead.
-          </p>
-        )}
+        <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
+          This curve is here for curiosity only. Judge progress by waist, body fat, lean/muscle,
+          and how shirts fit — not the number on the scale.
+          {composition?.etaWeeks != null && composition.etaWeeks > 0
+            ? ` Shirt-fit ETA is about ${Math.round(composition.etaWeeks)} weeks (${etaLabel}).`
+            : ""}
+        </p>
       </CollapsibleCard>
 
       <Card>

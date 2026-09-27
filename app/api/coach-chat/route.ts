@@ -72,7 +72,8 @@ export async function POST(request: Request) {
     "`engine.tdee` is BASE burn without exercise, anchored to InBody `scanBmr` when present; total burn for a day = tdee + that day's activityCalories. " +
     "`engine.targets.calories` is a rest-day budget — use each day's calorieBudget / vsBudget / netBalance for over/under calls. " +
     "Never say the user is over calories when vsBudget <= 0. " +
-    "Primary goal is 15% body fat (`engine.composition`); 170 lb is only a guide. Flat weight with fat↓/lean↑ is recomposition success, not failure. " +
+    "Primary goal is shirt fit (`engine.composition.lookGoal`): bigger chest/back/arms, smaller stomach. " +
+    "Steer by waist, body fat, and lean/muscle — the user does not care what they weigh. Flat weight with fat↓/lean↑/waist↓ is success. " +
     "Days marked likelyIncomplete / inProgress / outlier* should be treated as logging issues, not intentional diet choices. " +
     "Stay specific and numeric. If the user corrects a fact or adds context (sleep, travel, illness, " +
     "missed weigh-in, alcohol, unlogged meals, etc.), acknowledge it and revise your advice accordingly. " +

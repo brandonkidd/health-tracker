@@ -1,20 +1,27 @@
 import { BODYFI_PLAN } from "../config";
-import type { BodyScan, HealthState } from "../types";
+import type { BodyScan, HealthState, WeeklyCheckIn } from "../types";
 import { addDays, daysBetween } from "./trend";
 
 /**
- * Composition-first progress: the cut's real finish line is body-fat %
- * (athletic look), not a fixed scale weight. Weight can hold while fat
- * drops and lean rises — that still counts as progress.
+ * Shirt-fit progress: bigger chest/back/arms, smaller stomach.
+ * Scale weight is ignored as a success metric. We steer by waist, body fat,
+ * and lean / skeletal muscle from InBody + weekly waist check-ins.
  */
 
-const GOAL_BODY_FAT = BODYFI_PLAN.anchors.find(
+const CUT_ANCHOR = BODYFI_PLAN.anchors.find(
   (anchor) => anchor.week > 0 && anchor.phase === "Cut"
-)?.bodyFat ?? 15;
+);
+const GOAL_BODY_FAT = CUT_ANCHOR?.bodyFat ?? 15;
+const GOAL_WAIST = CUT_ANCHOR?.waist ?? 35.5;
+const LOOK_GOAL =
+  "Bigger chest, back, and arms — smaller stomach. Shirts should fit up top and hang clean through the middle.";
 
 /** Sanity clamp on body-fat change rate, percentage points / week. */
 const MIN_BF_RATE = -1.5;
 const MAX_BF_RATE = 0.5;
+/** Sanity clamp on waist change rate, inches / week. */
+const MIN_WAIST_RATE = -0.75;
+const MAX_WAIST_RATE = 0.25;
 
 export interface CompositionScanPoint {
   date: string;
@@ -24,6 +31,7 @@ export interface CompositionScanPoint {
   fatMass: number | null;
   skeletalMuscle: number | null;
   visceralFat: number | null;
+  waist: number | null;
   bmr: number | null;
 }
 
@@ -35,19 +43,36 @@ export interface CompositionDelta {
   fatMassLb: number | null;
   skeletalMuscleLb: number | null;
   visceralFat: number | null;
+  waistIn: number | null;
 }
 
 export interface CompositionProgress {
+  /** Plain-language physique goal — not a scale number. */
+  lookGoal: string;
   goalBodyFat: number;
-  /** Optional scale guide from the plan — secondary to body fat. */
+  goalWaist: number;
+  /** Kept for digest compatibility; not a success metric. */
   guideWeight: number;
   first: CompositionScanPoint;
   latest: CompositionScanPoint;
   delta: CompositionDelta;
+  /** Best available waist (scan or weekly check-in). */
+  latestWaist: number | null;
+  firstWaist: number | null;
   /** Observed body-fat change rate from first→latest scan, pp/week. */
   observedBodyFatRatePerWeek: number | null;
+  /** Observed waist change rate from first→latest waist mark, in/week. */
+  observedWaistRatePerWeek: number | null;
   etaWeeks: number | null;
   etaDate: string | null;
+  /** Which signal drove the ETA. */
+  etaBasis: "bodyFat" | "waist" | "both" | null;
+  /** Lean or skeletal muscle up — proxy for chest/back/arms. */
+  upperBodyUp: boolean;
+  /** Waist or fat mass / BF down — proxy for smaller stomach. */
+  midsectionDown: boolean;
+  /** True when the shirt-fit shape is moving the right way. */
+  shirtFitImproving: boolean;
   /** True when weight barely moved but fat↓ / lean↑ — classic recomp. */
   isRecompPattern: boolean;
   summary: string;
@@ -97,8 +122,22 @@ function toPoint(scan: BodyScan): CompositionScanPoint | null {
           ? scan.muscleMass
           : null,
     visceralFat: typeof scan.visceralFat === "number" ? scan.visceralFat : null,
+    waist: typeof scan.waist === "number" && scan.waist > 0 ? scan.waist : null,
     bmr: typeof scan.bmr === "number" ? scan.bmr : null,
   };
+}
+
+function waistMarks(state: HealthState): { date: string; waist: number }[] {
+  const fromScans = state.bodyScans
+    .filter((scan) => typeof scan.waist === "number" && (scan.waist as number) > 0)
+    .map((scan) => ({ date: scan.date, waist: scan.waist as number }));
+  const fromCheckIns = state.weeklyCheckIns
+    .filter(
+      (entry: WeeklyCheckIn) =>
+        typeof entry.waist === "number" && (entry.waist as number) > 0
+    )
+    .map((entry) => ({ date: entry.date, waist: entry.waist as number }));
+  return [...fromScans, ...fromCheckIns].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function signedDelta(latest: number | null, first: number | null): number | null {
@@ -114,6 +153,10 @@ function formatSigned(value: number | null, unit: string): string | null {
 
 export function goalBodyFatFromPlan(): number {
   return GOAL_BODY_FAT;
+}
+
+export function goalWaistFromPlan(): number {
+  return GOAL_WAIST;
 }
 
 export function buildCompositionProgress(
@@ -134,6 +177,18 @@ export function buildCompositionProgress(
       ? 0
       : Number((daysBetween(first.date, latest.date) / 7).toFixed(1));
 
+  const waists = waistMarks(state);
+  const firstWaistMark = waists[0] ?? null;
+  const latestWaistMark = waists.length ? waists[waists.length - 1] : null;
+  const firstWaist = first.waist ?? firstWaistMark?.waist ?? null;
+  const latestWaist = latest.waist ?? latestWaistMark?.waist ?? null;
+  const waistWeeks =
+    firstWaistMark && latestWaistMark && firstWaistMark.date !== latestWaistMark.date
+      ? Number(
+          (daysBetween(firstWaistMark.date, latestWaistMark.date) / 7).toFixed(1)
+        )
+      : weeks;
+
   const delta: CompositionDelta = {
     weeks,
     weightLb: signedDelta(latest.weight, first.weight),
@@ -142,6 +197,7 @@ export function buildCompositionProgress(
     fatMassLb: signedDelta(latest.fatMass, first.fatMass),
     skeletalMuscleLb: signedDelta(latest.skeletalMuscle, first.skeletalMuscle),
     visceralFat: signedDelta(latest.visceralFat, first.visceralFat),
+    waistIn: signedDelta(latestWaist, firstWaist),
   };
 
   let observedBodyFatRatePerWeek: number | null = null;
@@ -151,66 +207,131 @@ export function buildCompositionProgress(
     );
   }
 
+  let observedWaistRatePerWeek: number | null = null;
+  if (waistWeeks >= 2 && delta.waistIn != null) {
+    observedWaistRatePerWeek = Number(
+      Math.min(
+        MAX_WAIST_RATE,
+        Math.max(MIN_WAIST_RATE, delta.waistIn / waistWeeks)
+      ).toFixed(3)
+    );
+  }
+
+  // ETA: take the nearer of body-fat and waist pace when both are falling.
   let etaWeeks: number | null = null;
   let etaDate: string | null = null;
-  const remaining = latest.bodyFat - GOAL_BODY_FAT;
-  if (remaining <= 0) {
+  let etaBasis: CompositionProgress["etaBasis"] = null;
+  const bfRemaining = latest.bodyFat - GOAL_BODY_FAT;
+  const waistRemaining =
+    latestWaist != null ? latestWaist - GOAL_WAIST : null;
+
+  const bfEta =
+    bfRemaining <= 0
+      ? 0
+      : observedBodyFatRatePerWeek != null && observedBodyFatRatePerWeek < -0.02
+        ? bfRemaining / -observedBodyFatRatePerWeek
+        : null;
+  const waistEta =
+    waistRemaining == null
+      ? null
+      : waistRemaining <= 0
+        ? 0
+        : observedWaistRatePerWeek != null && observedWaistRatePerWeek < -0.02
+          ? waistRemaining / -observedWaistRatePerWeek
+          : null;
+
+  if (bfEta === 0 && (waistEta == null || waistEta === 0)) {
     etaWeeks = 0;
     etaDate = today;
-  } else if (observedBodyFatRatePerWeek != null && observedBodyFatRatePerWeek < -0.02) {
-    etaWeeks = Number((remaining / -observedBodyFatRatePerWeek).toFixed(1));
+    etaBasis = waistEta === 0 ? "both" : "bodyFat";
+  } else if (bfEta != null && waistEta != null) {
+    etaWeeks = Number(Math.max(bfEta, waistEta).toFixed(1));
     etaDate = addDays(today, Math.round(etaWeeks * 7));
+    etaBasis = "both";
+  } else if (bfEta != null) {
+    etaWeeks = Number(bfEta.toFixed(1));
+    etaDate = addDays(today, Math.round(etaWeeks * 7));
+    etaBasis = "bodyFat";
+  } else if (waistEta != null) {
+    etaWeeks = Number(waistEta.toFixed(1));
+    etaDate = addDays(today, Math.round(etaWeeks * 7));
+    etaBasis = "waist";
   }
 
   const weightStable =
     delta.weightLb == null || Math.abs(delta.weightLb) <= 2.5;
   const fatDown = (delta.bodyFatPp ?? 0) < -0.3 || (delta.fatMassLb ?? 0) < -0.5;
-  const leanUp = (delta.leanMassLb ?? 0) > 0.3;
+  const leanUp =
+    (delta.leanMassLb ?? 0) > 0.3 || (delta.skeletalMuscleLb ?? 0) > 0.3;
+  const waistDown = (delta.waistIn ?? 0) < -0.2;
+  const upperBodyUp = leanUp;
+  const midsectionDown = fatDown || waistDown;
   const isRecompPattern = weightStable && fatDown && leanUp;
+  const shirtFitImproving = upperBodyUp || midsectionDown;
 
   const parts: string[] = [];
+  if (delta.waistIn != null) {
+    parts.push(
+      `${formatSigned(delta.waistIn, '" waist')} (${firstWaist}" → ${latestWaist}")`
+    );
+  }
   if (delta.bodyFatPp != null) {
     parts.push(
       `${formatSigned(delta.bodyFatPp, " pp body fat")} (${first.bodyFat}% → ${latest.bodyFat}%)`
     );
   }
-  if (delta.leanMassLb != null) {
+  if (delta.skeletalMuscleLb != null) {
+    parts.push(`${formatSigned(delta.skeletalMuscleLb, " lb skeletal muscle")}`);
+  } else if (delta.leanMassLb != null) {
     parts.push(`${formatSigned(delta.leanMassLb, " lb lean")}`);
   }
   if (delta.fatMassLb != null) {
     parts.push(`${formatSigned(delta.fatMassLb, " lb fat mass")}`);
   }
-  if (delta.weightLb != null) {
-    parts.push(`${formatSigned(delta.weightLb, " lb scale weight")}`);
-  }
+
   const spanLabel =
     weeks > 0 ? `Across ${weeks} weeks of scans` : "From your latest scan";
-  let summary = `${spanLabel}: ${parts.join(", ")}.`;
+  let summary = `${spanLabel}: ${parts.join(", ") || "keep logging waist and InBody"}.`;
+  if (shirtFitImproving) {
+    const shapeBits: string[] = [];
+    if (upperBodyUp) shapeBits.push("upper body (lean/muscle) up");
+    if (midsectionDown) shapeBits.push("midsection (waist/fat) down");
+    summary += ` Shirt-fit shape is improving — ${shapeBits.join(" and ")}.`;
+  }
   if (isRecompPattern) {
     summary +=
-      " Scale weight barely moved while fat dropped and lean rose — that's recomposition, not a stall.";
+      " Scale weight barely moved while the shape changed — ignore the scale for success.";
   }
   if (etaWeeks != null && etaWeeks > 0 && etaDate) {
-    summary += ` At this body-fat pace, ${GOAL_BODY_FAT}% lands around ${etaDate} (~${Math.round(etaWeeks)} weeks).`;
+    summary += ` At this pace, the look goal (~${GOAL_BODY_FAT}% BF`;
+    if (etaBasis === "waist" || etaBasis === "both") {
+      summary += ` / ${GOAL_WAIST}" waist`;
+    }
+    summary += `) lands around ${etaDate} (~${Math.round(etaWeeks)} weeks).`;
   } else if (etaWeeks === 0) {
-    summary += ` You're at or under the ${GOAL_BODY_FAT}% body-fat goal.`;
-  } else if (remaining > 0) {
-    summary += ` Primary goal remains ${GOAL_BODY_FAT}% body fat (${remaining.toFixed(1)} pp to go) — not a fixed scale weight.`;
+    summary += ` You're at the shirt-fit targets (${GOAL_BODY_FAT}% BF / ${GOAL_WAIST}" waist).`;
+  } else {
+    summary += ` Goal is the shirt fit — ${LOOK_GOAL}`;
   }
 
-  const cutAnchor = BODYFI_PLAN.anchors.find(
-    (anchor) => anchor.week > 0 && anchor.phase === "Cut"
-  );
-
   return {
+    lookGoal: LOOK_GOAL,
     goalBodyFat: GOAL_BODY_FAT,
-    guideWeight: cutAnchor?.weight ?? 170,
+    goalWaist: GOAL_WAIST,
+    guideWeight: CUT_ANCHOR?.weight ?? 170,
     first,
     latest,
     delta,
+    latestWaist,
+    firstWaist,
     observedBodyFatRatePerWeek,
+    observedWaistRatePerWeek,
     etaWeeks,
     etaDate,
+    etaBasis,
+    upperBodyUp,
+    midsectionDown,
+    shirtFitImproving,
     isRecompPattern,
     summary,
   };
