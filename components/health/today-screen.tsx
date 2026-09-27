@@ -237,13 +237,15 @@ type Targets = {
 function dayScore(day: DailyLog, targets: Targets, supplementList: { id: string }[]): number {
   const ratio = (value: number, target: number) => (target > 0 ? Math.min(1, value / target) : 0);
 
-  // Full credit for logging at/under target; overage decays to zero at +25%.
+  // Rest-day target + tracked exercise = net budget for the day.
+  const calorieBudget = targets.calories + (day.estimatedActivityCalories || 0);
+  // Full credit for logging at/under net budget; overage decays to zero at +25%.
   const calorieCredit =
     day.calories <= 0
       ? 0
-      : day.calories <= targets.calories
+      : day.calories <= calorieBudget
         ? 1
-        : Math.max(0, 1 - (day.calories - targets.calories) / (targets.calories * 0.25));
+        : Math.max(0, 1 - (day.calories - calorieBudget) / (calorieBudget * 0.25));
 
   const supplementCredit =
     supplementList.length > 0
@@ -1429,8 +1431,16 @@ export function TodayScreen({
         <UpdateCard
           label="Calories"
           delta={weeklyDelta(calorieSeries)}
-          status={day.calories <= targets.calories * 1.05 ? "On plan" : "High"}
-          statusLow={day.calories > targets.calories * 1.05}
+          status={
+            day.calories <=
+            (targets.calories + (day.estimatedActivityCalories || 0)) * 1.05
+              ? "On plan"
+              : "High"
+          }
+          statusLow={
+            day.calories >
+            (targets.calories + (day.estimatedActivityCalories || 0)) * 1.05
+          }
           value={day.calories.toLocaleString()}
           unit="cal"
         >

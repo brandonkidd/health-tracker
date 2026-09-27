@@ -1,5 +1,11 @@
 import type { HealthState } from "../types";
 import type { EngineSnapshot } from "./index";
+import {
+  classifyIntakeDays,
+  dayCalorieBudget,
+  type IntakeQuality,
+  vsCalorieBudget,
+} from "./intake-quality";
 import { dateToTime } from "./trend";
 
 /**
@@ -14,6 +20,17 @@ const DIGEST_DAYS = 28;
 export interface DigestDay {
   date: string;
   calories: number;
+  /** Tracked workout / class / walk burn for this day (kcal). */
+  activityCalories: number;
+  /** Rest-day target + activityCalories — the net budget for the day. */
+  calorieBudget: number;
+  /**
+   * calories − calorieBudget. Negative = under budget (room left / on track
+   * for the planned deficit once exercise is counted). Positive = over net budget.
+   */
+  vsBudget: number;
+  /** Base burn + activity − food (positive = deficit). */
+  netBalance: number;
   protein: number;
   waterOz: number;
   steps: number;
@@ -23,23 +40,35 @@ export interface DigestDay {
   soreness: number | null;
   trained: boolean;
   workouts: string[];
+  mealCount: number;
   alcohol: boolean;
+  /** Logging-quality label for this day's food log. */
+  intakeQuality: IntakeQuality;
+  intakeQualityReason: string | null;
 }
 
 export interface InsightDigest {
   date: string;
   days: DigestDay[];
+  logging: {
+    usableIntakeDays: number;
+    incompleteIntakeDays: number;
+    outlierIntakeDays: number;
+    note: string;
+  };
   engine: {
     tdee: EngineSnapshot["tdee"];
     targets: EngineSnapshot["targets"];
     forecast: {
       startTrendWeight: number;
       observedRatePerWeek: number | null;
+      impliedRatePerWeek: number | null;
       projectedRatePerWeek: number;
       goalWeight: number;
       etaWeeks: number | null;
       etaDate: string | null;
       deltaVsPlan: number;
+      planWeightToday: number;
     } | null;
     correlations: EngineSnapshot["correlations"]["findings"];
   };
@@ -54,15 +83,32 @@ export function buildInsightDigest(
   today: string
 ): InsightDigest {
   const end = dateToTime(today);
-  const days: DigestDay[] = Object.values(state.days)
+  const windowDays = Object.values(state.days)
     .filter((day) => {
       const time = dateToTime(day.date);
       return time <= end && time > end - DIGEST_DAYS * DAY_MS;
     })
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((day) => ({
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const restTarget = snapshot.targets.calories;
+  const classifications = classifyIntakeDays(windowDays, restTarget, today);
+  const baseBurn = snapshot.tdee.tdee;
+
+  const days: DigestDay[] = windowDays.map((day) => {
+    const activityCalories = day.estimatedActivityCalories || 0;
+    const calorieBudget = dayCalorieBudget(restTarget, activityCalories);
+    const assessment = classifications.get(day.date) ?? {
+      quality: "empty" as const,
+      usableForAverage: false,
+      reason: null,
+    };
+    return {
       date: day.date,
       calories: day.calories,
+      activityCalories,
+      calorieBudget,
+      vsBudget: vsCalorieBudget(day.calories, restTarget, activityCalories),
+      netBalance: baseBurn + activityCalories - day.calories,
       protein: day.protein,
       waterOz: day.waterOz,
       steps: day.steps,
@@ -72,24 +118,65 @@ export function buildInsightDigest(
       soreness: day.soreness ?? null,
       trained: day.activityCompleted || (day.workouts?.length ?? 0) > 0,
       workouts: (day.workouts ?? []).map((workout) => workout.activity),
+      mealCount: day.meals.length,
       alcohol: day.meals.some((meal) => ALCOHOL_PATTERN.test(meal.label)),
-    }));
+      intakeQuality: assessment.quality,
+      intakeQualityReason: assessment.reason,
+    };
+  });
+
+  const incompleteIntakeDays = days.filter(
+    (day) =>
+      day.intakeQuality === "likelyIncomplete" || day.intakeQuality === "inProgress"
+  ).length;
+  const outlierIntakeDays = days.filter(
+    (day) =>
+      day.intakeQuality === "outlierHigh" || day.intakeQuality === "outlierLow"
+  ).length;
+  const usableIntakeDays = days.filter(
+    (day) => day.intakeQuality === "usable"
+  ).length;
+
+  const loggingNoteParts: string[] = [];
+  if (incompleteIntakeDays > 0) {
+    loggingNoteParts.push(
+      `${incompleteIntakeDays} day(s) look partially logged — do not treat those low totals as intentional deficits`
+    );
+  }
+  if (outlierIntakeDays > 0) {
+    loggingNoteParts.push(
+      `${outlierIntakeDays} day(s) flagged as calorie outliers vs the recent median`
+    );
+  }
+  if (loggingNoteParts.length === 0) {
+    loggingNoteParts.push(
+      "Food logging looks consistent enough for energy-balance reads"
+    );
+  }
 
   const forecast = snapshot.forecast
     ? {
         startTrendWeight: snapshot.forecast.startTrendWeight,
         observedRatePerWeek: snapshot.forecast.observedRatePerWeek,
+        impliedRatePerWeek: snapshot.forecast.impliedRatePerWeek,
         projectedRatePerWeek: snapshot.forecast.projectedRatePerWeek,
         goalWeight: snapshot.forecast.goalWeight,
         etaWeeks: snapshot.forecast.etaWeeks,
         etaDate: snapshot.forecast.etaDate,
         deltaVsPlan: snapshot.forecast.deltaVsPlan,
+        planWeightToday: snapshot.forecast.planWeightToday,
       }
     : null;
 
   return {
     date: today,
     days,
+    logging: {
+      usableIntakeDays,
+      incompleteIntakeDays,
+      outlierIntakeDays,
+      note: loggingNoteParts.join(". ") + ".",
+    },
     engine: {
       tdee: snapshot.tdee,
       targets: snapshot.targets,

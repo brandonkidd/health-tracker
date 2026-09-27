@@ -1,5 +1,6 @@
 import { BODYFI_PLAN } from "../config";
 import type { HealthState } from "../types";
+import { robustAverageIntake } from "./intake-quality";
 import {
   auxiliaryWeighIns,
   buildTrendSeries,
@@ -47,8 +48,16 @@ export interface TdeeEstimate {
   confidence: number;
   /** Days spanned by the measurement window actually used. */
   windowDays: number;
+  /** Days with any food logged (including incomplete / outliers). */
   intakeDays: number;
+  /** Days that survived completeness + outlier filters for avgIntake. */
+  usableIntakeDays: number;
+  /** Food days dropped as likely incomplete / still in progress. */
+  incompleteIntakeDays: number;
+  /** Food days dropped as high/low outliers vs the usable median. */
+  outlierIntakeDays: number;
   weighInDays: number;
+  /** Robust average intake (kcal) over usable days when possible. */
   avgIntake: number | null;
   trendChangeLbs: number | null;
 }
@@ -122,6 +131,9 @@ export function estimateTdee(
     confidence: 0,
     windowDays: 0,
     intakeDays: 0,
+    usableIntakeDays: 0,
+    incompleteIntakeDays: 0,
+    outlierIntakeDays: 0,
     weighInDays: windowPoints.length,
     avgIntake: null,
     trendChangeLbs: null,
@@ -136,34 +148,46 @@ export function estimateTdee(
   // Intake days between the first and last weigh-in (aligned energy window),
   // plus tracked exercise across the whole window so the measured burn can be
   // reduced to a base (exercise is re-added per day by the UI).
-  const intakeCalories: number[] = [];
+  const windowLogs = [];
   let activityTotal = 0;
   for (const day of Object.values(state.days)) {
     const time = dateToTime(day.date);
     if (time < dateToTime(first.date) || time > dateToTime(last.date)) continue;
     activityTotal += day.estimatedActivityCalories || 0;
-    if (day.calories > 0 || day.meals.length > 0) intakeCalories.push(day.calories);
+    windowLogs.push(day);
   }
   const avgActivity = Math.round(activityTotal / (span + 1));
-  if (intakeCalories.length < 7) {
+
+  // Soft floor uses the static plan calorie target so classification doesn't
+  // depend on the adaptive estimate we're about to compute.
+  const restDayFloor = BODYFI_PLAN.targets.calories;
+  const intake = robustAverageIntake(windowLogs, restDayFloor, endDate);
+
+  if (intake.rawIntakeDays < 7 || intake.avgIntake == null) {
     return {
       ...base,
       windowDays: span,
-      intakeDays: intakeCalories.length,
+      intakeDays: intake.rawIntakeDays,
+      usableIntakeDays: intake.usableDays,
+      incompleteIntakeDays: intake.incompleteDays,
+      outlierIntakeDays: intake.outlierDays,
       avgActivity,
       trendChangeLbs: Number((last.trend - first.trend).toFixed(2)),
     };
   }
 
-  const avgIntake =
-    intakeCalories.reduce((sum, c) => sum + c, 0) / intakeCalories.length;
+  const avgIntake = intake.avgIntake;
   const trendChange = last.trend - first.trend;
   const rawMeasured = avgIntake - (trendChange * KCAL_PER_LB) / span - avgActivity;
   const measuredTdee = Math.round(
     Math.min(MAX_PLAUSIBLE_TDEE, Math.max(MIN_PLAUSIBLE_TDEE, rawMeasured))
   );
 
-  const intakeCoverage = Math.min(1, intakeCalories.length / (span + 1));
+  // Confidence prefers usable coverage; incomplete/outlier days still count
+  // toward "something was logged" but don't inflate the measured burn.
+  const usableCoverage = Math.min(1, intake.usableDays / (span + 1));
+  const rawCoverage = Math.min(1, intake.rawIntakeDays / (span + 1));
+  const intakeCoverage = 0.7 * usableCoverage + 0.3 * rawCoverage;
   const weighCoverage = Math.min(1, windowPoints.length / (span + 1));
   const spanFactor = Math.min(1, span / 21);
   const confidence = Number(
@@ -182,7 +206,10 @@ export function estimateTdee(
     avgActivity,
     confidence,
     windowDays: span,
-    intakeDays: intakeCalories.length,
+    intakeDays: intake.rawIntakeDays,
+    usableIntakeDays: intake.usableDays,
+    incompleteIntakeDays: intake.incompleteDays,
+    outlierIntakeDays: intake.outlierDays,
     weighInDays: windowPoints.length,
     avgIntake: Math.round(avgIntake),
     trendChangeLbs: Number(trendChange.toFixed(2)),
