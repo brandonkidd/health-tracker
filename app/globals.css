@@ -1119,6 +1119,69 @@ h4 {
   letter-spacing: -0.04em;
 }
 
+.hc-recomp-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.hc-recomp-compare > div,
+.hc-recomp-deltas > div {
+  display: grid;
+  gap: 4px;
+}
+
+.hc-recomp-compare span,
+.hc-recomp-deltas span {
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hc-recomp-compare strong {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.hc-recomp-compare small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.hc-recomp-deltas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.hc-recomp-deltas strong {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.hc-recomp-deltas small {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .hc-recomp-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-recomp-deltas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ——— Layout helpers ——— */
 .hc-two-col {
   display: grid;

@@ -3,7 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 import { BODYFI_PLAN } from "@/lib/health/config";
 import { ptDateKey } from "@/lib/health/date";
-import { checkInDelta, planWeek, projectionAtWeek } from "@/lib/health/projections";
+import { planWeek, projectionAtWeek } from "@/lib/health/projections";
 import type { AdaptiveForecast, EngineSnapshot } from "@/lib/health/engine";
 import type { BodyScan, DailyLog, HealthState, WeeklyCheckIn } from "@/lib/health/types";
 import { Card, CollapsibleCard, EmptyState, Field, SectionHeader, StatusBadge } from "./ui";
@@ -188,9 +188,17 @@ export function BodyScreen({
   const strengthRows = strengthProgress(state.days);
   const latest = state.weeklyCheckIns.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
   const latestScan = state.bodyScans.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
-  const delta = latest ? checkInDelta(latest) : undefined;
   const forecast = engine?.forecast ?? null;
+  const composition = engine?.composition ?? null;
   const etaLabel = (() => {
+    const primary = composition;
+    if (primary?.etaDate != null) {
+      if (primary.etaWeeks === 0) return "Now";
+      return new Date(`${primary.etaDate}T12:00:00`).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+    }
     if (!forecast || forecast.etaDate == null) return "—";
     if (forecast.etaWeeks === 0) return "Now";
     return new Date(`${forecast.etaDate}T12:00:00`).toLocaleDateString(undefined, {
@@ -198,6 +206,11 @@ export function BodyScreen({
       day: "numeric",
     });
   })();
+  const formatSigned = (value: number | null | undefined, digits = 1) => {
+    if (value == null) return "—";
+    const rounded = Number(value.toFixed(digits));
+    return `${rounded > 0 ? "+" : ""}${rounded}`;
+  };
 
   function submitCheckIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -294,9 +307,12 @@ export function BodyScreen({
     <div className="hc-stack">
       <Card className="hc-hero">
         <div>
-          <div className="hc-eyebrow">Cut → 170 → build → 185</div>
+          <div className="hc-eyebrow">Cut → 15% body fat → build</div>
           <h1>Your body, measured honestly.</h1>
-          <p>Weight is daily noise. Waist, 7-day averages, strength, and consistent InBody conditions tell the story.</p>
+          <p>
+            Primary finish line is <strong>15% body fat</strong> and an athletic look — not a fixed
+            170 on the scale. Weight can hold while fat drops and lean rises; that still counts.
+          </p>
         </div>
         <button className="hc-button" onClick={() => setShowCheckIn(!showCheckIn)}>Weekly check-in</button>
       </Card>
@@ -316,19 +332,117 @@ export function BodyScreen({
       )}
 
       <div className="hc-status-rail">
-        <Card><span>Trend weight</span><strong>{engine?.trendWeight ?? latest?.weight ?? "—"}<small> lb</small></strong></Card>
-        <Card><span>Latest waist</span><strong>{latest?.waist ?? "—"}<small> in</small></strong></Card>
-        <Card><span>Vs plan</span><strong>{forecast ? `${forecast.deltaVsPlan > 0 ? "+" : ""}${forecast.deltaVsPlan}` : delta?.weight == null ? "—" : `${delta.weight > 0 ? "+" : ""}${delta.weight}`}<small> lb</small></strong></Card>
-        <Card><span>{forecast ? `ETA ${forecast.goalWeight} lb` : "Plan week"}</span><strong>{forecast ? etaLabel : planWeek(ptDateKey())}</strong></Card>
+        <Card>
+          <span>Body fat</span>
+          <strong>
+            {composition?.latest.bodyFat ?? latestScan?.bodyFat ?? "—"}
+            <small>%</small>
+          </strong>
+        </Card>
+        <Card>
+          <span>Lean mass</span>
+          <strong>
+            {composition?.latest.leanMass ?? latestScan?.leanMass ?? "—"}
+            <small> lb</small>
+          </strong>
+        </Card>
+        <Card>
+          <span>Trend weight</span>
+          <strong>
+            {engine?.trendWeight ?? latest?.weight ?? "—"}
+            <small> lb</small>
+          </strong>
+        </Card>
+        <Card>
+          <span>
+            {composition
+              ? `ETA ${composition.goalBodyFat}% BF`
+              : forecast
+                ? `Guide ${forecast.goalWeight} lb`
+                : "Plan week"}
+          </span>
+          <strong>{composition || forecast ? etaLabel : planWeek(ptDateKey())}</strong>
+        </Card>
       </div>
+
+      {composition && (
+        <Card>
+          <SectionHeader
+            eyebrow="Scan to scan"
+            title="Recomp progress"
+            action={
+              composition.isRecompPattern ? (
+                <StatusBadge tone="good">Recomp pattern</StatusBadge>
+              ) : undefined
+            }
+          />
+          <div className="hc-recomp-compare">
+            <div>
+              <span>First scan · {composition.first.date}</span>
+              <strong>{composition.first.bodyFat}%</strong>
+              <small>
+                {[
+                  composition.first.weight != null ? `${composition.first.weight} lb` : null,
+                  composition.first.leanMass != null
+                    ? `${composition.first.leanMass} lb lean`
+                    : null,
+                  composition.first.fatMass != null
+                    ? `${composition.first.fatMass} lb fat`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </small>
+            </div>
+            <div>
+              <span>Latest · {composition.latest.date}</span>
+              <strong>{composition.latest.bodyFat}%</strong>
+              <small>
+                {[
+                  composition.latest.weight != null ? `${composition.latest.weight} lb` : null,
+                  composition.latest.leanMass != null
+                    ? `${composition.latest.leanMass} lb lean`
+                    : null,
+                  composition.latest.fatMass != null
+                    ? `${composition.latest.fatMass} lb fat`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </small>
+            </div>
+          </div>
+          <div className="hc-recomp-deltas">
+            <div>
+              <span>Body fat</span>
+              <strong>{formatSigned(composition.delta.bodyFatPp)}<small> pp</small></strong>
+            </div>
+            <div>
+              <span>Lean mass</span>
+              <strong>{formatSigned(composition.delta.leanMassLb)}<small> lb</small></strong>
+            </div>
+            <div>
+              <span>Fat mass</span>
+              <strong>{formatSigned(composition.delta.fatMassLb)}<small> lb</small></strong>
+            </div>
+            <div>
+              <span>Scale weight</span>
+              <strong>{formatSigned(composition.delta.weightLb)}<small> lb</small></strong>
+            </div>
+          </div>
+          <p className="hc-muted hc-compact-copy" style={{ marginTop: 12 }}>
+            {composition.summary}
+          </p>
+        </Card>
+      )}
 
       <BodyModel latestCheckIn={latest} latestScan={latestScan} />
       <PhotoTimeline />
 
       <CollapsibleCard
-        eyebrow="The curve, live"
-        title="Actual vs projected weight"
-        defaultOpen
+        eyebrow="Secondary signal"
+        title="Scale weight vs plan guide"
+        defaultOpen={false}
         action={
           <div className="hc-segmented">
             <button className={!fullArc ? "active" : ""} onClick={() => setFullArc(false)}>Cut</button>
@@ -338,21 +452,32 @@ export function BodyScreen({
       >
         <ArcChart entries={state.weeklyCheckIns} fullArc={fullArc} forecast={forecast} />
         <div className="hc-chart-legend">
-          <span className="projected">Plan</span>
+          <span className="projected">Plan guide</span>
           <span className="actual">Actual</span>
           {forecast && <span className="forecasted">Your pace</span>}
         </div>
-        {forecast && (
+        {composition && (
+          <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
+            Primary goal is <strong>{composition.goalBodyFat}% body fat</strong>
+            {composition.etaWeeks != null && composition.etaWeeks > 0
+              ? ` — about ${Math.round(composition.etaWeeks)} weeks at your scan pace (${etaLabel}). `
+              : composition.etaWeeks === 0
+                ? " — you're there. "
+                : ` (${(composition.latest.bodyFat - composition.goalBodyFat).toFixed(1)} pp to go). `}
+            The ~{composition.guideWeight} lb number is only a guide if lean mass holds.
+          </p>
+        )}
+        {forecast && !composition && (
           <p className="hc-muted hc-compact-copy" style={{ marginTop: 10 }}>
             At your current pace ({forecast.projectedRatePerWeek > 0 ? "+" : ""}
             {forecast.projectedRatePerWeek} lb/week from a {forecast.startTrendWeight} lb trend
-            weight), you reach <strong>{forecast.goalWeight} lb</strong>
+            weight), the scale guide is <strong>{forecast.goalWeight} lb</strong>
             {forecast.etaWeeks != null && forecast.etaWeeks > 0
               ? ` in about ${Math.round(forecast.etaWeeks)} weeks (${etaLabel}). `
               : forecast.etaWeeks === 0
                 ? " — you're there. "
                 : " — pace has stalled; see the coach's recommendations. "}
-            The shaded band shows the uncertainty from day-to-day scale noise.
+            Add InBody scans to steer by body fat % instead.
           </p>
         )}
       </CollapsibleCard>

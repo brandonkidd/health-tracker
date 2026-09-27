@@ -64,11 +64,13 @@ export async function POST(request: Request) {
         "and never compare intake only to targets.calories on a trained day; use calorieBudget / vsBudget / netBalance. " +
         "`intakeQuality` flags incomplete or outlier food days (`likelyIncomplete`, `inProgress`, `outlierHigh`, `outlierLow`); " +
         "`logging` summarizes how many such days were excluded from the robust average. Do NOT treat likelyIncomplete / inProgress low totals as intentional deficits — ask for fuller logging or ignore them in the trend read. " +
-        "`engine.forecast` is the projected weight path (observed + implied rates, goal ETA, delta vs plan); " +
+        "`engine.composition` is the PRIMARY cut goal: latest vs first InBody body-fat %, lean/fat mass deltas, and ETA to 15% body fat. " +
+        "Scale weight (`engine.forecast.goalWeight` ~170) is only a secondary guide — if composition.isRecompPattern is true, celebrate fat↓/lean↑ even when weight is flat. " +
+        "`engine.forecast` is the projected weight path (secondary); prefer composition.etaDate / goalBodyFat in outlook when available. " +
         "`engine.correlations` are statistically-gated patterns found in the data. " +
         "Write like a sharp, supportive coach: specific numbers over platitudes, never invent data, never give medical advice. " +
         "When TDEE confidence is below 0.5, say estimates are still calibrating and lean on logging consistency as a recommendation. " +
-        "Project outcomes from the forecast and net energy balance, not from raw calorie totals alone. " +
+        "Project outcomes from composition progress and net energy balance, not from raw calorie totals or scale weight alone. " +
         "Mention sleep, water, steps, or alcohol only when the data actually shows something.",
       messages: [
         {

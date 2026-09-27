@@ -1,5 +1,9 @@
 import type { HealthState } from "../types";
 import {
+  buildCompositionProgress,
+  type CompositionProgress,
+} from "./composition";
+import {
   buildCorrelationReport,
   type CorrelationReport,
 } from "./correlations";
@@ -27,6 +31,8 @@ export interface EngineSnapshot {
   tdee: TdeeEstimate;
   targets: TargetRecommendation;
   forecast: AdaptiveForecast | null;
+  /** Scan-to-scan body-fat / lean progress; primary cut finish line is 15% BF. */
+  composition: CompositionProgress | null;
   correlations: CorrelationReport;
 }
 
@@ -38,6 +44,7 @@ export function computeEngineSnapshot(
   const tdee = estimateTdee(state, today, 28, trendSeries);
   const targets = recommendTargets(tdee, today);
   const forecast = buildForecast(trendSeries, tdee, today);
+  const composition = buildCompositionProgress(state, today);
   const correlations = buildCorrelationReport(state);
   const latest = latestTrendPoint(trendSeries, today);
 
@@ -48,6 +55,7 @@ export function computeEngineSnapshot(
     tdee,
     targets,
     forecast,
+    composition,
     correlations,
   };
 }
@@ -67,5 +75,10 @@ export type { TrendPoint } from "./trend";
 export type { TdeeEstimate } from "./tdee";
 export type { TargetRecommendation } from "./targets";
 export type { AdaptiveForecast, ForecastPoint } from "./forecast";
+export type {
+  CompositionProgress,
+  CompositionDelta,
+  CompositionScanPoint,
+} from "./composition";
 export type { CorrelationFinding, CorrelationReport } from "./correlations";
 export { buildInsightDigest, hashDigest, type InsightDigest } from "./digest";

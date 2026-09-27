@@ -107,7 +107,11 @@ export function PlanScreen({
         <div>
           <div className="hc-eyebrow">The roadmap</div>
           <h1>Cut with control. Build with patience.</h1>
-          <p>First reach a healthy, maintainable 170. Hold. Then earn the slow build to 185 while waist and labs stay honest.</p>
+          <p>
+            First reach <strong>15% body fat</strong> and an athletic look (scale weight near ~170
+            is only a guide if lean holds). Hold. Then earn the slow build while waist and labs
+            stay honest.
+          </p>
         </div>
         <StatusBadge tone="good">Current phase: Cut</StatusBadge>
       </Card>
@@ -118,8 +122,10 @@ export function PlanScreen({
           {BODYFI_PLAN.anchors.map((anchor) => (
             <div key={anchor.week}>
               <span>Week {anchor.week}</span>
-              <strong>{anchor.weight} lb</strong>
-              <small>{anchor.phase} · {anchor.waist}&quot; waist · {anchor.bodyFat}% BF guide</small>
+              <strong>{anchor.bodyFat}% BF</strong>
+              <small>
+                {anchor.phase} · ~{anchor.weight} lb guide · {anchor.waist}&quot; waist
+              </small>
             </div>
           ))}
         </div>
@@ -165,11 +171,12 @@ export function PlanScreen({
       <Card>
         <SectionHeader eyebrow="Steering rules" title="What changes the plan" />
         <ul className="hc-rules">
-          <li>Judge progress by 7-day average weight plus weekly waist.</li>
-          <li>If both stall for 10–14 compliant days, reduce roughly 150 calories or add walking.</li>
-          <li>Keep loss under roughly 1.25 lb per week; protect strength, recovery, and lean mass.</li>
+          <li>Judge the cut by InBody body fat %, lean mass, and weekly waist — not day-to-day scale weight.</li>
+          <li>Flat weight with fat↓ and lean↑ is recomposition progress, not a stall.</li>
+          <li>If waist and body fat stall for 10–14 compliant days, reduce roughly 150 calories or add walking.</li>
+          <li>Keep scale loss under roughly 1.25 lb per week when it is falling; protect strength, recovery, and lean mass.</li>
           <li>If lifts, sleep, or energy fall sharply, recover and eat appropriately—do not add more training.</li>
-          <li>Hold around 170 before beginning a slow, measured build.</li>
+          <li>Hold near 15% body fat (and a weight that feels lean) before beginning a slow, measured build.</li>
         </ul>
       </Card>
 

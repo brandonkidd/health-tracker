@@ -28,14 +28,28 @@ function baseBurnHint(
   return confidenceLabel(tdee.confidence);
 }
 
-function formatEta(forecast: NonNullable<EngineSnapshot["forecast"]>): string | null {
-  if (forecast.etaWeeks == null || forecast.etaDate == null) return null;
-  if (forecast.etaWeeks === 0) return "Goal reached";
+function formatEta(engine: EngineSnapshot): string | null {
+  const composition = engine.composition;
+  if (composition?.etaWeeks != null && composition.etaDate != null) {
+    if (composition.etaWeeks === 0) return `${composition.goalBodyFat}% body fat — reached`;
+    const date = new Date(`${composition.etaDate}T12:00:00`).toLocaleDateString(
+      undefined,
+      { month: "short", day: "numeric" }
+    );
+    return `${composition.goalBodyFat}% BF around ${date}`;
+  }
+  if (composition && composition.latest.bodyFat > composition.goalBodyFat) {
+    const remaining = (composition.latest.bodyFat - composition.goalBodyFat).toFixed(1);
+    return `${composition.goalBodyFat}% BF · ${remaining} pp to go`;
+  }
+  const forecast = engine.forecast;
+  if (!forecast || forecast.etaWeeks == null || forecast.etaDate == null) return null;
+  if (forecast.etaWeeks === 0) return "Guide weight reached";
   const date = new Date(`${forecast.etaDate}T12:00:00`).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
   });
-  return `${forecast.goalWeight} lb around ${date}`;
+  return `~${forecast.goalWeight} lb guide · ${date}`;
 }
 
 export function CoachCard({
@@ -75,10 +89,10 @@ export function CoachCard({
 
   if (!engine) return null;
 
-  const { tdee, targets, forecast } = engine;
+  const { tdee, targets, forecast, composition } = engine;
   // Base burn + tracked exercise − food; the base has no exercise baked in.
   const deficit = tdee.tdee + todayActivityCalories - todayCalories;
-  const eta = forecast ? formatEta(forecast) : null;
+  const eta = formatEta(engine);
 
   const chips: { label: string; value: string; hint?: string }[] = [
     {
@@ -100,7 +114,16 @@ export function CoachCard({
       hint: deficit >= 0 ? "deficit so far" : "over your burn",
     },
   ];
-  if (engine.trendWeight != null) {
+  if (composition) {
+    chips.push({
+      label: "Body fat",
+      value: `${composition.latest.bodyFat}%`,
+      hint:
+        composition.delta.bodyFatPp != null
+          ? `${composition.delta.bodyFatPp > 0 ? "+" : ""}${composition.delta.bodyFatPp} pp vs first scan`
+          : `goal ${composition.goalBodyFat}%`,
+    });
+  } else if (engine.trendWeight != null) {
     chips.push({
       label: "Trend weight",
       value: `${engine.trendWeight} lb`,
