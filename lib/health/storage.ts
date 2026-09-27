@@ -32,6 +32,7 @@ export function emptyDailyLog(date: string): DailyLog {
     activityType: plannedActivity(date).type,
     activityCompleted: false,
     estimatedActivityCalories: 0,
+    stepsCaloriesLogged: 0,
     supplements: {},
     meals: [],
     workouts: [],

@@ -53,6 +53,13 @@ export interface DailyLog {
   activityType?: ActivityType;
   activityCompleted: boolean;
   estimatedActivityCalories: number;
+  /**
+   * Calories from steps already folded into estimatedActivityCalories via the
+   * steps "Complete" action. Tracked so re-completing updates the contribution
+   * instead of stacking, and so it can be undone. Optional so pre-existing saved
+   * days without the field still parse.
+   */
+  stepsCaloriesLogged?: number;
   energy?: number;
   mood?: number;
   soreness?: number;
