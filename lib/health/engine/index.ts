@@ -31,7 +31,7 @@ export interface EngineSnapshot {
   tdee: TdeeEstimate;
   targets: TargetRecommendation;
   forecast: AdaptiveForecast | null;
-  /** Scan-to-scan body-fat / lean progress; primary cut finish line is 15% BF. */
+  /** Shirt-fit progress: waist / BF down, lean-muscle up — not scale weight. */
   composition: CompositionProgress | null;
   correlations: CorrelationReport;
 }

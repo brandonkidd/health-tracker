@@ -31,25 +31,32 @@ function baseBurnHint(
 function formatEta(engine: EngineSnapshot): string | null {
   const composition = engine.composition;
   if (composition?.etaWeeks != null && composition.etaDate != null) {
-    if (composition.etaWeeks === 0) return `${composition.goalBodyFat}% body fat — reached`;
+    if (composition.etaWeeks === 0) return "Shirt fit targets — reached";
     const date = new Date(`${composition.etaDate}T12:00:00`).toLocaleDateString(
       undefined,
       { month: "short", day: "numeric" }
     );
-    return `${composition.goalBodyFat}% BF around ${date}`;
+    return `Shirt fit · ${date}`;
   }
-  if (composition && composition.latest.bodyFat > composition.goalBodyFat) {
-    const remaining = (composition.latest.bodyFat - composition.goalBodyFat).toFixed(1);
-    return `${composition.goalBodyFat}% BF · ${remaining} pp to go`;
+  if (composition) {
+    const bits: string[] = [];
+    if (composition.latest.bodyFat > composition.goalBodyFat) {
+      bits.push(
+        `${(composition.latest.bodyFat - composition.goalBodyFat).toFixed(1)} pp BF`
+      );
+    }
+    if (
+      composition.latestWaist != null &&
+      composition.latestWaist > composition.goalWaist
+    ) {
+      bits.push(
+        `${(composition.latestWaist - composition.goalWaist).toFixed(1)}" waist`
+      );
+    }
+    if (bits.length) return `To shirt fit · ${bits.join(" · ")}`;
+    if (composition.shirtFitImproving) return "Shirt fit improving";
   }
-  const forecast = engine.forecast;
-  if (!forecast || forecast.etaWeeks == null || forecast.etaDate == null) return null;
-  if (forecast.etaWeeks === 0) return "Guide weight reached";
-  const date = new Date(`${forecast.etaDate}T12:00:00`).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-  return `~${forecast.goalWeight} lb guide · ${date}`;
+  return null;
 }
 
 export function CoachCard({
@@ -89,7 +96,7 @@ export function CoachCard({
 
   if (!engine) return null;
 
-  const { tdee, targets, forecast, composition } = engine;
+  const { tdee, targets, composition } = engine;
   // Base burn + tracked exercise − food; the base has no exercise baked in.
   const deficit = tdee.tdee + todayActivityCalories - todayCalories;
   const eta = formatEta(engine);
@@ -114,7 +121,16 @@ export function CoachCard({
       hint: deficit >= 0 ? "deficit so far" : "over your burn",
     },
   ];
-  if (composition) {
+  if (composition?.latestWaist != null) {
+    chips.push({
+      label: "Waist",
+      value: `${composition.latestWaist}"`,
+      hint:
+        composition.delta.waistIn != null
+          ? `${composition.delta.waistIn > 0 ? "+" : ""}${composition.delta.waistIn}" vs start`
+          : `goal ${composition.goalWaist}"`,
+    });
+  } else if (composition) {
     chips.push({
       label: "Body fat",
       value: `${composition.latest.bodyFat}%`,
@@ -122,15 +138,6 @@ export function CoachCard({
         composition.delta.bodyFatPp != null
           ? `${composition.delta.bodyFatPp > 0 ? "+" : ""}${composition.delta.bodyFatPp} pp vs first scan`
           : `goal ${composition.goalBodyFat}%`,
-    });
-  } else if (engine.trendWeight != null) {
-    chips.push({
-      label: "Trend weight",
-      value: `${engine.trendWeight} lb`,
-      hint:
-        forecast?.observedRatePerWeek != null
-          ? `${forecast.observedRatePerWeek > 0 ? "+" : ""}${forecast.observedRatePerWeek} lb/wk`
-          : undefined,
     });
   }
   if (eta) {

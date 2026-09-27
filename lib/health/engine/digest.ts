@@ -70,19 +70,30 @@ export interface InsightDigest {
       deltaVsPlan: number;
       planWeightToday: number;
     } | null;
-    /** Primary cut goal: body-fat % progress from InBody scans. */
+    /** Primary goal: shirt fit — bigger up top, smaller midsection. */
     composition: {
+      lookGoal: string;
       goalBodyFat: number;
+      goalWaist: number;
       guideWeight: number;
       latestBodyFat: number;
       firstBodyFat: number;
+      latestWaist: number | null;
+      firstWaist: number | null;
       deltaBodyFatPp: number | null;
+      deltaWaistIn: number | null;
       deltaLeanMassLb: number | null;
+      deltaSkeletalMuscleLb: number | null;
       deltaFatMassLb: number | null;
       deltaWeightLb: number | null;
       observedBodyFatRatePerWeek: number | null;
+      observedWaistRatePerWeek: number | null;
       etaWeeks: number | null;
       etaDate: string | null;
+      etaBasis: "bodyFat" | "waist" | "both" | null;
+      upperBodyUp: boolean;
+      midsectionDown: boolean;
+      shirtFitImproving: boolean;
       isRecompPattern: boolean;
       summary: string;
     } | null;
@@ -186,17 +197,28 @@ export function buildInsightDigest(
 
   const composition = snapshot.composition
     ? {
+        lookGoal: snapshot.composition.lookGoal,
         goalBodyFat: snapshot.composition.goalBodyFat,
+        goalWaist: snapshot.composition.goalWaist,
         guideWeight: snapshot.composition.guideWeight,
         latestBodyFat: snapshot.composition.latest.bodyFat,
         firstBodyFat: snapshot.composition.first.bodyFat,
+        latestWaist: snapshot.composition.latestWaist,
+        firstWaist: snapshot.composition.firstWaist,
         deltaBodyFatPp: snapshot.composition.delta.bodyFatPp,
+        deltaWaistIn: snapshot.composition.delta.waistIn,
         deltaLeanMassLb: snapshot.composition.delta.leanMassLb,
+        deltaSkeletalMuscleLb: snapshot.composition.delta.skeletalMuscleLb,
         deltaFatMassLb: snapshot.composition.delta.fatMassLb,
         deltaWeightLb: snapshot.composition.delta.weightLb,
         observedBodyFatRatePerWeek: snapshot.composition.observedBodyFatRatePerWeek,
+        observedWaistRatePerWeek: snapshot.composition.observedWaistRatePerWeek,
         etaWeeks: snapshot.composition.etaWeeks,
         etaDate: snapshot.composition.etaDate,
+        etaBasis: snapshot.composition.etaBasis,
+        upperBodyUp: snapshot.composition.upperBodyUp,
+        midsectionDown: snapshot.composition.midsectionDown,
+        shirtFitImproving: snapshot.composition.shirtFitImproving,
         isRecompPattern: snapshot.composition.isRecompPattern,
         summary: snapshot.composition.summary,
       }

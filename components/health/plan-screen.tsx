@@ -108,9 +108,9 @@ export function PlanScreen({
           <div className="hc-eyebrow">The roadmap</div>
           <h1>Cut with control. Build with patience.</h1>
           <p>
-            First reach <strong>15% body fat</strong> and an athletic look (scale weight near ~170
-            is only a guide if lean holds). Hold. Then earn the slow build while waist and labs
-            stay honest.
+            First get shirts to fit the way you want — <strong>bigger chest, back, and arms</strong>,{" "}
+            <strong>smaller stomach</strong> (~15% BF / ~35.5&quot; waist). Hold that look. Then earn
+            the slow build while waist and labs stay honest. Scale weight is irrelevant.
           </p>
         </div>
         <StatusBadge tone="good">Current phase: Cut</StatusBadge>
@@ -122,9 +122,9 @@ export function PlanScreen({
           {BODYFI_PLAN.anchors.map((anchor) => (
             <div key={anchor.week}>
               <span>Week {anchor.week}</span>
-              <strong>{anchor.bodyFat}% BF</strong>
+              <strong>{anchor.waist}&quot; waist</strong>
               <small>
-                {anchor.phase} · ~{anchor.weight} lb guide · {anchor.waist}&quot; waist
+                {anchor.phase} · {anchor.bodyFat}% BF · shirt-fit look
               </small>
             </div>
           ))}
@@ -171,12 +171,12 @@ export function PlanScreen({
       <Card>
         <SectionHeader eyebrow="Steering rules" title="What changes the plan" />
         <ul className="hc-rules">
-          <li>Judge the cut by InBody body fat %, lean mass, and weekly waist — not day-to-day scale weight.</li>
-          <li>Flat weight with fat↓ and lean↑ is recomposition progress, not a stall.</li>
+          <li>Judge progress by weekly waist, InBody body fat, lean/skeletal muscle, and shirt fit — never by scale weight.</li>
+          <li>Smaller stomach + fuller chest/back/arms is the win, even if the scale does not move.</li>
           <li>If waist and body fat stall for 10–14 compliant days, reduce roughly 150 calories or add walking.</li>
-          <li>Keep scale loss under roughly 1.25 lb per week when it is falling; protect strength, recovery, and lean mass.</li>
+          <li>Protect strength on Alpha days — arms, back, and chest are what fill the shirt.</li>
           <li>If lifts, sleep, or energy fall sharply, recover and eat appropriately—do not add more training.</li>
-          <li>Hold near 15% body fat (and a weight that feels lean) before beginning a slow, measured build.</li>
+          <li>Hold the shirt-fit look (~15% BF / ~35.5&quot; waist) before beginning a slow, measured build.</li>
         </ul>
       </Card>
 
